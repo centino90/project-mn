@@ -37,17 +37,10 @@
 		return $client->createAuthUrl();
 	}
 
-    function tryAndLoginWithGoogle($get, $userModel)
+    function tryAndLoginWithGoogle($get, $usersController)
 	{
-		// $client = setGoogleClient();
-		// $token = $client->fetchAccessTokenWithAuthCode($get['code']);
-
-		// $client->setAccessToken($token);
-
-		// Get user profile
-		// $gauth = new Google_Service_Oauth2($client);
-		// $googleUserInfo = $gauth->userinfo->get();
-
+		$userModel = $usersController->userModel;
+		
 		// assume fail
 		$status = 'fail';
 		$message = '';
@@ -57,17 +50,21 @@
 		$_SESSION['google_user_info'] = array();
 		$_SESSION['eci_login_required_to_connect_google'] = false;
 
-		if ( isset( $get['error'] ) ) { // error comming from facebook GET vars
+		if ( isset( $get['error'] ) ) { 
+			// error comming from facebook GET vars
 			$message = $get['error_description'];
-		} else { // no error in facebook GET vars
+		} else { 
+			// no error in facebook GET vars
 			// get an access token with the code facebook sent us
 			$client = setGoogleClient();
 			$accessTokenInfo = $client->fetchAccessTokenWithAuthCode($get['code']);
 
-			if (isset($accessTokenInfo['error'])) { // there was an error getting an access token with the code
+			if (isset($accessTokenInfo['error'])) { 
+				// there was an error getting an access token with the code
 				$message = $accessTokenInfo['error'];
 				die($message);
-			} else { // we have access token! :D
+			} else { 
+				// we have access token! :D
 				$_SESSION['google_access_token'] = $accessTokenInfo['access_token'];
 
 				$client->setAccessToken($accessTokenInfo);
@@ -94,28 +91,30 @@
 							$userModel->updateRowById( 'users', 'google_user_id', $googleUserInfo['id'], $userInfoWithEmail->id);
 						}
 
-						// save info to php session so they are logged in
-						$_SESSION['user_id'] = $userInfoWithEmail->id;
-						$_SESSION['user_email'] = $userInfoWithEmail->email;
-						$_SESSION['user_name'] = $userInfoWithEmail->first_name . ' ' . $userInfoWithEmail->last_name;
-						redirect('posts');
-					} elseif ( $userInfoWithEmail && !$userInfoWithEmail->google_user_id ) { // existing account exists for the email and has not logged in with facebook before
+						if ($userInfoWithEmail) {
+							$usersController->createUserSession($userInfoWithEmail, false);
+						}
+
+					} elseif ( $userInfoWithEmail && !$userInfoWithEmail->google_user_id ) { 
+						/*
+						existing account exists for the email and has not logged in 
+						with Google before
+						*/
 						$_SESSION['eci_login_required_to_connect_google'] = true;
-					} else { // user not found with id/email sign them up and log them in
+					} else { 
+						// user not found with id/email sign them up and log them in
 						// sign user up						
 						$client->setAccessToken($_SESSION['google_access_token']);
 
-						$userId = $userModel->register( ['email' => $googleUserInfo->email, 'first_name' => $googleUserInfo->givenName, 'last_name' => $googleUserInfo->familyName, 'google_user_id' => $googleUserInfo->id, 'google_access_token' => $accessTokenInfo['access_token']] );					
+						$userModel->register( ['email' => $googleUserInfo->email, 'first_name' => $googleUserInfo->givenName, 'last_name' => $googleUserInfo->familyName, 'google_user_id' => $googleUserInfo->id, 'google_access_token' => $accessTokenInfo['access_token']] );					
 						$userInfo = $userModel->getRowWithValue( 'users', 'google_user_id', $googleUserInfo['id'] );
 
-						// save info to php session so they are logged in
-						$_SESSION['user_id'] = $userInfo->id;
-						$_SESSION['user_email'] = $userInfo->email;
-						$_SESSION['user_name'] = $userInfo->first_name . ' ' . $userInfo->last_name;
-						redirect('posts');
+						if ($userInfo) {
+							$usersController->createUserSession($userInfo, false);
+						}
 					}
 				} else {
-					$message = 'Invalid creds';
+					$message = 'Invalid credentials';
 				}
 			}
 		}
