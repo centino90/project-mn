@@ -104,7 +104,7 @@
       </div>
     </div>
 
-    <!-- Personal information -->
+    <!-- License information -->
     <div class="max-w-3xl w-full mx-auto">
       <form class="mt-8" action="<?php echo URLROOT; ?>/users/registerPrcInfo" method="post">
         <div class="text-black text-center mt-5 mb-8">
@@ -112,7 +112,7 @@
         </div>
 
         <div>
-          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 gap-3">
             <div class="relative rounded-md">
               <label for="company-website" class="block text-sm font-medium text-gray-700">
                 PRC license no. *
