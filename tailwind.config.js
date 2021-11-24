@@ -1,3 +1,5 @@
+const colors = require('tailwindcss/colors')
+
 module.exports = {
   purge: {
     enabled: false,
@@ -10,11 +12,24 @@ module.exports = {
   },
   darkMode: false, // or 'media' or 'class'
   theme: {
-    extend: {},
+    colors: {
+      blue: colors.sky,
+      white: colors.white,
+      gray: colors.gray,
+      black: colors.black,
+      transparent: colors.transparent,
+
+      // Custom
+      primary: colors.fuchsia,
+      secondary: colors.gray,
+      success: colors.green,
+      danger: colors.red,
+    },
+    // borderColor: theme => theme('colors')
+    // fill: theme => theme('colors')
   },
   variants: {
     extend: {
-
     },
   },
   plugins: [

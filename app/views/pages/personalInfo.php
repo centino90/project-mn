@@ -3,283 +3,215 @@
 <?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
 <div class="flex flex-col w-full" x-data="app()">
-  <div class="text-black text-center">
-    <?php flash('update_success'); ?>
-  </div>
+  <div class="min-w-full px-1">
+    <form action="<?php echo URLROOT; ?>/pages/personalInfo" method="post">
+      <!-- <div class="text-black text-center">
+      <?php flash('update_success'); ?>
+      </div> -->
 
-  <header class="flex justify-content-between px-4 sm:px-0">
-    <div class="w-64 flex-shrink-0">
-      <span class="text-lg font-medium leading-6 text-gray-900">Personal Information</span>
-      <p class="mt-1 text-sm text-gray-600">
-        Use a permanent address where you can receive mail.
-      </p>
-    </div>
-    <div class="w-full text-right">
-      <a x-bind="trigger"></a>
-    </div>
-  </header>
+      <header class="flex items-center justify-between gap-3 mb-10">
+        <div class="w-64 flex-shrink-0">
+          <span class="text-lg font-medium">Personal information</span>
+        </div>
+        <div>
+          <a class="flex text-blue-400 hover:underline cursor-pointer" @click="onEditMode = !onEditMode" x-show="!onEditMode">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Enable editing
+          </a>
+          <a class="flex text-blue-400 hover:underline cursor-pointer" @click="onEditMode = !onEditMode" x-show="onEditMode">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Disable editing
+          </a>
+        </div>
+      </header>
 
-  <div class="overflow-x-auto mt-9">
-    <div class="inline-block min-w-full px-1">
-      <div class="overflow-hidden sm:rounded-lg">
-        <form action="<?php echo URLROOT; ?>/pages/personalInfo" method="POST">
-          <div x-bind="inputSelectGroup" class="md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="first_name" class="block text-sm font-medium text-gray-700">
-                  First name
-                </label>
-              </div>
+      <div class="flex flex-col gap-y-5">
+        <!-- First name -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            First name
+          </label>
+          <input type="text" value="<?php echo $data['first_name'] ?>" x-bind="formGroup.formInput" name="first_name">
+          <?php if (!empty($data['first_name_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['first_name_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.first_name" type="text" name="first_name" id="first_name">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.first_name_err" x-text="serverData.first_name_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="middle_name" class="block text-sm font-medium text-gray-700">
-                  Middle name
-                </label>
-              </div>
+        <!-- Middle name -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Middle name
+          </label>
+          <input type="text" value="<?php echo $data['middle_name'] ?>" x-bind="formGroup.formInput" name="middle_name">
+          <?php if (!empty($data['middle_name_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['middle_name_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.middle_name" type="text" name="middle_name" id="middle_name">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.middle_name_err" x-text="serverData.middle_name_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="last_name" class="block text-sm font-medium text-gray-700">
-                  Last name
-                </label>
-              </div>
+        <!-- Last name -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Last name
+          </label>
+          <input type="text" value="<?php echo $data['last_name'] ?>" x-bind="formGroup.formInput" name="last_name">
+          <?php if (!empty($data['last_name_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['last_name_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.last_name" type="text" name="last_name" id="last_name">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.last_name_err" x-text="serverData.last_name_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="gender" class="block text-sm font-medium text-gray-700">
-                  Gender
-                </label>
-              </div>
+        <!-- Date of birth -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Date of Birth
+          </label>
+          <input type="date" value="<?php echo $data['birthdate'] ?>" x-bind="formGroup.formInput" name="birthdate">
+          <?php if (!empty($data['birthdate_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['birthdate_err']; ?> !
             </div>
+          <?php endif; ?>
+        </div>
 
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <select x-bind="inputSelectGroup.select" :disabled="!onEditMode" name="gender" id="gender">
-                  <option value="">Select</option>
-                  <template x-for="(option, index) in inputSelectGroup.select.options.gender">
-                    <option :value="option" x-text="option" :selected="option == serverData.gender">
-                    </option>
-                  </template>
-                </select>
+        <!-- Gender -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Gender
+          </label>
+          <select x-bind="formGroup.formInput" name="gender">
+            <option value="">Select</option>
+            <option <?php if ($data['gender'] == 'Female') : ?> selected <?php endif; ?> value="Female">Female</option>
+            <option <?php if ($data['gender'] == 'Male') : ?> selected <?php endif; ?> value="Male">Male</option>
+          </select>
+          <?php if (!empty($data['gender_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['gender_err']; ?> !
+            </div>
+          <?php endif; ?>
+        </div>
 
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.gender_err" x-text="serverData.gender_err">
-                </div>
-              </div>
+        <!-- Contact no -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Contact number
+          </label>
+          <input type="text" value="<?php echo $data['contact_number'] ?>" x-bind="formGroup.formInput" name="contact_number">
+          <?php if (!empty($data['contact_number_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['contact_number_err']; ?> !
             </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="birthdate" class="block text-sm font-medium text-gray-700">
-                  Birthdate
-                </label>
-              </div>
+        <!-- Facebook account name -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Facebook account name
+          </label>
+          <input type="text" value="<?php echo $data['fb_account_name'] ?>" x-bind="formGroup.formInput" name="fb_account_name">
+          <?php if (!empty($data['fb_account_name_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['fb_account_name_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.birthdate" type="date" name="birthdate" id="birthdate">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.birthdate_err" x-text="serverData.birthdate_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="contact_number" class="block text-sm font-medium text-gray-700">
-                  Contact nubmer
-                </label>
-              </div>
+        <!-- Home address -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Home address
+          </label>
+          <input type="text" value="<?php echo $data['address'] ?>" x-bind="formGroup.formInput" name="address">
+          <?php if (!empty($data['address_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['address_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.contact_number" type="number" name="contact_number" id="contact_number">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.contact_number_err" x-text="serverData.contact_number_err">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="fb_account_name" class="block text-sm font-medium text-gray-700">
-                  Fb account name
-                </label>
-              </div>
-            </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.fb_account_name" type="text" name="fb_account_name" id="fb_account_name">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.fb_account_name_err" x-text="serverData.fb_account_name_err">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="address" class="block text-sm font-medium text-gray-700">
-                  Home address
-                </label>
-              </div>
-            </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.address" type="text" name="address" id="address">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.address_err" x-text="serverData.address_err">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-9 md:grid md:grid-cols-3 md:gap-3" x-data="{specified: false}">
-            <div class="md:col-span-1"></div>
-            <div class="md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <button type="submit" x-show="onEditMode" class="mx-1 group relative flex justify-center py-2 px-4 border border-transparent text-white font-bold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                  Submit to proceed
-                </button>
-              </div>
-            </div>
-          </div>
-        </form>
+          <?php endif; ?>
+        </div>
       </div>
-    </div>
+
+      <!-- Form submit -->
+      <div class="my-10" x-show="onEditMode">
+        <button type="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+          Submit to proceed
+        </button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <script>
-    /**
-   Passed all php data to javascript and used alpinejs to
-   reduce any repeating code
-  **/
-    document.addEventListener('alpine:init', () => {
-      Alpine.store('serverData', <?php echo json_encode($data) ?>)
+<script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('app', () => ({
+      init() {
+        if (this.checkServerValidationError()) {
+          this.onEditMode = true
+        } else {
+          this.onEditMode = false
+        }
+      },
+      onEditMode: false,
+      serverData: <?php echo json_encode($data); ?>,
+      formGroup: {
+        [':class']() {
+          let defaultClass = 'form-group'
 
-      Alpine.data('app', () => ({
-        init() {
-          if (this.checkServerValidationError()) {
-            this.onEditMode = true
-          } else {
-            this.onEditMode = false
-          }
+          return this.onEditMode ? `${defaultClass} border-0` : `${defaultClass} border-b`
         },
-        onEditMode: false,
-        serverData: <?php echo json_encode($data); ?>,
-
-        trigger: {
-          ['x-text']() {
-            return this.onEditMode ? 'Disable editing' : 'Enable editing'
-          },
-          ['@click']() {
-            if (this.onEditMode && this.checkServerValidationError()) {
-              if (!confirm(
-                  `You seem to have unfinished action. Do you still want to proceed?
-                  If so, your data will be reverted back.`
-                )) {
-                return
-              }
-              window.location.href = '<?php echo URLROOT; ?>/pages/personalInfo'
-            }
-
-            this.getInputs().forEach(input => {
-              input.value = this.serverData[input.getAttribute('name')]
-            })
-            this.onEditMode = !this.onEditMode
+        formLabel: {
+          [':for']() {
+            return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
           },
           [':class']() {
-            return 'text-blue-400 hover:underline cursor-pointer'
-          },
-        },
-
-        inputSelectGroup: {
-          ['x-bind:class']() {
-            return !this.onEditMode ? 'border-b' : ''
-          },
-          select: {
-            [':disabled']() {
-              return !this.onEditMode
-            },
-            [':class']() {
-              let defaultClass = 'focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm'
-
-              return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-gray-300`
-            },
-            options: {
-              gender: <?php echo json_encode($data['gender_options']); ?>,
-            }
-          },
-          inputs: {
-            [':disabled']() {
-              return !this.onEditMode
-            },
-            [':class']() {
-              let defaultClass = 'focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm'
-
-              return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-gray-300`
-            },
-          },
-          errorMessage: {
-            ['x-bind:class']() {
-              return 'err-message text-sm text-red-500 px-2 pt-2'
-            },
+            return 'mb-4 form-label'
           }
         },
+        formInput: {
+          [':id']() {
+            return this.$el.getAttribute('name')
+          },
+          [':disabled']() {
+            return !this.onEditMode
+          },
+          [':class']() {
+            let defaultClass = 'form-input'
 
-        checkServerValidationError: function() {
-          if (
-            this.serverData.first_name_err !== '' ||
-            this.serverData.middle_name_err !== '' ||
-            this.serverData.last_name_err !== '' ||
-            this.serverData.gender_err !== '' ||
-            this.serverData.fb_account_name_err !== '' ||
-            this.serverData.contact_number_err !== '' ||
-            this.serverData.birthdate_err !== '' ||
-            this.serverData.address_err !== ''
-          ) {
-            return true
+            return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-secondary-300`
+          },
+        },
+        formInputError: {
+          [':class']() {
+            return 'form-input-err'
           }
-          return false
         },
-        getInputs() {
-          return document.querySelectorAll('form input, form select, form textarea')
-        },
-      }))
-    })
-  </script>
+      },
 
-  <?php require APPROOT . '/views/inc/footer.php'; ?>
+      checkServerValidationError: function() {
+        if (
+          this.serverData.first_name_err !== '' ||
+          this.serverData.middle_name_err !== '' ||
+          this.serverData.last_name_err !== '' ||
+          this.serverData.gender_err !== '' ||
+          this.serverData.fb_account_name_err !== '' ||
+          this.serverData.contact_number_err !== '' ||
+          this.serverData.birthdate_err !== '' ||
+          this.serverData.address_err !== ''
+        ) {
+          return true
+        }
+        return false
+      }
+    }))
+  })
+</script>
+
+<?php require APPROOT . '/views/inc/footer.php'; ?>

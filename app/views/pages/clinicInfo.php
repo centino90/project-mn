@@ -3,210 +3,169 @@
 <?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
 <div class="flex flex-col w-full" x-data="app()">
-  <div class="text-black text-center">
-    <?php flash('update_success'); ?>
-  </div>
+  <div class="min-w-full px-1">
+    <form action="<?php echo URLROOT; ?>/pages/clinicInfo" method="POST">
+      <!-- <div class="text-black text-center">
+        <?php flash('update_success'); ?>
+      </div> -->
 
-  <header class="flex justify-content-between px-4 sm:px-0">
-    <div class="w-64 flex-shrink-0">
-      <span class="text-lg font-medium leading-6 text-gray-900">Clinic information</span>
-      <p class="mt-1 text-sm text-gray-600">
-        Use a permanent address where you can receive mail.
-      </p>
-    </div>
-    <div class="w-full text-right">
-      <a x-bind="trigger">
-      </a>
-    </div>
-  </header>
+      <header class="flex items-center justify-between gap-3 mb-10">
+        <div class="w-64 flex-shrink-0">
+          <span class="text-lg font-medium">Clinic information</span>
+        </div>
+        <div>
+          <a class="flex text-blue-400 hover:underline cursor-pointer" @click="onEditMode = !onEditMode" x-show="!onEditMode">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Enable editing
+          </a>
+          <a class="flex text-blue-400 hover:underline cursor-pointer" @click="onEditMode = !onEditMode" x-show="onEditMode">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Disable editing
+          </a>
+        </div>
+      </header>
 
-  <div class="overflow-x-auto mt-9">
-    <div class="inline-block min-w-full px-1">
-      <div class="overflow-hidden sm:rounded-lg">
-        <form action="<?php echo URLROOT; ?>/pages/clinicInfo" method="POST">
-          <div x-bind="inputSelectGroup" class="md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="clinic_name" class="block text-sm font-medium text-gray-700">
-                  Name
-                </label>
-              </div>
+      <div class="flex flex-col gap-y-5">
+        <!-- Name -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Name
+          </label>
+          <input type="text" value="<?php echo $data['clinic_name'] ?>" x-bind="formGroup.formInput" name="clinic_name">
+          <?php if (!empty($data['clinic_name_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['clinic_name_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.clinic_name" type="text" name="clinic_name" id="clinic_name">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.clinic_name_err" x-text="serverData.clinic_name_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="clinic_street" class="block text-sm font-medium text-gray-700">
-                  Street
-                </label>
-              </div>
+        <!-- Street -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Street
+          </label>
+          <input type="text" value="<?php echo $data['clinic_street'] ?>" x-bind="formGroup.formInput" name="clinic_street">
+          <?php if (!empty($data['clinic_street_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['clinic_street_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.clinic_street" type="text" name="clinic_street" id="clinic_street">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.clinic_street_err" x-text="serverData.clinic_street_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="clinic_district" class="block text-sm font-medium text-gray-700">
-                  District
-                </label>
-              </div>
+        <!-- District -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            District
+          </label>
+          <input type="text" value="<?php echo $data['clinic_district'] ?>" x-bind="formGroup.formInput" name="clinic_district">
+          <?php if (!empty($data['clinic_district_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['clinic_district_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.clinic_district" type="text" name="clinic_district" id="clinic_district">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.clinic_district_err" x-text="serverData.clinic_district_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="clinic_city" class="block text-sm font-medium text-gray-700">
-                  City
-                </label>
-              </div>
+        <!-- City -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            City
+          </label>
+          <input type="text" value="<?php echo $data['clinic_city'] ?>" x-bind="formGroup.formInput" name="clinic_city">
+          <?php if (!empty($data['clinic_city_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['clinic_city_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.clinic_city" type="text" name="clinic_city" id="clinic_city">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.clinic_city_err" x-text="serverData.clinic_city_err">
-                </div>
-              </div>
-            </div>
-          </div>
+          <?php endif; ?>
+        </div>
 
-          <div x-bind="inputSelectGroup" class="mt-4 md:grid md:grid-cols-3 md:gap-6">
-            <div class="md:col-span-1 flex items-end">
-              <div class="px-4 sm:px-0">
-                <label for="clinic_contact_number" class="block text-sm font-medium text-gray-700">
-                  Contact number
-                </label>
-              </div>
+        <!-- Contact number -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Contact number
+          </label>
+          <input type="number" value="<?php echo $data['clinic_contact_number'] ?>" x-bind="formGroup.formInput" name="clinic_contact_number">
+          <?php if (!empty($data['clinic_contact_number_err'])) : ?>
+            <div x-bind="formGroup.formInputError">
+              <?php echo $data['clinic_contact_number_err']; ?> !
             </div>
-            <div class="mt-1 md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <input x-bind="inputSelectGroup.inputs" :value="serverData.clinic_contact_number" type="text" name="clinic_contact_number" id="clinic_contact_number">
-                <div class="err-message" x-bind="inputSelectGroup.errorMessage" x-show="serverData.clinic_contact_number_err" x-text="serverData.clinic_contact_number_err">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-9 md:grid md:grid-cols-3 md:gap-3" x-data="{specified: false}">
-            <div class="md:col-span-1"></div>
-            <div class="md:mt-0 md:col-span-2">
-              <div class="px-4 sm:px-0">
-                <button type="submit" x-show="onEditMode" class="mx-1 group relative flex justify-center py-2 px-4 border border-transparent text-white font-bold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                  Submit to proceed
-                </button>
-              </div>
-            </div>
-          </div>
-        </form>
+          <?php endif; ?>
+        </div>
       </div>
-    </div>
+
+      <!-- Form submit -->
+      <div class="my-10" x-show="onEditMode">
+        <button type="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+          Submit to proceed
+        </button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <script>
-    /**
-   Passed all php data to javascript and used alpinejs to
-   reduce any repeating code
-  **/
-    document.addEventListener('alpine:init', () => {
-      Alpine.store('serverData', <?php echo json_encode($data) ?>)
+<script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('app', () => ({
+      init() {
+        if (this.checkServerValidationError()) {
+          this.onEditMode = true
+        } else {
+          this.onEditMode = false
+        }
+      },
+      onEditMode: false,
+      serverData: <?php echo json_encode($data); ?>,
+      formGroup: {
+        [':class']() {
+          let defaultClass = 'form-group'
 
-      Alpine.data('app', () => ({
-        init() {
-          if (this.checkServerValidationError()) {
-            this.onEditMode = true
-          } else {
-            this.onEditMode = false
-          }
-          console.log(this.serverData)
+          return this.onEditMode ? `${defaultClass} border-0` : `${defaultClass} border-b`
         },
-        onEditMode: false,
-        serverData: <?php echo json_encode($data); ?>,
-
-        trigger: {
-          ['x-text']() {
-            return this.onEditMode ? 'Disable editing' : 'Enable editing'
-          },
-          ['@click']() {
-            if (this.onEditMode && this.checkServerValidationError()) {
-              if (!confirm(
-                  `You seem to have unfinished action. Do you still want to proceed?
-                  If so, your data will be reverted back.`
-                )) {
-                return
-              }
-              window.location.href = '<?php echo URLROOT; ?>/pages/personalInfo'
-            }
-
-            this.getInputs().forEach(input => {
-              input.value = this.serverData[input.getAttribute('name')]
-            })
-            this.onEditMode = !this.onEditMode
+        formLabel: {
+          [':for']() {
+            return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
           },
           [':class']() {
-            return 'text-blue-400 hover:underline cursor-pointer'
-          },
-        },
-
-        inputSelectGroup: {
-          ['x-bind:class']() {
-            return !this.onEditMode ? 'border-b' : ''
-          },
-          inputs: {
-            [':disabled']() {
-              return !this.onEditMode
-            },
-            [':class']() {
-              let defaultClass = 'focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm'
-
-              return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-gray-300`
-            },
-          },
-          errorMessage: {
-            ['x-bind:class']() {
-              return 'err-message text-sm text-red-500 px-2 pt-2'
-            },
+            return 'mb-4 form-label'
           }
         },
+        formInput: {
+          [':id']() {
+            return this.$el.getAttribute('name')
+          },
+          [':disabled']() {
+            return !this.onEditMode
+          },
+          [':class']() {
+            let defaultClass = 'form-input'
 
-        checkServerValidationError: function() {
-          if (
-            this.serverData.clinic_name_err !== '' ||
-            this.serverData.clinic_street_err !== '' ||
-            this.serverData.clinic_district_err !== '' ||
-            this.serverData.clinic_city_err !== '' ||
-            this.serverData.clinic_contact_number_err !== ''
-          ) {
-            return true
+            return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-secondary-300`
+          },
+        },
+        formInputError: {
+          [':class']() {
+            return 'form-input-err'
           }
-          return false
         },
-        getInputs() {
-          return document.querySelectorAll('form input, form select, form textarea')
-        },
-      }))
-    })
-  </script>
+      },
 
-  <?php require APPROOT . '/views/inc/footer.php'; ?>
+      checkServerValidationError: function() {
+        if (
+          this.serverData.clinic_name_err !== '' ||
+          this.serverData.clinic_street_err !== '' ||
+          this.serverData.clinic_district_err !== '' ||
+          this.serverData.clinic_city_err !== '' ||
+          this.serverData.clinic_contact_number_err !== ''
+        ) {
+          return true
+        }
+        return false
+      }
+    }))
+  })
+</script>
+
+<?php require APPROOT . '/views/inc/footer.php'; ?>

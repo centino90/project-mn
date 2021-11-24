@@ -20,5 +20,5 @@
   // URL Root
   define('URLROOT', 'http://localhost/DuesPaymentSystem');
   // Site Name
-  define('SITENAME', 'DuesPaymentSystem');
+  define('SITENAME', 'PDO-DCC');
   // App Version

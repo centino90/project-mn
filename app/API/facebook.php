@@ -137,6 +137,7 @@ function tryAndLoginWithFacebook($get, $usersController)
 		} else { 
 			// we have access token! :D
 			// set access token in the session
+
 			$_SESSION['fb_access_token'] = $accessTokenInfo['fb_response']['access_token'];
 
 			// get facebook user info with the access token
@@ -176,9 +177,9 @@ function tryAndLoginWithFacebook($get, $usersController)
 				} else {
 					// sign up and sign in users if not found with id/email 			
 					$fbUserInfo['fb_response']['fb_access_token'] = $_SESSION['fb_access_token'];
+			
 					$userModel->register($fbUserInfo['fb_response']);
-
-					$userInfo = $userModel->getRowWithValue('users', 'fb_user_id', $fbUserInfo['fb_response']['id']);
+					$userInfo = $userModel->getRowWithValue('users', 'email', $fbUserInfo['fb_response']['email']);
 
 					if ($userInfo) {
 						$usersController->createUserSession($userInfo, false);
