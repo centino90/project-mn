@@ -1,6 +1,6 @@
 <?php
   // DB Params
-  define('DB_HOST', 'localhost');
+   define('DB_HOST', 'localhost');
   define('DB_USER', 'u704967255_centino90');
   define('DB_PASS', 'Tropawzpoge123');
   define('DB_NAME', 'u704967255_PaymentSystem');
@@ -15,11 +15,10 @@
 	define( 'GOOGLE_CLIENT_SECRET', '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' );
 	define( 'GOOGLE_REDIRECT_URI', 'https://www.pda-dcc.com/users/login' );
 
-  // App Root
+// APP ROOT
   define('APPROOT', dirname(dirname(__FILE__)));
   // URL Root
   define('URLROOT', 'https://www.pda-dcc.com/');
-  // Site Name
-  define('SITENAME', 'DuesPaymentSystem');
   // App Version
-  define('APPVERSION', '1.0.0');
+  define('APPVERSION', '1.0.0'); 
+  define('SITENAME', 'PDO-DCC');
