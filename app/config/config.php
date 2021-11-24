@@ -15,6 +15,8 @@
 	define( 'GOOGLE_CLIENT_SECRET', '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' );
 	define( 'GOOGLE_REDIRECT_URI', 'https://www.pda-dcc.com/users/login' );
 
+// APP ROOT
+  define('APPROOT', dirname(dirname(__FILE__)));
   // URL Root
   define('URLROOT', 'https://www.pda-dcc.com/');
   // App Version
