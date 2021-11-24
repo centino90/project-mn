@@ -55,6 +55,7 @@ function tryAndLoginWithGoogle($get, $usersController)
 	if (isset($get['error'])) {
 		// error comming from facebook GET vars
 		$message = $get['error_description'];
+		redirect('users/login');
 	} else {
 		// no error in facebook GET vars
 		// get an access token with the code facebook sent us
@@ -122,7 +123,8 @@ function tryAndLoginWithGoogle($get, $usersController)
 					}
 				}
 			} else {
-				$message = 'Invalid credentials';
+				$message = 'Sorry but we require your email in this system.';
+				redirect('users/login');
 			}
 		}
 	}

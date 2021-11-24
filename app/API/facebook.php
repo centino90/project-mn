@@ -48,7 +48,7 @@ function getFacebookLoginUrl()
 		'client_id' => FB_APP_ID,
 		'redirect_uri' => FB_REDIRECT_URI,
 		'state' => FB_APP_STATE,
-		'scope' => 'email',
+		'scope' => ['email', 'public_profile'],
 		'auth_type' => 'rerequest'
 	);
 
@@ -127,6 +127,7 @@ function tryAndLoginWithFacebook($get, $usersController)
 	if (isset($get['error'])) { 
 		// error comming from facebook GET vars
 		$message = $get['error_description'];
+		redirect('users/login');
 	} else { 
 		// no error in facebook GET vars
 		// get an access token with the code facebook sent us
@@ -186,8 +187,8 @@ function tryAndLoginWithFacebook($get, $usersController)
 					}
 				}
 			} else {
-
 				$message = 'Invalid credentials';
+				redirect('users/login');
 			}
 		}
 	}
