@@ -4,6 +4,11 @@ class Users extends Controller
   public function __construct()
   {
     $this->userModel = $this->model('User');
+    // if (time() - $_SESSION["login_time_stamp"] > 20) {
+    //   session_unset();
+    //   session_destroy();
+    //   redirect("users/login");
+    // }
   }
 
   public function index()
@@ -105,12 +110,13 @@ class Users extends Controller
         'email' => trim($_POST['email']),
         'password' => trim($_POST['password']),
         'confirm_password' => trim($_POST['confirm_password']),
+        'is_admin' => false,
 
         'email_err' => '',
         'password_err' => '',
         'confirm_password_err' => ''
       ];
-    
+
       // Validate login credentials
       if (empty($data['email'])) {
         $data['email_err'] = 'Please enter email';
@@ -135,8 +141,8 @@ class Users extends Controller
 
       // Check if all errors are empty
       if (
-        empty($data['email_err']) && empty($data['password_err']) 
-        && empty($data['confirm_password_err'])      
+        empty($data['email_err']) && empty($data['password_err'])
+        && empty($data['confirm_password_err'])
       ) {
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
@@ -155,11 +161,11 @@ class Users extends Controller
       }
     } else {
 
-      $data = [        
+      $data = [
         'email' => '',
         'password' => '',
         'confirm_password' => '',
-       
+
         'email_err' => '',
         'password_err' => '',
         'confirm_password_err' => ''
@@ -175,6 +181,14 @@ class Users extends Controller
     }
     if (isLoggedIn() && isCompleteInfo()) {
       redirect('pages');
+    }
+    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
+      session_unset();
+      session_destroy();
+      redirect("users/login");
+    } else {
+      session_regenerate_id(true);
+      $_SESSION['login_time_stamp'] = time();
     }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -215,10 +229,9 @@ class Users extends Controller
 
       // Check if errors are empty
       if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
-        if ($this->userModel->updatePrcInfo($data)) {                    
+        if ($this->userModel->updatePrcInfo($data)) {
           $_SESSION['current_registration_step'] = 'registerPersonalInfo';
           redirect('users/registerPersonalInfo');
-
         } else {
           die('Something went wrong');
         }
@@ -254,12 +267,17 @@ class Users extends Controller
     if (isLoggedIn() && isCompleteInfo()) {
       redirect('pages');
     }
-    // if ($_SESSION['current_registration_step'] != 'registerPersonalInfo') {
-    //   redirect('users/' . $_SESSION['current_registration_step']);
-    // }
+    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
+      session_unset();
+      session_destroy();
+      redirect("users/login");
+    } else {
+      session_regenerate_id(true);
+      $_SESSION['login_time_stamp'] = time();
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
- 
+
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       $data = [
@@ -318,10 +336,9 @@ class Users extends Controller
         && empty($data['fb_account_name_err']) && empty($data['address_err'])
       ) {
 
-        if ($this->userModel->updatePersonalInfo($data)) {                  
+        if ($this->userModel->updatePersonalInfo($data)) {
           $_SESSION['current_registration_step'] = 'registerClinicInfo';
           redirect('users/registerClinicInfo');
-
         } else {
           die('Something went wrong');
         }
@@ -363,9 +380,14 @@ class Users extends Controller
     if (isLoggedIn() && isCompleteInfo()) {
       redirect('pages');
     }
-    // if ($_SESSION['current_registration_step'] != 'registerClinicInfo') {
-    //   redirect('users/' . $_SESSION['current_registration_step']);
-    // }
+    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
+      session_unset();
+      session_destroy();
+      redirect("users/login");
+    } else {
+      session_regenerate_id(true);
+      $_SESSION['login_time_stamp'] = time();
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -412,7 +434,6 @@ class Users extends Controller
         if ($this->model('Clinic')->updateOrInsert($data)) {
           $_SESSION['current_registration_step'] = 'registerEmergencyInfo';
           redirect('users/registerEmergencyInfo');
-
         } else {
           die('Something went wrong');
         }
@@ -448,9 +469,14 @@ class Users extends Controller
     if (isLoggedIn() && isCompleteInfo()) {
       redirect('pages');
     }
-    // if ($_SESSION['current_registration_step'] != 'registerEmergencyInfo') {
-    //   redirect('users/' . $_SESSION['current_registration_step']);
-    // }
+    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
+      session_unset();
+      session_destroy();
+      redirect("users/login");
+    } else {
+      session_regenerate_id(true);
+      $_SESSION['login_time_stamp'] = time();
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -482,10 +508,10 @@ class Users extends Controller
         empty($data['emergency_person_name_err']) && empty($data['emergency_address_err'])
         && empty($data['emergency_contact_number_err'])
       ) {
-        if ($this->userModel->updateEmergencyInfo($data)) {        
-          $_SESSION['current_registration_step'] = 'registerDuesInfo';
-          redirect('users/registerDuesInfo');
-
+        if ($this->userModel->updateEmergencyInfo($data)) {
+          $user = $this->userModel->getUserById($_SESSION['user_id']);
+          unset($_SESSION['current_registration_info']);
+          $this->createUserSession($user);
         } else {
           die('Something went wrong');
         }
@@ -509,58 +535,58 @@ class Users extends Controller
       $this->view('users/registerEmergencyInfo', $data);
     }
   }
-  public function registerDuesInfo()
-  {
-    if (!isLoggedIn()) {
-      redirect('users/login');
-    }
-    if (isLoggedIn() && isCompleteInfo()) {
-      redirect('pages');
-    }
-    // if ($_SESSION['current_registration_step'] != 'registerDuesInfo') {
-    //   redirect('users/' . $_SESSION['current_registration_step']);
-    // }
+  // public function registerDuesInfo()
+  // {
+  //   if (!isLoggedIn()) {
+  //     redirect('users/login');
+  //   }
+  //   if (isLoggedIn() && isCompleteInfo()) {
+  //     redirect('pages');
+  //   }
+  //   // if ($_SESSION['current_registration_step'] != 'registerDuesInfo') {
+  //   //   redirect('users/' . $_SESSION['current_registration_step']);
+  //   // }
 
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+  //   if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  //     $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
-      $data = [
-        'user_id' => $_SESSION['user_id'] ?? '',
-        'payment_option' => trim($_POST['payment_option']),
-        'payment_option_err' => ''
-      ];
+  //     $data = [
+  //       'user_id' => $_SESSION['user_id'] ?? '',
+  //       'payment_option' => trim($_POST['payment_option']),
+  //       'payment_option_err' => ''
+  //     ];
 
-      // Validate payment option
-      if (empty($data['payment_option'])) {
-        $data['payment_option_err'] = 'Please select your payment option';
-      }
+  //     // Validate payment option
+  //     if (empty($data['payment_option'])) {
+  //       $data['payment_option_err'] = 'Please select your payment option';
+  //     }
 
-      if (empty($data['payment_option_err'])) {
-        if ($this->userModel->updateDuesInfo($data)) {
-          $user = $this->userModel->getUserById($_SESSION['user_id']);
-          unset($_SESSION['current_registration_info']);
-          $this->createUserSession($user);
+  //     if (empty($data['payment_option_err'])) {
+  //       if ($this->userModel->updateDuesInfo($data)) {
+  //         $user = $this->userModel->getUserById($_SESSION['user_id']);
+  //         unset($_SESSION['current_registration_info']);
+  //         $this->createUserSession($user);
 
-        } else {
-          die('Something went wrong');
-        }
-      } else {
-        // Load view with errors
-        $this->view('users/registerDuesInfo', $data);
-      }
-    } else {
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
+  //       } else {
+  //         die('Something went wrong');
+  //       }
+  //     } else {
+  //       // Load view with errors
+  //       $this->view('users/registerDuesInfo', $data);
+  //     }
+  //   } else {
+  //     $user = $this->userModel->getUserById($_SESSION['user_id']);
 
-      $data = [
-        'payment_option' => $user->payment_option ?? isset($_POST['payment_option']) ?? trim($_POST['payment_option']) ?? '',
+  //     $data = [
+  //       'payment_option' => $user->payment_option ?? isset($_POST['payment_option']) ?? trim($_POST['payment_option']) ?? '',
 
-        'payment_option_err' => ''
-      ];
+  //       'payment_option_err' => ''
+  //     ];
 
-      // Load view
-      $this->view('users/registerDuesInfo', $data);
-    }
-  }
+  //     // Load view
+  //     $this->view('users/registerDuesInfo', $data);
+  //   }
+  // }
 
   public function createUserSession($user = '', $notThirdParty = true)
   {
@@ -571,21 +597,25 @@ class Users extends Controller
     if (
       $notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
       && !empty($user->prc_number) && !empty($user->emergency_person_name)
-      && !empty($user->payment_option)
     ) {
       $_SESSION['complete_info'] = true;
+      $_SESSION["login_time_stamp"] = time();
+
       flash('login_status', 'You just signed in successfully!');
       redirect('pages');
     } else if (
       !$notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
       && !empty($user->prc_number) && !empty($user->emergency_person_name)
-      && !empty($user->payment_option)
     ) {
+      // die('yes');
       $_SESSION['complete_info'] = true;
+      $_SESSION["login_time_stamp"] = time();
+
       flash('login_status', 'You just signed in successfully!');
       redirect('pages');
     } else {
       $_SESSION['complete_info'] = false;
+      $_SESSION["login_time_stamp"] = time();
       flash('login_status', 'Proceed to finish registration', 'You are either signed in using 3rd party authenthication or missed some inputs along the steps.');
       redirect('users/registerPrcInfo');
     }
@@ -596,6 +626,8 @@ class Users extends Controller
     unset($_SESSION['user_id']);
     unset($_SESSION['user_email']);
     unset($_SESSION['user_name']);
+    unset($_SESSION['complete_info']);
+    unset($_SESSION['login_time_stamp']);
     session_destroy();
     redirect('users/login');
   }

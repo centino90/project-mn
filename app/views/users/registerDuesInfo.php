@@ -21,7 +21,7 @@
           </div>
         </div>
 
-        <div class="text-xs text-center md:text-base text-gray-800">PRC information</div>
+        <div class="text-xs text-center md:text-base">License information</div>
       </div>
 
       <div class="w-1/4">

@@ -13,13 +13,21 @@ class User
   {
     $this->db->query(
       'INSERT INTO users 
-        (email, password) 
+        (first_name, last_name, email, password, is_admin, fb_user_id, fb_access_token, google_user_id, google_access_token) 
       VALUES
-        (:email, :password)
+        (:first_name, :last_name, :email, :password, :is_admin, :fb_user_id, :fb_access_token, :google_user_id, :google_access_token)
       '
     );
-    $this->db->bind(':email', $data['email']);
+
+    $this->db->bind(':first_name', $data['first_name'] ?? '');
+    $this->db->bind(':last_name', $data['last_name'] ?? '');
+    $this->db->bind(':email', $data['email'] ?? '');
     $this->db->bind(':password', $data['password'] ?? '');
+    $this->db->bind(':is_admin', $data['is_admin'] ?? '');
+    $this->db->bind(':fb_user_id', $data['id'] ?? '');
+    $this->db->bind(':fb_access_token', $data['fb_access_token'] ?? '');
+    $this->db->bind(':google_user_id', $data['google_user_id'] ?? '');
+    $this->db->bind(':google_access_token', $data['google_access_token'] ?? '');
 
     if ($this->db->execute()) {
       return true;

@@ -6,6 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/main.css">
   <title><?php echo SITENAME; ?></title>
+  <link rel="shortcut icon" href="<?php echo URLROOT; ?>/img/favicon.ico" type="image/x-icon">
 </head>
 <body>
   <?php require APPROOT . '/views/inc/navbar.php'; ?>
