@@ -11,16 +11,16 @@
 
       <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
         <div class="w-64 flex-shrink-0">
-        <span class="text-2xl font-bold">License information</span>
+          <span class="text-2xl font-bold">License information</span>
         </div>
         <div>
-          <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="!onEditMode">
+          <button type="button" @click="onEditMode = !onEditMode" x-show="!onEditMode" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             Enable editing
           </button>
-          <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
+          <button type="button" @click="onEditMode = !onEditMode" x-show="onEditMode" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -48,10 +48,12 @@
         <!-- Registration date -->
         <div x-bind="formGroup">
           <label x-bind="formGroup.formLabel">
-            Registration date
+            Registration date <small class="font-medium">(MM/DD/YY)</small>
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="date" value="<?php echo $data['prc_registration_date'] ?>" x-bind="formGroup.formInput" name="prc_registration_date">
+            <div class="flex flex-1 items-center">
+              <input :type="!onEditMode ? 'text' : 'date'" :value="!onEditMode ? `<?php echo $data['prc_registration_date'] ?> (${dayjs('<?php echo $data['prc_registration_date'] ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['prc_registration_date'] ?>'" x-bind="formGroup.formInput" :max="dayjs().format('YYYY-MM-DD')" name="prc_registration_date">
+            </div>
             <?php if (!empty($data['prc_registration_date_err'])) : ?>
               <div x-bind="formGroup.formInputError">
                 <?php echo $data['prc_registration_date_err']; ?> !
@@ -63,10 +65,19 @@
         <!-- Expiration date -->
         <div x-bind="formGroup">
           <label x-bind="formGroup.formLabel">
-            Expiration date
+            Expiration date <small class="font-medium">(MM/DD/YY)</small>
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="date" value="<?php echo $data['prc_expiration_date'] ?>" x-bind="formGroup.formInput" name="prc_expiration_date">
+            <div class="flex flex-1 items-center">
+              <input :type="!onEditMode ? 'text' : 'date'" :value="!onEditMode ? `<?php echo $data['prc_expiration_date'] ?> (${dayjs('<?php echo $data['prc_expiration_date'] ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['prc_expiration_date'] ?>'" x-bind="formGroup.formInput" :min="dayjs().add(1, 'day').format('YYYY-MM-DD')" name="prc_expiration_date">
+              <span x-show="!onEditMode" :class="checkIfRegistrationIsExpired() ? 'bg-danger-100 text-danger-800' : 'bg-warning-100 text-warning-800'" class="whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span x-text="generateExpirationStatus()">
+                </span>
+              </span>
+            </div>
             <?php if (!empty($data['prc_expiration_date_err'])) : ?>
               <div x-bind="formGroup.formInputError">
                 <?php echo $data['prc_expiration_date_err']; ?> !
@@ -150,9 +161,14 @@
         } else {
           this.onEditMode = false
         }
+        // console.log(this.checkIfRegistrationIsExpired())
+        // console.log(this.getRelativeTimeBeforeExpiration())
+
       },
       onEditMode: false,
       serverData: <?php echo json_encode($data); ?>,
+      // registrationDate: serverData.prc_registration_date,
+      // expirationDate: serverData.prc_expiration_date,
       formGroup: {
         [':class']() {
           let defaultClass = 'form-group'
@@ -192,6 +208,33 @@
         }
       },
 
+      // getYearsSinceRegistration: function() {
+      //   return dayjs().year() - dayjs(this.serverData.prc_registration_date).year()
+      // },
+      checkIfRegistrationIsExpired: function() {
+        return dayjs(this.serverData.prc_expiration_date).year() < dayjs().year() ? true : false
+      },
+      getRelativeTimeSinceExpiration: function() {
+          return `expired ${dayjs(this.serverData.prc_expiration_date).from(dayjs())}`
+      },
+      getRemainingTimeBeforeExpiration: function() {
+        let remainingYear = dayjs(this.serverData.prc_expiration_date).year() - dayjs().year()
+
+        return dayjs(this.serverData.prc_expiration_date).subtract(remainingYear, 'year')
+      },
+      getRelativeTimeBeforeExpiration: function() {
+          let remainingTime = this.getRemainingTimeBeforeExpiration();
+
+          return `expires ${dayjs(this.serverData.remainingTime).to(dayjs(this.serverData.prc_expiration_date))}`
+      },
+      generateExpirationStatus: function() {
+        if (this.checkIfRegistrationIsExpired()) {
+          console.log('yeehuh')
+          return this.getRelativeTimeSinceExpiration()
+        } else {
+          return this.getRelativeTimeBeforeExpiration()
+        }
+      },
       checkServerValidationError: function() {
         if (
           this.serverData.prc_number_err !== '' ||
@@ -203,7 +246,7 @@
           return true
         }
         return false
-      }
+      },
     }))
   })
 </script>

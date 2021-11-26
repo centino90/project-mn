@@ -118,10 +118,10 @@
           <!-- Registration date -->
           <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
-              Registration date <span class="text-danger-500">*</span>
+              Registration date <small class="font-medium">(MM/DD/YY)</small>
             </label>
             <div x-bind="inputContainer">
-              <input type="date" value="<?php echo $data['prc_registration_date'] ?>" x-bind="formInput" name="prc_registration_date">
+              <input type="date" value="<?php echo $data['prc_registration_date'] ?>" x-bind="formInput" :max="dayjs().format('YYYY-MM-DD')" name="prc_registration_date">
               <?php if (!empty($data['prc_registration_date_err'])) : ?>
                 <div x-bind="formInputError">
                   <?php echo $data['prc_registration_date_err']; ?> !
@@ -133,10 +133,10 @@
           <!-- Expiration date -->
           <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
-              Expiration date <span class="text-danger-500">*</span>
+              Expiration date <small class="font-medium">(MM/DD/YY)</small>
             </label>
             <div x-bind="inputContainer">
-              <input type="date" value="<?php echo $data['prc_expiration_date'] ?>" x-bind="formInput" name="prc_expiration_date">
+              <input type="date" value="<?php echo $data['prc_expiration_date'] ?>" x-bind="formInput" :min="dayjs().add(1, 'day').format('YYYY-MM-DD')" name="prc_expiration_date">
               <?php if (!empty($data['prc_expiration_date_err'])) : ?>
                 <div x-bind="formInputError">
                   <?php echo $data['prc_expiration_date_err']; ?> !
@@ -170,7 +170,7 @@
                 </div>
               <?php endif; ?>
             </div>
-          </div>          
+          </div>
 
           <!-- Type of practice -->
           <div x-data="formGroup()" class="form-group">
@@ -180,7 +180,7 @@
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="specified">Select</a>
             </label>
             <div x-bind="inputContainer">
-              <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified name="type_practice" placeholder="Specify your type of practice">
+              <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified name=" type_practice" placeholder="Specify your type of practice">
               <select x-bind="formInput" x-show="!specified" :disabled="specified" name="type_practice">
                 <option value="">Select</option>
                 <option <?php if ($data['type_practice'] == 'Government Dentist') : ?> selected <?php endif; ?> value="Government Dentist">Government Dentist</option>
