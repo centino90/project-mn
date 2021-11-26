@@ -5,7 +5,6 @@
   define('DB_PASS', '');
   define('DB_NAME', 'DuesPaymentSystem');
 
-  define('test', 'hellp');
   // fb credentials
 	define( 'FB_APP_ID', '597967324656000' );
 	define( 'FB_APP_SECRET', '96b5f8442fa44b01bc8ee03d17da0271' );
