@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/main.css">
   <title><?php echo SITENAME; ?></title>
   <link rel="shortcut icon" href="<?php echo URLROOT; ?>/img/favicon.ico" type="image/x-icon">
+  <!-- <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"> -->
+
 </head>
 <body>
   <?php require APPROOT . '/views/inc/navbar.php'; ?>

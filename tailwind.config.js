@@ -24,6 +24,7 @@ module.exports = {
       secondary: colors.gray,
       success: colors.green,
       danger: colors.red,
+      warning: colors.yellow,
     },
     // borderColor: theme => theme('colors')
     // fill: theme => theme('colors')

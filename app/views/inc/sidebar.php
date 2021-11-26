@@ -1,5 +1,5 @@
 <!-- This example requires Tailwind CSS v2.0+ -->
-<div class="lg:w-64 flex-shrink-0 lg:h-screen sm:rounded-lg bg-white overflow-hidden border-r border-b mb-8 lg:mb-0">
+<div class="lg:w-64 flex-shrink-0 lg:h-screen sm:rounded-lg sm:rounded-b-none bg-white overflow-hidden border-r mb-8 lg:mb-0">
   <div class="p-4 bg-gradient-to-r from-primary-400 to-primary-600 text-lg font-medium text-white">
     <b>[<?php echo $_SESSION['is_admin'] == true ? 'Admin' : 'Member'; ?>] -</b>
     <?php echo $_SESSION['user_name']; ?>

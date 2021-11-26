@@ -3,8 +3,9 @@
   <div class="container mx-auto px-5">
     <div class="flex flex-wrap justify-between items-center border-b-2 border-secondary-100 py-6 md:justify-start md:space-x-10">
       <div class="flex justify-start md:w-0 md:flex-1">
-        <a href="#">
-          <img class="h-12 w-auto sm:h-16" src="<?php echo URLROOT; ?>/img/PDO-DCC.png" alt="PDO-DCC logo">
+        <a href="<?php echo URLROOT; ?>/" class="font-semibold text-secondary-400">
+          <img class="h-12 w-auto mx-auto sm:h-16" src="<?php echo URLROOT; ?>/img/PDO-DCC.png" alt="PDO-DCC logo">
+          PDO-DCC
         </a>
       </div>
 
