@@ -4,11 +4,6 @@ class Users extends Controller
   public function __construct()
   {
     $this->userModel = $this->model('User');
-    // if (time() - $_SESSION["login_time_stamp"] > 20) {
-    //   session_unset();
-    //   session_destroy();
-    //   redirect("users/login");
-    // }
   }
 
   public function index()
@@ -19,7 +14,7 @@ class Users extends Controller
   public function login()
   {
     if (isLoggedIn()) {
-      redirect('pages');
+      redirect('members');
     }
 
     // Check Facebook API request code
@@ -100,7 +95,7 @@ class Users extends Controller
   public function register()
   {
     if (isLoggedIn()) {
-      redirect('pages');
+      redirect('members');
     }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -120,6 +115,8 @@ class Users extends Controller
       // Validate login credentials
       if (empty($data['email'])) {
         $data['email_err'] = 'Please enter email';
+      } else if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        $data['email_err'] = 'Please enter a valid email format';
       } else {
         // Check email
         if ($this->userModel->findUserByEmail($data['email'])) {
@@ -180,7 +177,7 @@ class Users extends Controller
       redirect('users/login');
     }
     if (isLoggedIn() && isCompleteInfo()) {
-      redirect('pages');
+      redirect('members');
     }
     if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
       session_unset();
@@ -265,7 +262,7 @@ class Users extends Controller
       redirect('users/login');
     }
     if (isLoggedIn() && isCompleteInfo()) {
-      redirect('pages');
+      redirect('members');
     }
     if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
       session_unset();
@@ -378,7 +375,7 @@ class Users extends Controller
       redirect('users/login');
     }
     if (isLoggedIn() && isCompleteInfo()) {
-      redirect('pages');
+      redirect('members');
     }
     if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
       session_unset();
@@ -467,7 +464,7 @@ class Users extends Controller
       redirect('users/login');
     }
     if (isLoggedIn() && isCompleteInfo()) {
-      redirect('pages');
+      redirect('members');
     }
     if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
       session_unset();
@@ -541,7 +538,7 @@ class Users extends Controller
   //     redirect('users/login');
   //   }
   //   if (isLoggedIn() && isCompleteInfo()) {
-  //     redirect('pages');
+  //     redirect('members');
   //   }
   //   // if ($_SESSION['current_registration_step'] != 'registerDuesInfo') {
   //   //   redirect('users/' . $_SESSION['current_registration_step']);
@@ -593,30 +590,42 @@ class Users extends Controller
     $_SESSION['user_id'] = $user->id;
     $_SESSION['user_email'] = $user->email;
     $_SESSION['user_name'] = ucwords($user->last_name) . ', ' . ucwords($user->first_name) . ' ' . ucwords(substr($user->middle_name, 0, 1) . '.');
+    $_SESSION['is_admin'] = $user->is_admin;
 
     if (
       $notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
       && !empty($user->prc_number) && !empty($user->emergency_person_name)
     ) {
+      flash('login_status', 'You just signed in successfully!');
+
       $_SESSION['complete_info'] = true;
       $_SESSION["login_time_stamp"] = time();
 
-      flash('login_status', 'You just signed in successfully!');
-      redirect('pages');
+      if ($_SESSION['is_admin']) {
+        redirect('admins');
+      } else {
+        redirect('members');
+      }
     } else if (
       !$notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
       && !empty($user->prc_number) && !empty($user->emergency_person_name)
     ) {
-      // die('yes');
+      flash('login_status', 'You just signed in successfully!');
+
       $_SESSION['complete_info'] = true;
       $_SESSION["login_time_stamp"] = time();
 
-      flash('login_status', 'You just signed in successfully!');
-      redirect('pages');
+      if ($_SESSION['is_admin']) {
+        redirect('admins');
+      } else {
+        redirect('members');
+      }
     } else {
+      flash('login_status', 'Proceed to finish registration', 'You are either signed in using 3rd party authenthication or missed some inputs along the steps.');
+
       $_SESSION['complete_info'] = false;
       $_SESSION["login_time_stamp"] = time();
-      flash('login_status', 'Proceed to finish registration', 'You are either signed in using 3rd party authenthication or missed some inputs along the steps.');
+
       redirect('users/registerPrcInfo');
     }
   }
@@ -626,6 +635,7 @@ class Users extends Controller
     unset($_SESSION['user_id']);
     unset($_SESSION['user_email']);
     unset($_SESSION['user_name']);
+    unset($_SESSION['is_admin']);
     unset($_SESSION['complete_info']);
     unset($_SESSION['login_time_stamp']);
     session_destroy();

@@ -1,11 +1,14 @@
 <?php
-  // Load composer dependencies
+  /* =========== Load Dependencies  
+  ============================== */
+  // composer dependencies
   require_once '../vendor/autoload.php';
-  // Load Configs
+
+  // Configs
   require_once 'config/config.php';
   require_once 'config/api.php';
 
-  // Load Helpers
+  // Helpers
   require_once 'helpers/url_helper.php';
   require_once 'helpers/session_helper.php';
 

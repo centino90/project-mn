@@ -75,31 +75,80 @@
 /* =========== FORMS
 ====================
 */
+// .form-group {
+//     @apply
+//     flex flex-wrap 
+//     rounded-md
+// }   
+// .form-label {
+//     @apply 
+//     whitespace-nowrap block 
+//     text-sm font-bold text-secondary-700
+// }
+// .form-input {
+//     @apply 
+//     w-full h-10
+//     block rounded-md 
+//     border-secondary-300 focus:border-primary-500 
+//     sm:text-sm 
+//     focus:ring-primary-500 
+// }
+// .form-input-err {
+//     @apply 
+//     text-sm text-danger-500 
+//     px-2 pt-2
+// }
+
+// .form-btn {
+//     @apply 
+//     flex justify-center items-center 
+//     border border-transparent 
+//     hover:bg-primary-600
+//     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+//     font-bold 
+//     rounded-md;
+// }
+
+
 .form-group {
     @apply
-    flex flex-wrap 
-    rounded-md
+    flex flex-col md:flex-row justify-between md:gap-3
+    rounded-md;
 }   
+.input-container {
+    @apply
+    flex flex-col md:flex-row flex-wrap justify-between gap-2
+    w-full md:w-3/4 rounded-md;
+}
+.input-container-nowrap {
+    @apply
+    flex flex-col md:flex-row flex-nowrap justify-between gap-2
+    w-full md:w-3/4 rounded-md;
+}
 .form-label {
     @apply 
-    whitespace-nowrap block 
-    text-sm font-bold text-secondary-700
+    w-full md:w-1/4
+    mb-2 md:mb-4
+    whitespace-nowrap
+    text-sm font-bold text-secondary-700;
 }
 .form-input {
     @apply 
-    block w-full rounded-md 
+    h-10 w-full rounded-md
     border-secondary-300 focus:border-primary-500 
     sm:text-sm 
-    focus:ring-primary-500 
+    focus:ring-primary-500 ;
 }
 .form-input-err {
     @apply 
+    w-full
     text-sm text-danger-500 
-    px-2 pt-2
+    px-2 md:px-0;
 }
 
 .form-btn {
     @apply 
+    cursor-pointer
     flex justify-center items-center 
     border border-transparent 
     hover:bg-primary-600

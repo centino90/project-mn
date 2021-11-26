@@ -13,7 +13,7 @@
       </div> -->
 
       <div class="flex flex-col gap-y-5">
-        <div class="relative rounded-md">
+        <div class="rounded-md">
           <input type="email" name="email" id="email" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Email address">
           <?php if (!empty($data['email_err'])) : ?>
             <div class="text-sm text-danger-500 px-2 pt-2">
@@ -22,7 +22,7 @@
           <?php endif; ?>
         </div>
 
-        <div class="relative rounded-md">
+        <div class="rounded-md">
           <input type="password" name="password" id="password" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Password">
           <?php if (!empty($data['password_err'])) : ?>
             <div class="text-sm text-danger-500 px-2 pt-2">
@@ -69,5 +69,8 @@
     </div>
   </div>
 </div>
+
+<script>
+</script>
 
 <?php require APPROOT . '/views/inc/footer.php'; ?>

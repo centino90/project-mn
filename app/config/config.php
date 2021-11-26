@@ -6,13 +6,13 @@
   define('DB_NAME', 'DuesPaymentSystem');
 
   // fb credentials
-	define( 'FB_APP_ID', '4649891738473679' );
-	define( 'FB_APP_SECRET', '3f981db9771fa424b0870a9eb4e4a4f4' );
+	define( 'FB_APP_ID', '597967324656000' );
+	define( 'FB_APP_SECRET', '96b5f8442fa44b01bc8ee03d17da0271' );
 	define( 'FB_REDIRECT_URI', 'http://localhost/DuesPaymentSystem/users/login' );
 
   // GOOGLE credentials
-  define( 'GOOGLE_CLIENT_ID', '716149094685-4no609952083305njj3n077nbd3kf61r.apps.googleusercontent.com' );
-	define( 'GOOGLE_CLIENT_SECRET', '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' );
+  define( 'GOOGLE_CLIENT_ID', '339949192946-oeiqofcjp8j81t759usbnm5eamp20uvn.apps.googleusercontent.com' );
+	define( 'GOOGLE_CLIENT_SECRET', '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' );
 	define( 'GOOGLE_REDIRECT_URI', 'http://localhost/DuesPaymentSystem/users/login' );
 
   // App Root

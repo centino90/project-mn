@@ -98,100 +98,114 @@
           License information
         </header>
 
-        <div class="flex flex-col gap-y-5">
+        <div class="flex flex-col gap-y-8">
           <!-- License no -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               PRC license no <span class="text-danger-500">*</span>
             </label>
-            <input type="number" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number">
-            <?php if (!empty($data['prc_number_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['prc_number_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="number" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number" autofocus>
+
+              <?php if (!empty($data['prc_number_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['prc_number_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Registration date -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Registration date <span class="text-danger-500">*</span>
             </label>
-            <input type="date" value="<?php echo $data['prc_registration_date'] ?>" x-bind="formInput" name="prc_registration_date">
-            <?php if (!empty($data['prc_registration_date_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['prc_registration_date_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="date" value="<?php echo $data['prc_registration_date'] ?>" x-bind="formInput" name="prc_registration_date">
+              <?php if (!empty($data['prc_registration_date_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['prc_registration_date_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Expiration date -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Expiration date <span class="text-danger-500">*</span>
             </label>
-            <input type="date" value="<?php echo $data['prc_expiration_date'] ?>" x-bind="formInput" name="prc_expiration_date">
-            <?php if (!empty($data['prc_expiration_date_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['prc_expiration_date_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="date" value="<?php echo $data['prc_expiration_date'] ?>" x-bind="formInput" name="prc_expiration_date">
+              <?php if (!empty($data['prc_expiration_date_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['prc_expiration_date_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Field of practice -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Field of practice <span class="text-danger-500">*</span>
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="!specified">Specify</a>
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="specified">Select</a>
             </label>
-            <input type="text" value="<?php echo $data['field_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice">
-            <select x-bind="formInput" x-show="!specified" :disabled="specified" name="field_practice">
-              <option value="">Select</option>
-              <option <?php if ($data['field_practice'] == 'General Practice') : ?> selected <?php endif; ?> value="General Practice">General Practice</option>
-              <option <?php if ($data['field_practice'] == 'Endodontics') : ?> selected <?php endif; ?> value="Endodontics">Endodontics</option>
-              <option <?php if ($data['field_practice'] == 'Prosthodontics') : ?> selected <?php endif; ?> value="Prosthodontics">Prosthodontics</option>
-              <option <?php if ($data['field_practice'] == 'Orthodontics') : ?> selected <?php endif; ?> value="Orthodontics">Orthodontics</option>
-              <option <?php if ($data['field_practice'] == 'Oral and maxillofacial surgery') : ?> selected <?php endif; ?> value="Oral and maxillofacial surgery">Oral and maxillofacial surgery</option>
-              <option <?php if ($data['field_practice'] == 'Pedodontics') : ?> selected <?php endif; ?> value="Pedodontics">Pedodontics</option>
-              <option <?php if ($data['field_practice'] == 'Periodontics') : ?> selected <?php endif; ?> value="Periodontics">Periodontics</option>
-            </select>
-            <?php if (!empty($data['field_practice_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['field_practice_err']; ?> !
-              </div>
-            <?php endif; ?>
-          </div>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['field_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice">
+              <select x-bind="formInput" x-show="!specified" :disabled="specified" name="field_practice">
+                <option value="">Select</option>
+                <option <?php if ($data['field_practice'] == 'General Practice') : ?> selected <?php endif; ?> value="General Practice">General Practice</option>
+                <option <?php if ($data['field_practice'] == 'Endodontics') : ?> selected <?php endif; ?> value="Endodontics">Endodontics</option>
+                <option <?php if ($data['field_practice'] == 'Prosthodontics') : ?> selected <?php endif; ?> value="Prosthodontics">Prosthodontics</option>
+                <option <?php if ($data['field_practice'] == 'Orthodontics') : ?> selected <?php endif; ?> value="Orthodontics">Orthodontics</option>
+                <option <?php if ($data['field_practice'] == 'Oral and maxillofacial surgery') : ?> selected <?php endif; ?> value="Oral and maxillofacial surgery">Oral and maxillofacial surgery</option>
+                <option <?php if ($data['field_practice'] == 'Pedodontics') : ?> selected <?php endif; ?> value="Pedodontics">Pedodontics</option>
+                <option <?php if ($data['field_practice'] == 'Periodontics') : ?> selected <?php endif; ?> value="Periodontics">Periodontics</option>
+              </select>
+              <?php if (!empty($data['field_practice_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['field_practice_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
+          </div>          
 
           <!-- Type of practice -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Type of practice <span class="text-danger-500">*</span>
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="!specified">Specify</a>
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="specified">Select</a>
             </label>
-            <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified" name="type_practice" placeholder="Specify your type of practice">
-            <select x-bind="formInput" x-show="!specified" :disabled="specified" name="type_practice">
-              <option value="">Select</option>
-              <option <?php if ($data['type_practice'] == 'Government Dentist') : ?> selected <?php endif; ?> value="Government Dentist">Government Dentist</option>
-              <option <?php if ($data['type_practice'] == 'Clinic Owner') : ?> selected <?php endif; ?> value="Clinic Owner">Clinic Owner</option>
-              <option <?php if ($data['type_practice'] == 'Dental Associate') : ?> selected <?php endif; ?> value="Dental Associate">Dental Associate</option>
-              <option <?php if ($data['type_practice'] == 'School Dentist') : ?> selected <?php endif; ?> value="School Dentist">School Dentist</option>
-              <option <?php if ($data['type_practice'] == 'None Practicing') : ?> selected <?php endif; ?> value="None Practicing">None Practicing</option>
-            </select>
-            <?php if (!empty($data['type_practice_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['type_practice_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified name="type_practice" placeholder="Specify your type of practice">
+              <select x-bind="formInput" x-show="!specified" :disabled="specified" name="type_practice">
+                <option value="">Select</option>
+                <option <?php if ($data['type_practice'] == 'Government Dentist') : ?> selected <?php endif; ?> value="Government Dentist">Government Dentist</option>
+                <option <?php if ($data['type_practice'] == 'Clinic Owner') : ?> selected <?php endif; ?> value="Clinic Owner">Clinic Owner</option>
+                <option <?php if ($data['type_practice'] == 'Dental Associate') : ?> selected <?php endif; ?> value="Dental Associate">Dental Associate</option>
+                <option <?php if ($data['type_practice'] == 'School Dentist') : ?> selected <?php endif; ?> value="School Dentist">School Dentist</option>
+                <option <?php if ($data['type_practice'] == 'None Practicing') : ?> selected <?php endif; ?> value="None Practicing">None Practicing</option>
+              </select>
+              <?php if (!empty($data['type_practice_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['type_practice_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
-        </div>
 
-        <!-- Form submit -->
-        <div class="my-10">        
-          <button type="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
-            Submit to proceed
-          </button>
+          <!-- Form submit -->
+          <div x-data="formGroup()" class="form-group">
+            <label x-bind="formLabel">
+            </label>
+            <div x-bind="inputContainer">
+              <input type="submit" value="Submit to proceed" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              </input>
+            </div>
+          </div>
         </div>
       </form>
     </div>
@@ -200,15 +214,19 @@
 
 <script>
   document.addEventListener('alpine:init', () => {
-    Alpine.data('input', () => ({
+    Alpine.data('formGroup', () => ({
       specified: false,
-      class: 'form-group',
       formLabel: {
         [':for']() {
           return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
         },
         [':class']() {
           return 'mb-4 form-label'
+        }
+      },
+      inputContainer: {
+        [':class']() {
+          return 'input-container'
         }
       },
       formInput: {

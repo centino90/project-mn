@@ -97,124 +97,143 @@
           Personal information
         </header>
 
-        <div class="flex flex-col gap-y-5">
+        <div class="flex flex-col gap-y-8">
           <!-- First name -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               First name <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['first_name'] ?>" x-bind="formInput" name="first_name">
-            <?php if (!empty($data['first_name_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['first_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['first_name'] ?>" x-bind="formInput" name="first_name" autofocus>
+              <?php if (!empty($data['first_name_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['first_name_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Middle name -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Middle name <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['middle_name'] ?>" x-bind="formInput" name="middle_name">
-            <?php if (!empty($data['middle_name_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['middle_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['middle_name'] ?>" x-bind="formInput" name="middle_name">
+              <?php if (!empty($data['middle_name_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['middle_name_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Last name -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Last name <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['last_name'] ?>" x-bind="formInput" name="last_name">
-            <?php if (!empty($data['last_name_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['last_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['last_name'] ?>" x-bind="formInput" name="last_name">
+              <?php if (!empty($data['last_name_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['last_name_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Date of birth -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Date of Birth <span class="text-danger-500">*</span>
             </label>
-            <input type="date" value="<?php echo $data['birthdate'] ?>" x-bind="formInput" name="birthdate">
-            <?php if (!empty($data['birthdate_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['birthdate_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="date" value="<?php echo $data['birthdate'] ?>" x-bind="formInput" name="birthdate">
+              <?php if (!empty($data['birthdate_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['birthdate_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Gender -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Gender <span class="text-danger-500">*</span>
             </label>
-            <select x-bind="formInput" name="gender">
-              <option value="">Select</option>
-              <option <?php if ($data['gender'] == 'Female') : ?> selected <?php endif; ?> value="Female">Female</option>
-              <option <?php if ($data['gender'] == 'Male') : ?> selected <?php endif; ?> value="Male">Male</option>
-            </select>
-            <?php if (!empty($data['gender_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['gender_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <select x-bind="formInput" name="gender">
+                <option value="">Select</option>
+                <option <?php if ($data['gender'] == 'Female') : ?> selected <?php endif; ?> value="Female">Female</option>
+                <option <?php if ($data['gender'] == 'Male') : ?> selected <?php endif; ?> value="Male">Male</option>
+              </select>
+              <?php if (!empty($data['gender_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['gender_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Contact no -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Contact number <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['contact_number'] ?>" x-bind="formInput" name="contact_number">
-            <?php if (!empty($data['contact_number_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['contact_number_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['contact_number'] ?>" x-bind="formInput" name="contact_number">
+              <?php if (!empty($data['contact_number_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['contact_number_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Facebook account name -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Facebook account name <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['fb_account_name'] ?>" x-bind="formInput" name="fb_account_name">
-            <?php if (!empty($data['fb_account_name_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['fb_account_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['fb_account_name'] ?>" x-bind="formInput" name="fb_account_name">
+              <?php if (!empty($data['fb_account_name_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['fb_account_name_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Home address -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Home address <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['address'] ?>" x-bind="formInput" name="address">
-            <?php if (!empty($data['address_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['address_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['address'] ?>" x-bind="formInput" name="address">
+              <?php if (!empty($data['address_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['address_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
-        </div>
 
-        <!-- Form submit -->
-        <div class="my-10 flex flex-col sm:flex-row gap-3">
-          <a href="<?php echo URLROOT . '/users/registerPrcInfo'; ?>" class="form-btn bg-secondary-500 text-white w-full md:w-80 py-2 px-4">
-            Go back
-          </a>
-          <button type="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
-            Submit to proceed
-          </button>
+          <!-- Form submit -->
+          <div x-data="formGroup()" class="form-group md:pl-3">
+            <label x-bind="formLabel">
+            </label>
+            <div class="input-container-nowrap">
+              <a href="<?php echo URLROOT . '/users/registerPrcInfo'; ?>" class="form-btn bg-secondary-500 text-white w-full md:w-80 py-2 px-4 mx-0">
+                Go back
+              </a>
+              <input type="submit" value="Submit to proceed" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              </input>
+            </div>
+          </div>
         </div>
       </form>
     </div>
@@ -223,14 +242,19 @@
 
 <script>
   document.addEventListener('alpine:init', () => {
-    Alpine.data('input', () => ({
-      class: 'form-group',
+    Alpine.data('formGroup', () => ({
+      specified: false,
       formLabel: {
         [':for']() {
           return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
         },
         [':class']() {
           return 'mb-4 form-label'
+        }
+      },
+      inputContainer: {
+        [':class']() {
+          return 'input-container'
         }
       },
       formInput: {

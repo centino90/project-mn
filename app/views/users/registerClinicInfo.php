@@ -96,82 +96,94 @@
           Clinic information
         </header>
 
-        <div class="flex flex-col gap-y-5">
+        <div class="flex flex-col gap-y-8">
           <!-- Registered name -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Registered name <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['clinic_name'] ?>" x-bind="formInput" name="clinic_name">
-            <?php if (!empty($data['clinic_name_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['clinic_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['clinic_name'] ?>" x-bind="formInput" name="clinic_name" autofocus>
+              <?php if (!empty($data['clinic_name_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['clinic_name_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Street -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Street <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['clinic_street'] ?>" x-bind="formInput" name="clinic_street" placeholder="Rm. / Unit No. / Bldg. Name / Blk. / Lot / Street Name">
-            <?php if (!empty($data['clinic_street_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['clinic_street_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['clinic_street'] ?>" x-bind="formInput" name="clinic_street" placeholder="Rm. / Unit No. / Bldg. Name / Blk. / Lot / Street Name">
+              <?php if (!empty($data['clinic_street_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['clinic_street_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Barangay / District -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Barangay / District <span class="text-danger-500">*</span>
             </label>
-
-            <input type="text" value="<?php echo $data['clinic_district'] ?>" x-bind="formInput" name="clinic_district">
-            <?php if (!empty($data['clinic_district_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['clinic_district_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['clinic_district'] ?>" x-bind="formInput" name="clinic_district">
+              <?php if (!empty($data['clinic_district_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['clinic_district_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- City / Municipality -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               City / Municipality <span class="text-danger-500">*</span>
             </label>
-            <input type="text" value="<?php echo $data['clinic_city'] ?>" x-bind="formInput" name="clinic_city">
-            <?php if (!empty($data['clinic_city_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['clinic_city_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="text" value="<?php echo $data['clinic_city'] ?>" x-bind="formInput" name="clinic_city">
+              <?php if (!empty($data['clinic_city_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['clinic_city_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
 
           <!-- Contact number -->
-          <div x-data="input()" :class="class">
+          <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
               Contact number <span class="text-danger-500">*</span>
             </label>
-            <input type="number" value="<?php echo $data['clinic_contact_number'] ?>" x-bind="formInput" name="clinic_contact_number">
-            <?php if (!empty($data['clinic_contact_number_err'])) : ?>
-              <div x-bind="formInputError">
-                <?php echo $data['clinic_contact_number_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <div x-bind="inputContainer">
+              <input type="number" value="<?php echo $data['clinic_contact_number'] ?>" x-bind="formInput" name="clinic_contact_number">
+              <?php if (!empty($data['clinic_contact_number_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['clinic_contact_number_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
           </div>
-        </div>
 
-        <!-- Form submit -->
-        <div class="my-10 flex flex-col sm:flex-row gap-3">
-          <a href="<?php echo URLROOT . '/users/registerPersonalInfo'; ?>" class="form-btn bg-secondary-500 text-white w-full md:w-80 py-2 px-4">
-            Go back
-          </a>
-          <button type="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
-            Submit to proceed
-          </button>
+          <!-- Form submit -->
+          <div x-data="formGroup()" class="form-group md:pl-3">
+            <label x-bind="formLabel">
+            </label>
+            <div class="input-container-nowrap">
+              <a href="<?php echo URLROOT . '/users/registerPersonalInfo'; ?>" class="form-btn bg-secondary-500 text-white w-full md:w-80 py-2 px-4 mx-0">
+                Go back
+              </a>
+              <input type="submit" value="Submit to proceed" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              </input>
+            </div>
+          </div>
         </div>
       </form>
     </div>
@@ -180,14 +192,18 @@
 
 <script>
   document.addEventListener('alpine:init', () => {
-    Alpine.data('input', () => ({
-      class: 'form-group',
+    Alpine.data('formGroup', () => ({
       formLabel: {
         [':for']() {
           return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
         },
         [':class']() {
           return 'mb-4 form-label'
+        }
+      },
+      inputContainer: {
+        [':class']() {
+          return 'input-container'
         }
       },
       formInput: {
