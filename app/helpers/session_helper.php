@@ -21,7 +21,7 @@ function flash($name = '', $label = '', $message = '', $class = 'bg-green-600')
       $_SESSION[$name . '_class'] = $class;
     } elseif (empty($label) && !empty($_SESSION[$name])) {
       echo '<div class="flex max-w-sm w-full bg-white shadow-md rounded-lg overflow-hidden mx-auto my-5">' .
-        '<div class="w-2 ' .$_SESSION[$name . '_class'] . '">' .
+        '<div class="w-2 ' . $_SESSION[$name . '_class'] . '">' .
         '</div>' .
         '<div class="w-full flex justify-between px-2 py-2">' .
         '<div class="flex flex-col ml-2">' .
@@ -41,6 +41,9 @@ function flash($name = '', $label = '', $message = '', $class = 'bg-green-600')
   }
 }
 
+/* SETTERS */
+
+/* CHECKS */
 function isLoggedIn()
 {
   if (isset($_SESSION['user_id'])) {
@@ -49,7 +52,14 @@ function isLoggedIn()
     return false;
   }
 }
-
+function isAdmin()
+{
+  if ($_SESSION['is_admin']) {
+    return true;
+  } else {
+    return false;
+  }
+}
 function isCompleteInfo()
 {
   if (isset($_SESSION['complete_info']) && $_SESSION['complete_info'] == true) {
@@ -58,6 +68,65 @@ function isCompleteInfo()
     return false;
   }
 }
+function isIdleUser()
+{
+  //check user if idle for 10mins
+  if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/* REDIRECTS */
+function redirectAuthUserWithRole()
+{
+  if (isLoggedIn()) {
+    if (isAdmin()) {
+      redirect('admins');
+      return;
+    }
+    redirect('members');
+  }
+}
+function redirectUnAuthUser()
+{
+  if (!isLoggedIn()) {
+    redirect('users');
+  }
+}
+function redirectIfNotAdmin()
+{
+  if (!isAdmin()) {
+    redirect('members');
+  }
+}
+function redirectFullyRegisteredUser()
+{
+  if (isLoggedIn() && isCompleteInfo()) {
+    redirect('users/registerPrcInfo');
+  }
+}
+function redirectNotFullyRegisteredUser()
+{
+  if (isLoggedIn() && !isCompleteInfo()) {
+    redirect('users/registerPrcInfo');
+  }
+}
+function redirectInactiveUserOrRegenerateTimer()
+{
+  if (isIdleUser()) {
+    session_unset();
+    session_destroy();
+    redirect("users/login");
+    return;
+  }
+  session_regenerate_id(true);
+  $_SESSION['login_time_stamp'] = time();
+}
+
+
+
 
 // function currentInfoNumber()
 // {

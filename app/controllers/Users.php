@@ -13,25 +13,20 @@ class Users extends Controller
 
   public function login()
   {
-    if (isLoggedIn()) {
-      redirect('members');
-    }
+    redirectAuthUserWithRole();
 
     // Check Facebook API request code
     if (isset($_GET['state']) && FB_APP_STATE == $_GET['state']) {
       // try and log the user in with $_GET vars from facebook 
-      $fbLogin = tryAndLoginWithFacebook($_GET, $this);
+      tryAndLoginWithFacebook($_GET, $this);
     }
 
     //Check Google API request code
     if (isset($_GET['code'])) {
-      $googleLogin = tryAndLoginWithGoogle($_GET, $this);
+      tryAndLoginWithGoogle($_GET, $this);
     }
 
-    // Check for POST
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      // Process form
-      // Sanitize POST data
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       // Init data
@@ -62,7 +57,7 @@ class Users extends Controller
 
       // Make sure errors are empty
       if (empty($data['email_err']) && empty($data['password_err'])) {
-        // Validated
+
         // Check and set logged in user
         $loggedInUser = $this->userModel->login($data['email'], $data['password']);
 
@@ -94,9 +89,7 @@ class Users extends Controller
 
   public function register()
   {
-    if (isLoggedIn()) {
-      redirect('members');
-    }
+    redirectAuthUserWithRole();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -173,20 +166,9 @@ class Users extends Controller
   }
   public function registerPrcInfo()
   {
-    if (!isLoggedIn()) {
-      redirect('users/login');
-    }
-    if (isLoggedIn() && isCompleteInfo()) {
-      redirect('members');
-    }
-    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
-      session_unset();
-      session_destroy();
-      redirect("users/login");
-    } else {
-      session_regenerate_id(true);
-      $_SESSION['login_time_stamp'] = time();
-    }
+    redirectUnAuthUser();
+    redirectFullyRegisteredUser();
+    redirectInactiveUserOrRegenerateTimer();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -229,13 +211,13 @@ class Users extends Controller
         if ($this->userModel->updatePrcInfo($data)) {
           $_SESSION['current_registration_step'] = 'registerPersonalInfo';
           redirect('users/registerPersonalInfo');
-        } else {
-          die('Something went wrong');
+          return;
         }
-      } else {
-        // Load view with errors
-        $this->view('users/registerPrcInfo', $data);
+        die('Something went wrong');
+        return;
       }
+      // Load view with errors
+      $this->view('users/registerPrcInfo', $data);
     } else {
       $user = $this->userModel->getUserById($_SESSION['user_id']);
 
@@ -258,20 +240,9 @@ class Users extends Controller
   }
   public function registerPersonalInfo()
   {
-    if (!isLoggedIn()) {
-      redirect('users/login');
-    }
-    if (isLoggedIn() && isCompleteInfo()) {
-      redirect('members');
-    }
-    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
-      session_unset();
-      session_destroy();
-      redirect("users/login");
-    } else {
-      session_regenerate_id(true);
-      $_SESSION['login_time_stamp'] = time();
-    }
+    redirectUnAuthUser();
+    redirectFullyRegisteredUser();
+    redirectInactiveUserOrRegenerateTimer();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
@@ -371,20 +342,9 @@ class Users extends Controller
   }
   public function registerClinicInfo()
   {
-    if (!isLoggedIn()) {
-      redirect('users/login');
-    }
-    if (isLoggedIn() && isCompleteInfo()) {
-      redirect('members');
-    }
-    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
-      session_unset();
-      session_destroy();
-      redirect("users/login");
-    } else {
-      session_regenerate_id(true);
-      $_SESSION['login_time_stamp'] = time();
-    }
+    redirectUnAuthUser();
+    redirectFullyRegisteredUser();
+    redirectInactiveUserOrRegenerateTimer();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -460,20 +420,9 @@ class Users extends Controller
   }
   public function registerEmergencyInfo()
   {
-    if (!isLoggedIn()) {
-      redirect('users/login');
-    }
-    if (isLoggedIn() && isCompleteInfo()) {
-      redirect('members');
-    }
-    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
-      session_unset();
-      session_destroy();
-      redirect("users/login");
-    } else {
-      session_regenerate_id(true);
-      $_SESSION['login_time_stamp'] = time();
-    }
+    redirectUnAuthUser();
+    redirectFullyRegisteredUser();
+    redirectInactiveUserOrRegenerateTimer();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -538,7 +487,7 @@ class Users extends Controller
   //     redirect('users/login');
   //   }
   //   if (isLoggedIn() && isCompleteInfo()) {
-  //     redirect('members');
+  //     redirect('profiles');
   //   }
   //   // if ($_SESSION['current_registration_step'] != 'registerDuesInfo') {
   //   //   redirect('users/' . $_SESSION['current_registration_step']);
@@ -585,7 +534,7 @@ class Users extends Controller
   //   }
   // }
 
-  public function createUserSession($user = '', $notThirdParty = true)
+  public function createUserSession(object $user, bool $notThirdParty = true): void
   {
     $_SESSION['user_id'] = $user->id;
     $_SESSION['user_email'] = $user->email;
@@ -601,11 +550,7 @@ class Users extends Controller
       $_SESSION['complete_info'] = true;
       $_SESSION["login_time_stamp"] = time();
 
-      if ($_SESSION['is_admin']) {
-        redirect('admins');
-      } else {
-        redirect('members');
-      }
+      redirectAuthUserWithRole();
     } else if (
       !$notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
       && !empty($user->prc_number) && !empty($user->emergency_person_name)
@@ -615,18 +560,15 @@ class Users extends Controller
       $_SESSION['complete_info'] = true;
       $_SESSION["login_time_stamp"] = time();
 
-      if ($_SESSION['is_admin']) {
-        redirect('admins');
-      } else {
-        redirect('members');
-      }
+      redirectAuthUserWithRole();
     } else {
       flash('login_status', 'Proceed to finish registration', 'You are either signed in using 3rd party authenthication or missed some inputs along the steps.');
 
       $_SESSION['complete_info'] = false;
       $_SESSION["login_time_stamp"] = time();
 
-      redirect('users/registerPrcInfo');
+
+      redirectNotFullyRegisteredUser();
     }
   }
 
@@ -641,4 +583,40 @@ class Users extends Controller
     session_destroy();
     redirect('users/login');
   }
+
+
+
+
+    // public function validateAndCheckEmptyInputs($data)
+  // {
+  //   // Validate prc info
+  //   foreach ($data as $key => $value) {
+  //     if (empty($value)) {
+  //       $data[$key . '_err'] = 'Please enter your ' . str_replace('_', ' ', $key);
+  //     }
+  //   }
+
+  //   die(var_dump($data));
+  //   // if (empty($data['prc_number'])) {
+  //   //   $data['prc_number_err'] = 'Please enter your prc number';
+  //   // }
+  //   // if (empty($data['prc_registration_date'])) {
+  //   //   $data['prc_registration_date_err'] = 'Please enter your prc registration date';
+  //   // }
+  //   // if (empty($data['prc_expiration_date'])) {
+  //   //   $data['prc_expiration_date_err'] = 'Please enter your prc expiration date';
+  //   // }
+  //   // if (empty($data['field_practice'])) {
+  //   //   $data['field_practice_err'] = 'Please select your field of practice';
+  //   // }
+  //   // if (empty($data['type_practice'])) {
+  //   //   $data['type_practice_err'] = 'Please select your type of practice';
+  //   // }
+
+  //   // Check if errors are empty
+  //   if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
+  //     return true;
+  //   }
+  //   return false;
+  // }
 }

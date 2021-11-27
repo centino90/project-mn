@@ -52,6 +52,27 @@ class User
     }
   }
 
+  // Update user profile
+  public function update($data)
+  {
+    $this->db->query(
+      'UPDATE users 
+       SET
+        password = :password
+         WHERE id = :user_id 
+      '
+    );
+
+    $this->db->bind(':password', $data['password']);
+    $this->db->bind(':user_id', $data['user_id']);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   public function updatePrcInfo($data)
   {
     $this->db->query(
@@ -252,4 +273,53 @@ class User
       return false;
     }
   }
+
+  // public function updatedd($data)
+  // {
+  //   $this->db->query(
+  //     'UPDATE users 
+  //      SET
+  //         first_name = :first_name, middle_name = :middle_name, last_name = :last_name, birthdate = :birthdate, 
+  //         address = :address, contact_number = :contact_number, gender = :gender, fb_account_name = :fb_account_name,
+  //         prc_number = :prc_number, prc_registration_date = :prc_registration_date, prc_expiration_date = :prc_expiration_date, field_practice = :field_practice,
+  //         type_practice = :type_practice, emergency_person_name = :emergency_person_name, emergency_address = :emergency_address, emergency_contact_number = :emergency_contact_number,
+  //         payment_option = :payment_option, fb_user_id = :fb_user_id, fb_access_token = :fb_access_token, google_user_id = :google_user_id, google_access_token = :google_access_token,
+  //         email = :email, password = :password, is_active = :is_active, is_admin = :is_admin
+  //         WHERE id = :user_id 
+  //     '
+  //   );
+
+  //   $this->db->bind(':first_name', $data['first_name'] ?? '');
+  //   $this->db->bind(':middle_name', $data['middle_name'] ?? '');
+  //   $this->db->bind(':last_name', $data['last_name'] ?? '');
+  //   $this->db->bind(':birthdate', $data['birthdate'] ?? '');
+  //   $this->db->bind(':address', $data['address'] ?? '');
+  //   $this->db->bind(':contact_number', $data['contact_number'] ?? '');
+  //   $this->db->bind(':gender', $data['gender'] ?? '');
+  //   $this->db->bind(':fb_account_name', $data['fb_account_name'] ?? '');
+  //   $this->db->bind(':prc_number', $data['prc_number'] ?? '');
+  //   $this->db->bind(':prc_registration_date', $data['prc_registration_date'] ?? '');
+  //   $this->db->bind(':prc_expiration_date', $data['prc_expiration_date'] ?? '');
+  //   $this->db->bind(':field_practice', $data['field_practice'] ?? '');
+  //   $this->db->bind(':type_practice', $data['type_practice'] ?? '');
+  //   $this->db->bind(':emergency_person_name', $data['emergency_person_name'] ?? '');
+  //   $this->db->bind(':emergency_address', $data['emergency_address'] ?? '');
+  //   $this->db->bind(':emergency_contact_number', $data['emergency_contact_number'] ?? '');
+  //   $this->db->bind(':payment_option', $data['payment_option'] ?? '');
+  //   $this->db->bind(':fb_user_id', $data['fb_user_id'] ?? '');
+  //   $this->db->bind(':fb_access_token', $data['fb_access_token'] ?? '');
+  //   $this->db->bind(':google_user_id', $data['google_user_id'] ?? '');
+  //   $this->db->bind(':google_access_token', $data['google_access_token'] ?? '');
+  //   $this->db->bind(':email', $data['email'] ?? '');
+  //   $this->db->bind(':password', $data['password'] ?? '');
+  //   $this->db->bind(':is_active', $data['is_active'] ?? '');
+  //   $this->db->bind(':is_admin', $data['is_admin'] ?? '');
+  //   $this->db->bind(':user_id', $data['user_id']);
+
+  //   if ($this->db->execute()) {
+  //     return true;
+  //   } else {
+  //     return false;
+  //   }
+  // }
 }

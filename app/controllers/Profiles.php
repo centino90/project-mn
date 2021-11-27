@@ -1,24 +1,13 @@
 <?php
 
-class Members extends Controller
+class Profiles extends Controller
 {
     public function __construct()
     {
-        if (!isLoggedIn()) {
-            redirect('users/login');
-        }
-        if (isLoggedIn() && !isCompleteInfo()) {
-            redirect('users/registerPrcInfo');
-        }
-        if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
-            session_unset();
-            session_destroy();
-            redirect("users/login");
-        } else {
-            session_regenerate_id(true);
-            $_SESSION['login_time_stamp'] = time();
-        }
-
+        redirectUnAuthUser();
+        redirectNotFullyRegisteredUser();
+        redirectInactiveUserOrRegenerateTimer();
+ 
         $this->userModel = $this->model('User');
     }
 
@@ -27,9 +16,81 @@ class Members extends Controller
         $data = [
             'current_route' => __FUNCTION__,
         ];
-        
+
+        // $this->view('users/index', $data);
         unset($_SESSION['login_success']);
-        $this->view('members/home', $data);
+        redirect('profiles/userInfo');
+    }
+    public function userInfo()
+    {
+        $user = $this->userModel->getUserById($_SESSION['user_id']);
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+            $data = [
+                'current_route' => __FUNCTION__,
+                'user_id' => $_SESSION['user_id'] ?? '',
+
+                'has_facebook_auth' => !empty($user->fb_user_id) ? true : false,
+                'has_google_auth' => !empty($user->google_user_id) ? true : false,
+                'has_password' => !empty($user->password) ? true : false,
+
+                'email' => $user->email,
+                'password' => trim($_POST['password']),
+                'confirm_password' => trim($_POST['confirm_password']),
+
+                'password_err' => '',
+                'confirm_password_err' => ''
+            ];
+
+            if (empty($data['password'])) {
+                $data['password_err'] = 'Please enter password';
+            } elseif (strlen($data['password']) < 6) {
+                $data['password_err'] = 'Password must be at least 6 characters';
+            }
+            if (empty($data['confirm_password'])) {
+                $data['confirm_password_err'] = 'Please confirm password';
+            } else {
+                if ($data['password'] != $data['confirm_password']) {
+                    $data['confirm_password_err'] = 'Passwords do not match';
+                }
+            }
+
+            // Check if all errors are empty
+            if (
+                empty($data['password_err'])
+                && empty($data['confirm_password_err'])
+            ) {
+                $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+
+                if (!$this->userModel->update($data)) {
+                    die('Something went wrong');
+                }
+
+                redirect('profiles/userInfo');
+            } else {
+                // Load view with errors
+                $this->view('profiles/userInfo', $data);
+            }
+        } else {
+            $data = [
+                'current_route' => __FUNCTION__,
+
+                'has_facebook_auth' => !empty($user->fb_user_id) ? true : false,
+                'has_google_auth' => !empty($user->google_user_id) ? true : false,
+                'has_password' => !empty($user->password) ? true : false,
+
+                'email' => $user->email,
+                'password' => '',
+                'confirm_password' => '',
+
+                'email_err' => '',
+                'password_err' => '',
+                'confirm_password_err' => ''
+            ];
+
+            $this->view('profiles/userInfo', $data);
+        }
     }
     public function licenseInfo()
     {
@@ -94,13 +155,13 @@ class Members extends Controller
             if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
                 if ($this->userModel->updatePrcInfo($data)) {
                     flash('update_success', 'Your license profile was updated');
-                    redirect('members/licenseInfo');
+                    redirect('profiles/licenseInfo');
                 } else {
                     die('Something went wrong');
                 }
             } else {
                 // Load view with errors
-                $this->view('members/licenseInfo', $data);
+                $this->view('profiles/licenseInfo', $data);
             }
         } else {
             $user = $this->userModel->getUserById($_SESSION['user_id']);
@@ -123,7 +184,7 @@ class Members extends Controller
                 'type_practice_err' => '',
             ];
 
-            $this->view('members/licenseInfo', $data);
+            $this->view('profiles/licenseInfo', $data);
         }
     }
     public function personalInfo()
@@ -196,13 +257,13 @@ class Members extends Controller
 
                 if ($this->userModel->updatePersonalInfo($data)) {
                     flash('update_success', 'Your personal profile was updated');
-                    redirect('members/personalInfo');
+                    redirect('profiles/personalInfo');
                 } else {
                     die('Something went wrong');
                 }
             } else {
                 // Load view with errors
-                $this->view('members/personalInfo', $data);
+                $this->view('profiles/personalInfo', $data);
             }
         } else {
             $user = $this->userModel->getUserById($_SESSION['user_id']);
@@ -230,7 +291,7 @@ class Members extends Controller
                 'address_err' => '',
             ];
 
-            $this->view('members/personalInfo', $data);
+            $this->view('profiles/personalInfo', $data);
         }
     }
     public function clinicInfo()
@@ -282,13 +343,13 @@ class Members extends Controller
 
                 if ($this->model('Clinic')->updateOrInsert($data)) {
                     flash('update_success', 'Your clinic information was updated');
-                    redirect('members/clinicInfo');
+                    redirect('profiles/clinicInfo');
                 } else {
                     die('Something went wrong');
                 }
             } else {
                 // Load view with errors
-                $this->view('members/clinicInfo', $data);
+                $this->view('profiles/clinicInfo', $data);
             }
         } else {
             $clinic = $this->model('Clinic')->getClinicById($_SESSION['user_id']);
@@ -309,7 +370,7 @@ class Members extends Controller
                 'clinic_contact_number_err' => '',
             ];
 
-            $this->view('members/clinicInfo', $data);
+            $this->view('profiles/clinicInfo', $data);
         }
     }
 }

@@ -180,7 +180,7 @@
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="specified">Select</a>
             </label>
             <div x-bind="inputContainer">
-              <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified name=" type_practice" placeholder="Specify your type of practice">
+              <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified" name=" type_practice" placeholder="Specify your type of practice">
               <select x-bind="formInput" x-show="!specified" :disabled="specified" name="type_practice">
                 <option value="">Select</option>
                 <option <?php if ($data['type_practice'] == 'Government Dentist') : ?> selected <?php endif; ?> value="Government Dentist">Government Dentist</option>

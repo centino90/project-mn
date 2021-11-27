@@ -3,23 +3,10 @@ class Admins extends Controller
 {
   public function __construct()
   {
-    if (!isLoggedIn()) {
-      redirect('users/login');
-    }
-    if (isLoggedIn() && !isCompleteInfo()) {
-      redirect('users/registerPrcInfo');
-    }
-    if(!$_SESSION['is_admin']) {
-      redirectBack();
-    }
-    if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
-      session_unset();
-      session_destroy();
-      redirect("users/login");
-    } else {
-      session_regenerate_id(true);
-      $_SESSION['login_time_stamp'] = time();
-    }
+    redirectUnAuthUser();
+    redirectNotFullyRegisteredUser();
+    redirectIfNotAdmin();
+    redirectInactiveUserOrRegenerateTimer();
 
     $this->userModel = $this->model('User');
   }

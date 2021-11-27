@@ -1,7 +1,7 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
 <div class="mx-auto min-h-full w-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8">
+  <div class="max-w-lg w-full space-y-8 lg:px-8 lg:py-10">
     <div>
       <h2 class="mt-6 text-center text-3xl font-extrabold text-secondary-900">
         Sign in with your account
@@ -14,7 +14,7 @@
 
       <div class="flex flex-col gap-y-5">
         <div class="rounded-md">
-          <input type="email" name="email" id="email" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Email address">
+          <input type="email" name="email" value="<?php echo $data['email'] ?>" id="email" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Email address" autocomplete="username">
           <?php if (!empty($data['email_err'])) : ?>
             <div class="text-sm text-danger-500 px-2 pt-2">
               <?php echo $data['email_err']; ?> !
@@ -23,7 +23,7 @@
         </div>
 
         <div class="rounded-md">
-          <input type="password" name="password" id="password" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Password">
+          <input type="password" name="password" id="password" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Password" autocomplete="current-password">
           <?php if (!empty($data['password_err'])) : ?>
             <div class="text-sm text-danger-500 px-2 pt-2">
               <?php echo $data['password_err']; ?> !
@@ -34,7 +34,7 @@
         <div class="flex items-center justify-end">
           <div class="text-sm">
             <a href="<?php echo URLROOT; ?>/users/register" class="font-medium text-primary-600 hover:text-primary-500">
-              Not registered yet? Create an account
+              Create an account?
             </a>
           </div>
         </div>
@@ -62,7 +62,7 @@
       </div>
 
       <div>
-        <a href="<?php echo getGoogleLoginUrl(); ?>" class="mt-2 block text-center w-full bg-danger-700 hover:bg-danger-800 rounded-md text-white font-bold py-2 px-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+        <a href="<?php echo getGoogleLoginUrl(); ?>" class="mt-4 block text-center w-full bg-danger-700 hover:bg-danger-800 rounded-md text-white font-bold py-2 px-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
           Google
         </a>
       </div>

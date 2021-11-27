@@ -1,7 +1,7 @@
   </div>
 
   <!-- Footer -->
-  <footer class="bg-white">
+  <footer class="bg-white mt-20">
     <div class="container mx-auto w-full px-6">
       <div class="flex mt-8 justify-center gap-8">
         <a href="<?php echo URLROOT?>/about/" class="flex gap-1 text-sm font-semibold text-secondary-500 hover:text-secondary-900">
