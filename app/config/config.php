@@ -18,7 +18,7 @@
 // APP ROOT
   define('APPROOT', dirname(dirname(__FILE__)));
   // URL Root
-  define('URLROOT', 'https://www.pda-dcc.com/');
+  define('URLROOT', 'https://www.pda-dcc.com');
   // App Version
   define('APPVERSION', '1.0.0'); 
   define('SITENAME', 'PDO-DCC');
