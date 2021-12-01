@@ -1,6 +1,6 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
-<div class="mx-auto min-h-full w-full flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="mx-auto min-h-full w-full flex-col items-center justify-center px-4 sm:px-6 lg:px-8" x-data>
   <div class="mb-8">
     <h2 class="mt-6 text-center text-3xl font-extrabold text-secondary-900">
       Register additional information
@@ -87,7 +87,7 @@
 
     <!-- Personal information -->
     <div class="max-w-3xl w-full mx-auto">
-      <form action="<?php echo URLROOT; ?>/users/registerPersonalInfo" method="post">
+      <form action="<?php echo URLROOT; ?>/users/registerPersonalInfo" method="post" @submit="$el.querySelector('[type=submit]').disabled = true; $el.querySelector('[type=submit]').value = 'Please wait...'">
         <header class="flex items-center gap-3 py-5 mb-5 text-xl text-primary-500">
           <span class="font-bold mr-2">Step 2:</span>
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -202,6 +202,21 @@
               <?php if (!empty($data['fb_account_name_err'])) : ?>
                 <div x-bind="formInputError">
                   <?php echo $data['fb_account_name_err']; ?> !
+                </div>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div x-data="formGroup()" class="form-group">
+            <label x-bind="formLabel">
+              Email <span class="text-danger-500">*</span>
+            </label>
+            <div x-bind="inputContainer">
+              <input type="email" value="<?php echo $data['email'] ?>" x-bind="formInput" name="email">
+              <?php if (!empty($data['email_err'])) : ?>
+                <div x-bind="formInputError">
+                  <?php echo $data['email_err']; ?> !
                 </div>
               <?php endif; ?>
             </div>

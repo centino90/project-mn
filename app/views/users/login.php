@@ -1,20 +1,20 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
-<div class="mx-auto min-h-full w-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="mx-auto min-h-full w-full flex items-center justify-center px-4 sm:px-6 lg:px-8" x-data>
   <div class="max-w-lg w-full space-y-8 lg:px-8 lg:py-10">
     <div>
       <h2 class="mt-6 text-center text-3xl font-extrabold text-secondary-900">
         Sign in with your account
       </h2>
     </div>
-    <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/login" method="post">
-      <!-- <div class="text-black text-center">
-        <?php flash('register_success'); ?>
-      </div> -->
+    <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/login" method="post" @submit="$refs.submit.disabled = true; $refs.submit.value = 'Please wait...'">
+      <div class="text-black text-center">
+        <?php flash('login_status'); ?>
+      </div>
 
       <div class="flex flex-col gap-y-5">
         <div class="rounded-md">
-          <input type="email" name="email" value="<?php echo $data['email'] ?>" id="email" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Email address" autocomplete="username">
+          <input type="email" name="email" value="<?php echo $data['email'] ?>" id="email" class="focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-secondary-300 rounded-md" placeholder="Username" autocomplete="username">
           <?php if (!empty($data['email_err'])) : ?>
             <div class="text-sm text-danger-500 px-2 pt-2">
               <?php echo $data['email_err']; ?> !
@@ -31,19 +31,18 @@
           <?php endif; ?>
         </div>
 
-        <div class="flex items-center justify-end">
+        <div class="flex items-center">
           <div class="text-sm">
-            <a href="<?php echo URLROOT; ?>/users/register" class="font-medium text-primary-600 hover:text-primary-500">
-              Create an account?
+            <a href="<?php echo URLROOT; ?>/users/forgotPassword" class="font-medium text-primary-600 hover:text-primary-500 hover:underline">
+              Forgot password?
             </a>
           </div>
         </div>
 
         <!-- Form submit -->
         <div class="mt-4">
-          <button type="submit" class="form-btn bg-primary-500 text-white w-full py-2 px-4">
-            Sign in
-          </button>
+          <input type="submit" x-ref="submit" value="Sign in" class="form-btn bg-primary-500 text-white w-full py-2 px-4">
+          </input>
         </div>
       </div>
     </form>
@@ -66,6 +65,12 @@
           Google
         </a>
       </div>
+    </div>
+
+    <div class="text-sm text-center">
+      <a href="<?php echo URLROOT; ?>/users/register" class="font-medium hover:text-primary-500 hover:underline">
+        Don't have an account? <span class="text-primary-600">Sign up</span>
+      </a>
     </div>
   </div>
 </div>

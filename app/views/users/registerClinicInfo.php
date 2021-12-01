@@ -1,6 +1,6 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
-<div class="mx-auto min-h-full w-full flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="mx-auto min-h-full w-full flex-col items-center justify-center px-4 sm:px-6 lg:px-8" x-data>
   <div class="mb-8">
     <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
       Register additional information
@@ -35,7 +35,7 @@
           <div class="step-icon done">
             <span class="step-icon-content current">
               <svg class="w-full fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                <path class="heroicon-ui" d="M19 10h2a1 1 0 0 1 0 2h-2v2a1 1 0 0 1-2 0v-2h-2a1 1 0 0 1 0-2h2V8a1 1 0 0 1 2 0v2zM9 12A5 5 0 1 1 9 2a5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm8 11a1 1 0 0 1-2 0v-2a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v2a1 1 0 0 1-2 0v-2a5 5 0 0 1 5-5h5a5 5 0 0 1 5 5v2z" />
+                <path class="heroicon-ui" d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-2.3-8.7l1.3 1.29 3.3-3.3a1 1 0 0 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-2-2a1 1 0 0 1 1.4-1.42z" />
               </svg>
             </span>
           </div>
@@ -87,7 +87,7 @@
 
     <!-- Clinic information -->
     <div class="max-w-3xl w-full mx-auto">
-      <form action="<?php echo URLROOT; ?>/users/registerClinicInfo" method="post">
+      <form action="<?php echo URLROOT; ?>/users/registerClinicInfo" method="post" @submit="$el.querySelector('[type=submit]').disabled = true; $el.querySelector('[type=submit]').value = 'Please wait...'">
         <header class="flex items-center gap-3 py-5 mb-5 text-xl text-primary-500">
           <span class="font-bold mr-2">Step 3:</span>
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

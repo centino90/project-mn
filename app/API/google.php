@@ -16,7 +16,6 @@ function setGoogleClient()
 	$client->setClientId(GOOGLE_CLIENT_ID);
 	$client->setClientSecret(GOOGLE_CLIENT_SECRET);
 	$client->setRedirectUri(GOOGLE_REDIRECT_URI);
-	$client->addScope('profile');
 	$client->addScope('email');
 
 	return $client;
@@ -36,7 +35,7 @@ function getGoogleLoginUrl()
 	$client = setGoogleClient();
 
 	// endpoint for Google login dialog
-	return $client->createAuthUrl();
+	return filter_var($client->createAuthUrl(), FILTER_SANITIZE_URL);
 }
 
 function tryAndLoginWithGoogle($get, $usersController)
@@ -46,6 +45,10 @@ function tryAndLoginWithGoogle($get, $usersController)
 	// assume fail
 	$status = 'fail';
 	$message = '';
+	$user = '';
+	$emailConfirmation = '';
+	$isAdded = false;
+	$reason = '';
 
 	// reset session vars
 	$_SESSION['google_access_token'] = array();
@@ -53,12 +56,12 @@ function tryAndLoginWithGoogle($get, $usersController)
 	$_SESSION['eci_login_required_to_connect_google'] = false;
 
 	if (isset($get['error'])) {
-		// error comming from facebook GET vars
+		// error comming from google GET vars
 		$message = $get['error_description'];
 		redirect('users/login');
 	} else {
-		// no error in facebook GET vars
-		// get an access token with the code facebook sent us
+		// no error in google GET vars
+		// get an access token with the code google sent us
 		$client = setGoogleClient();
 		$accessTokenInfo = $client->fetchAccessTokenWithAuthCode($get['code']);
 
@@ -81,50 +84,78 @@ function tryAndLoginWithGoogle($get, $usersController)
 				// save user info to session
 				$_SESSION['google_user_info'] = $googleUserInfo;
 
-				// check for user with facebook id		
+				// check for user with google id		
+				// $userInfoWithId = $userModel->getRowWithValue('users', 'google_user_id', $googleUserInfo->id);
+
+
 				$userInfoWithId = $userModel->getRowWithValue('users', 'google_user_id', $googleUserInfo->id);
+				$loggedInUser = $userModel->getRowWithValue('users', 'id', $_SESSION['user_id'] ?? '');
 
-				// check for user with email
-				$userInfoWithEmail = $userModel->getRowWithValue('users', 'email', $googleUserInfo->email);
-				if ($userInfoWithId || ($userInfoWithEmail && !$userInfoWithEmail->password)) { // user has logged in with facebook before so we found them
-					// update user
-					$userModel->updateRowById('users', 'google_access_token', $_SESSION['google_access_token'], $userInfoWithEmail->id);
+				if ($userInfoWithId) {
+					//check if the registration is done inside or outside
+					if (isLoggedIn()) {
 
-					if (empty($userInfoWithEmail->google_user_id)) {
-						$userModel->updateRowById('users', 'google_user_id', $googleUserInfo['id'], $userInfoWithEmail->id);
+						if ($userInfoWithId->id != $loggedInUser->id) {
+							$status = 'fail';
+							$reason = 'accountTaken';
+							$message = 'This google account is already taken';
+						} else {
+							$status = 'fail';
+							$reason = 'accountTaken';
+							$message = 'You are currently using this google account. Try again.';
+						}
+					} else {
+						if (!$userInfoWithId->email_verified) {
+							$status = 'fail';
+							$reason = 'unverifiedEmail';
+							$message = 'Your email is still not verified. Please check your email to verify your account.';
+							$emailConfirmation = [
+								'email_confirmation_type' => 'register',
+								'id_type' => 'google_user_id',
+								'id' => $googleUserInfo->id,
+								'receiver_email' => $googleUserInfo->email
+							];
+						} else {
+							$userModel->updateRowById('google_access_token', $_SESSION['google_access_token'], $userInfoWithId->id);
+
+							$userModel->updateRowById('google_user_id', $googleUserInfo->id, $userInfoWithId->id);
+
+							$status = 'ok';
+							$message = 'You have successfully logged in using your google account';
+							$user = $userInfoWithId;
+						}
 					}
-
-					if ($userInfoWithEmail) {
-						$usersController->createUserSession($userInfoWithEmail, false);
-					}
-				} elseif ($userInfoWithEmail && !$userInfoWithEmail->google_user_id) {
-					/*
-						existing account exists for the email and has not logged in 
-						with Google before
-						*/
-					$_SESSION['eci_login_required_to_connect_google'] = true;
 				} else {
-					// sign up and sign in users if not found with id/email 				
-					$client->setAccessToken($_SESSION['google_access_token']);
+					if (isLoggedIn()) {
+						$userModel->updateRowById('google_access_token', $_SESSION['google_access_token'], $loggedInUser->id);
 
-					$userModel->register(
-						[
-							'email' => $googleUserInfo->email,
-							'first_name' => $googleUserInfo->givenName,
-							'last_name' => $googleUserInfo->familyName,
-							'google_user_id' => $googleUserInfo->id,
-							'google_access_token' => $accessTokenInfo['access_token']
-						]
-					);
-					$userInfo = $userModel->getRowWithValue('users', 'google_user_id', $googleUserInfo['id']);
+						$userModel->updateRowById('google_user_id', $googleUserInfo->id, $loggedInUser->id);
 
-					if ($userInfo) {
-						$usersController->createUserSession($userInfo, false);
+						$status = 'ok';
+						$message = 'Google was added to your user account successfully.';
+						$isAdded = true;
+					} else {
+						if ($userModel->register(
+							[
+								'google_user_id' => $googleUserInfo->id,
+								'google_access_token' => $_SESSION['google_access_token']
+							]
+						)) {
+
+							$status = 'ok';
+							$message = 'You successfully registered using your Google account.';
+							$emailConfirmation = [
+								'email_confirmation_type' => 'register',
+								'id_type' => 'google_user_id',
+								'id' => $googleUserInfo->id,
+								'receiver_email' => $googleUserInfo->email
+							];
+						}
 					}
 				}
 			} else {
-				$message = 'Sorry but we require your email in this system.';
-				redirect('users/login');
+				$status = 'fail';
+				$message = 'Invalid credentials';
 			}
 		}
 	}
@@ -132,5 +163,9 @@ function tryAndLoginWithGoogle($get, $usersController)
 	return array( // return status and message of login
 		'status' => $status,
 		'message' => $message,
+		'user' => $user,
+		'emailConfirmation' => $emailConfirmation,
+		'added' => $isAdded,
+		'reason' => $reason
 	);
 }

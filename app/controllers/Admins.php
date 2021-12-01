@@ -9,6 +9,7 @@ class Admins extends Controller
     redirectInactiveUserOrRegenerateTimer();
 
     $this->userModel = $this->model('User');
+    $this->clinicModel = $this->model('Clinic');
   }
 
   public function index()
@@ -25,6 +26,90 @@ class Admins extends Controller
     unset($_SESSION['login_success']);
     // redirect('admins/paymentHistory');
   }
+  public function accounts()
+  {
+    $members = $this->userModel->getRowsWithColumns(['role', 'is_active'], ['member', true]);
+    $clinics = $this->clinicModel->getRows();
+    // die(var_dump($clinics));
+    $officers = $this->userModel->getRowsWithColumns(['role', 'is_active'], ['admin', true]);
+    $accounts = $this->userModel->getRowsByColumn('is_active', true);
+
+    // die(var_dump($members));
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $data = [
+        'current_route' => __FUNCTION__,
+        'user_id' => $_SESSION['user_id'] ?? '',
+
+        'prc_number' => trim($_POST['prc_number']),
+        'prc_registration_date' => trim($_POST['prc_registration_date']),
+        'prc_expiration_date' => trim($_POST['prc_expiration_date']),
+        'field_practice' => trim($_POST['field_practice']),
+        'type_practice' => trim($_POST['type_practice']),
+
+        'prc_number_err' => '',
+        'prc_registration_date_err' => '',
+        'prc_expiration_date_err' => '',
+        'field_practice_err' => '',
+        'type_practice_err' => '',
+      ];
+
+      // Validate prc info
+      if (empty($data['prc_number'])) {
+        $data['prc_number_err'] = 'Please enter your prc number';
+      }
+      if (empty($data['prc_registration_date'])) {
+        $data['prc_registration_date_err'] = 'Please enter your prc registration date';
+      }
+      if (empty($data['prc_expiration_date'])) {
+        $data['prc_expiration_date_err'] = 'Please enter your prc expiration date';
+      }
+      if (empty($data['field_practice'])) {
+        $data['field_practice_err'] = 'Please select your field of practice';
+      }
+      if (empty($data['type_practice'])) {
+        $data['type_practice_err'] = 'Please select your type of practice';
+      }
+
+      // Check if errors are empty
+      if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
+        if ($this->userModel->updatePrcInfo($data)) {
+          flash('update_success', 'Your license profile was updated');
+          redirect('licenseInfo');
+        } else {
+          die('Something went wrong');
+        }
+      } else {
+        // Load view with errors
+        $this->view('licenseInfo', $data);
+      }
+    } else {
+      $user = $this->userModel->getUserById($_SESSION['user_id']);
+
+      $data = [
+        'current_route' => __FUNCTION__,
+
+        'accounts' => $accounts,
+        'members' => $members,
+        'clinics' => $clinics,
+        'prc_number' => $user->prc_number,
+        'prc_registration_date' => $user->prc_registration_date,
+        'prc_expiration_date' => $user->prc_expiration_date,
+        'field_practice' => $user->field_practice,
+        'type_practice' => $user->type_practice,
+
+        'prc_number_err' => '',
+        'prc_registration_date_err' => '',
+        'prc_expiration_date_err' => '',
+        'field_practice_err' => '',
+        'type_practice_err' => '',
+      ];
+
+      $this->view('admins/accounts', $data);
+    }
+  }
+
   public function licenseInfo()
   {
     $fieldOfPracticeOptions = [

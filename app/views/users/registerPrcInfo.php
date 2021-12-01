@@ -1,6 +1,6 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
-<div class="mx-auto min-h-full w-full flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="mx-auto min-h-full w-full flex-col items-center justify-center px-4 sm:px-6 lg:px-8" x-data>
   <div class="mb-8">
     <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
       Register additional information
@@ -86,7 +86,7 @@
 
     <!-- License information -->
     <div class="max-w-3xl w-full mx-auto">
-      <form action="<?php echo URLROOT; ?>/users/registerPrcInfo" method="post">
+      <form action="<?php echo URLROOT; ?>/users/registerPrcInfo" method="post" @submit="$el.querySelector('[type=submit]').disabled = true; $el.querySelector('[type=submit]').value = 'Please wait...'">
         <!-- <div class="text-black text-center mt-5 mb-8">
           <?php flash('login_status'); ?>
         </div> -->
@@ -198,10 +198,16 @@
           </div>
 
           <!-- Form submit -->
-          <div x-data="formGroup()" class="form-group">
+          <div x-data="formGroup()" class="form-group md:pl-3">
             <label x-bind="formLabel">
             </label>
-            <div x-bind="inputContainer">
+            <div class="input-container-nowrap">
+              <a href="<?php echo URLROOT . '/users/registerPassword'; ?>" @click.prevent="if (confirm('Go back to creating password?')) window.location.href=$event.target.getAttribute('href')" class="form-btn gap-3 bg-secondary-500 text-white w-full md:w-80 py-2 px-4 mx-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+                Create password
+              </a>
               <input type="submit" value="Submit to proceed" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
               </input>
             </div>

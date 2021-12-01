@@ -2,7 +2,7 @@ const colors = require('tailwindcss/colors')
 
 module.exports = {
   purge: {
-    enabled: true,
+    enabled: false,
     content: [
       './app/*.php',
       './app/**/*.php',
@@ -31,6 +31,9 @@ module.exports = {
   },
   variants: {
     extend: {
+      opacity: ['disabled'],
+      cursor: ['hover', 'disabled'],
+      pointerEvents: ['hover', 'focus', 'disabled'],
     },
   },
   plugins: [

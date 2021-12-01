@@ -1,12 +1,12 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
-<div class="mx-auto min-h-full w-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="mx-auto min-h-full w-full flex items-center justify-center px-4 sm:px-6 lg:px-8" x-data>
   <div class="max-w-lg w-full space-y-8 lg:px-8 lg:py-10">
     <div>
       <h2 class="mt-6 text-center text-3xl font-extrabold text-secondary-900">
         Sign up an account
       </h2>
     </div>
-    <form class="mt-8" action="<?php echo URLROOT; ?>/users/register" method="post">
+    <form class="mt-8" action="<?php echo URLROOT; ?>/users/register" method="post" @submit="$refs.submit.disabled = true; $refs.submit.value = 'Please wait...'">
       <div class="text-black text-center">
         <?php flash('register_success'); ?>
       </div>
@@ -20,7 +20,7 @@
                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
               </svg>
             </span>
-            <input type="email" name="email" value="<?php echo $data['email']?>" id="email" class="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-secondary-300" placeholder="Email address" autocomplete="username">
+            <input type="email" name="email" value="<?php echo $data['email'] ?>" id="email" class="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-secondary-300" placeholder="Enter email" autocomplete="username">
           </div>
           <?php if (!empty($data['email_err'])) : ?>
             <div class="text-sm text-danger-500 px-2 pt-2">
@@ -71,10 +71,15 @@
 
         <!-- Form submit -->
         <div class="my-4">
-          <button type="submit" class="form-btn bg-primary-500 text-white w-full py-2 px-4">
-            Sign up
-          </button>
+          <input type="submit" x-ref="submit" value="Sign up" class="form-btn bg-primary-500 text-white w-full py-2 px-4">
+          </input>
         </div>
+
+        <div class="text-sm text-center">
+          <a href="<?php echo URLROOT; ?>/users/login" class="font-medium hover:text-primary-500 hover:underline">
+            Already have an account? <span class="text-primary-600">Sign in</span>
+          </a>
+        </div>        
       </div>
     </form>
   </div>

@@ -1,5 +1,9 @@
 <?php
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
 class Profiles extends Controller
 {
     public function __construct()
@@ -7,7 +11,7 @@ class Profiles extends Controller
         redirectUnAuthUser();
         redirectNotFullyRegisteredUser();
         redirectInactiveUserOrRegenerateTimer();
- 
+
         $this->userModel = $this->model('User');
     }
 
@@ -34,14 +38,27 @@ class Profiles extends Controller
                 'has_facebook_auth' => !empty($user->fb_user_id) ? true : false,
                 'has_google_auth' => !empty($user->google_user_id) ? true : false,
                 'has_password' => !empty($user->password) ? true : false,
+                'has_email' => !empty($user->email) ? true : false,
 
-                'email' => $user->email,
+                'email' => $user->email ?? '',
+                'old_password' => trim($_POST['old_password']),
                 'password' => trim($_POST['password']),
                 'confirm_password' => trim($_POST['confirm_password']),
 
+                'old_password_err' => '',
                 'password_err' => '',
                 'confirm_password_err' => ''
             ];
+
+            $verifiedUser = $this->userModel->getVerifiedUserByEmail($_SESSION['user_email']);
+            $hashed_password = $verifiedUser->password;
+            if (empty($data['old_password'])) {
+                $data['old_password_err'] = 'Please enter password';
+            } else {
+                if (!password_verify($data['old_password'], $hashed_password)) {
+                    $data['old_password_err'] = 'Old Password incorrect';
+                }
+            }
 
             if (empty($data['password'])) {
                 $data['password_err'] = 'Please enter password';
@@ -58,8 +75,9 @@ class Profiles extends Controller
 
             // Check if all errors are empty
             if (
-                empty($data['password_err'])
-                && empty($data['confirm_password_err'])
+                empty($data['old_password_err']) &&
+                empty($data['password_err']) &&
+                empty($data['confirm_password_err'])
             ) {
                 $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
@@ -67,6 +85,7 @@ class Profiles extends Controller
                     die('Something went wrong');
                 }
 
+                // flash('update_status', 'Your password is succesfully updated!');
                 redirect('profiles/userInfo');
             } else {
                 // Load view with errors
@@ -79,12 +98,15 @@ class Profiles extends Controller
                 'has_facebook_auth' => !empty($user->fb_user_id) ? true : false,
                 'has_google_auth' => !empty($user->google_user_id) ? true : false,
                 'has_password' => !empty($user->password) ? true : false,
+                'has_email' => !empty($user->email) ? true : false,
+
 
                 'email' => $user->email,
+                'old_password' => '',
                 'password' => '',
                 'confirm_password' => '',
 
-                'email_err' => '',
+                'old_password_err' => '',
                 'password_err' => '',
                 'confirm_password_err' => ''
             ];
@@ -210,6 +232,7 @@ class Profiles extends Controller
                 'gender' => trim($_POST['gender']),
                 'contact_number' => trim($_POST['contact_number']),
                 'fb_account_name' => trim($_POST['fb_account_name']),
+                'email' => trim($_POST['email']),
                 'address' => trim($_POST['address']),
 
                 'first_name_err' => '',
@@ -217,6 +240,7 @@ class Profiles extends Controller
                 'last_name_err' => '',
                 'gender_err' => '',
                 'fb_account_name_err' => '',
+                'email_err' => '',
                 'contact_number_err' => '',
                 'birthdate_err' => '',
                 'address_err' => '',
@@ -244,6 +268,13 @@ class Profiles extends Controller
             if (empty($data['fb_account_name'])) {
                 $data['fb_account_name_err'] = 'Please enter your fb account name';
             }
+            if (empty($data['email'])) {
+                $data['email_err'] = 'Please enter your email';
+            } else {
+                if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+                    $data['email_err'] = 'Please enter your email';
+                }
+            }
             if (empty($data['address'])) {
                 $data['address_err'] = 'Please enter your home address';
             }
@@ -252,7 +283,8 @@ class Profiles extends Controller
                 empty($data['first_name_err']) && empty($data['middle_name_err'])
                 && empty($data['last_name_err']) && empty($data['birthdate_err'])
                 && empty($data['gender_err']) && empty($data['contact_number_err'])
-                && empty($data['fb_account_name_err']) && empty($data['address_err'])
+                && empty($data['fb_account_name_err']) && empty($data['email_err'])
+                && empty($data['address_err'])
             ) {
 
                 if ($this->userModel->updatePersonalInfo($data)) {
@@ -279,6 +311,7 @@ class Profiles extends Controller
                 'gender' => $user->gender ?? '',
                 'contact_number' => $user->contact_number ?? '',
                 'fb_account_name' => $user->fb_account_name ?? '',
+                'email' => $user->email ?? '',
                 'address' => $user->address ?? '',
 
                 'first_name_err' => '',
@@ -286,6 +319,7 @@ class Profiles extends Controller
                 'last_name_err' => '',
                 'gender_err' => '',
                 'fb_account_name_err' => '',
+                'email_err' => '',
                 'contact_number_err' => '',
                 'birthdate_err' => '',
                 'address_err' => '',
@@ -298,7 +332,6 @@ class Profiles extends Controller
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-            $user = $this->userModel->getUserById($_SESSION['user_id']);
 
             $data = [
                 'current_route' => __FUNCTION__,
@@ -372,5 +405,11 @@ class Profiles extends Controller
 
             $this->view('profiles/clinicInfo', $data);
         }
+    }
+
+    public function __destruct()
+    {
+        unset($_SESSION['fb_account_taken']);
+        unset($_SESSION['google_account_taken']);
     }
 }

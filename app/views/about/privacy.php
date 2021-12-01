@@ -42,7 +42,7 @@
 
                 This Institutional Data Privacy Statement (IDPS) of the Assumption College of Davao is designed to state the general data privacy framework in which the school adheres. Due to the numerous subordinating offices of the school, this statement may not contain specific information with regards to the data collection and processing of a particular office or purpose. Thus, every other privacy statement or notice produced and to be produced by the Assumption College of Davao for a particular office or purpose shall be consistent with this IDPS and with the school’s Privacy Manual.
 
-                <h1 class="text-3xl font-semibold">What personal data does the ACD collect?</h1>
+                <h1 class="text-3xl font-semibold">What personal data do we collect?</h1>
                 As an academic institution, the Assumption College of Davao is responsible for collecting specific personal and privileged data in order to operate appropriately. Such data are categorized into (but not limited to) the following:
 
                 Student personal information
@@ -63,7 +63,7 @@
 
                 The school’s community campaigns lead to the collection of sensitive and privileged information from community partners. These data, like other data, are guaranteed to be protected and overseen under the principles of lawfulness, fairness, and transparency.
 
-                <h1 class="text-3xl font-semibold">How long does the ACD store such data?</h1>
+                <h1 class="text-3xl font-semibold">How long do we store such data?</h1>
 
                 The Assumption College of Davao retains data as long as the school deems it to be useful for its operations. It is taken into consideration that different subordinating offices of the school follow different data retention protocols.
 
@@ -75,7 +75,7 @@
 
                 The school’s Community Extension Services Office keeps personal and privileged data of community partners. These data are kept within the arrangements stated in the contracts and MOA that bind the Assumption College of Davao to such community partners. Confidentiality is taken into consideration in the disposal of any community information by the time any of the said contracts or MOA expires.
 
-                <h1 class="text-3xl font-semibold"> How does the ACD protect such data? </h1>
+                <h1 class="text-3xl font-semibold"> How do we protect such data? </h1>
                 The Assumption College of Davao and its trusted auxiliary third-parties ensure the availability, confidentiality, and integrity of its collected data by employing efficient and properly backed-up electronic and physical security systems. These systems intend to protect such data from misuse, destruction, unauthorized access, and illicit alteration.
 
                 The school’s electronic and physical repositories for sensitive data are guaranteed to be well-maintained and regularly kept up to date under the modern principles of information security and data privacy.

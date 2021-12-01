@@ -1,11 +1,11 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
-<!-- Profile sidebar -->
-<?php require APPROOT . '/views/inc/profileSidebar.php'; ?>
+<!-- sidebar -->
+<?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
 <div class="flex flex-col w-full" x-data="app()">
   <div class="min-w-full px-4 lg:px-1">
-    <form action="<?php echo URLROOT; ?>/profiles/clinicInfo" method="POST">
+    <form action="<?php echo URLROOT; ?>/profiles/clinicInfo" method="POST" @submit.prevent="if (confirm('Confirm the changes of your clinic information?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
       <!-- <div class="text-black text-center">
         <?php flash('update_success'); ?>
       </div> -->
@@ -136,7 +136,7 @@
         <div x-bind="formGroup" x-show="onEditMode">
           <label x-bind="formGroup.formLabel"></label>
           <div x-bind="formGroup.inputContainer">
-            <input type="submit" value="Update" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+            <input type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
             </input>
           </div>
         </div>
@@ -190,6 +190,9 @@
           },
         },
         formInputError: {
+          ['x-show']() {
+            return this.onEditMode
+          },
           [':class']() {
             return 'form-input-err'
           }

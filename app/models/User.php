@@ -11,20 +11,24 @@ class User
   // Regsiter user
   public function register($data)
   {
+    $emailVkey = uniqid();
+
     $this->db->query(
       'INSERT INTO users 
-        (first_name, last_name, email, password, is_admin, fb_user_id, fb_access_token, google_user_id, google_access_token) 
+        (first_name, last_name, email, username, password, is_admin, fb_user_id, fb_access_token, google_user_id, google_access_token, email_vkey) 
       VALUES
-        (:first_name, :last_name, :email, :password, :is_admin, :fb_user_id, :fb_access_token, :google_user_id, :google_access_token)
+        (:first_name, :last_name, :email, :username, :password, :is_admin, :fb_user_id, :fb_access_token, :google_user_id, :google_access_token, :email_vkey)
       '
     );
 
     $this->db->bind(':first_name', $data['first_name'] ?? '');
     $this->db->bind(':last_name', $data['last_name'] ?? '');
-    $this->db->bind(':email', $data['email'] ?? '');
+    $this->db->bind(':email', $data['email'] ?? null);
+    $this->db->bind(':email_vkey', $emailVkey ?? '');
+    $this->db->bind(':username', $data['username'] ?? null);
     $this->db->bind(':password', $data['password'] ?? '');
     $this->db->bind(':is_admin', $data['is_admin'] ?? '');
-    $this->db->bind(':fb_user_id', $data['id'] ?? '');
+    $this->db->bind(':fb_user_id', $data['fb_user_id'] ?? '');
     $this->db->bind(':fb_access_token', $data['fb_access_token'] ?? '');
     $this->db->bind(':google_user_id', $data['google_user_id'] ?? '');
     $this->db->bind(':google_access_token', $data['google_access_token'] ?? '');
@@ -35,14 +39,57 @@ class User
       return false;
     }
   }
-
-  // Login User
-  public function login($email, $password)
+  public function regenerateEmailVkey($idType, $id)
   {
-    $this->db->query('SELECT * FROM users WHERE email = :email');
-    $this->db->bind(':email', $email);
+    $emailVkey = uniqid();
+
+    $this->db->query(
+      'UPDATE users 
+       SET
+        email_vkey = :email_vkey
+         WHERE ' . $idType . ' = :user_id 
+      '
+    );
+
+    $this->db->bind(':email_vkey', $emailVkey);
+    $this->db->bind(':user_id', $id);
+
+    if ($this->db->execute()) {
+      return $emailVkey;
+    } else {
+      return false;
+    }
+  }
+  public function removeThirdPartyAuth($id, $accessToken, $userId)
+  {
+    $this->db->query(
+      'UPDATE users 
+       SET '
+        . $id . ' = null, '
+        . $accessToken . ' = null
+         WHERE id = :user_id 
+      '
+    );
+
+    $this->db->bind(':user_id', $userId);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  // Login User
+  public function login($username, $password)
+  {
+    $this->db->query('SELECT * FROM users WHERE username = :username AND email_verified = true');
+    $this->db->bind(':username', $username);
 
     $row = $this->db->single();
+
+    if (!$row) {
+      return false;
+    }
 
     $hashed_password = $row->password;
     if (password_verify($password, $hashed_password)) {
@@ -52,18 +99,75 @@ class User
     }
   }
 
+  public function getVerifiedUserByEmail($email)
+  {
+    $this->db->query('SELECT * FROM users WHERE email = :email AND email_verified = true');
+    $this->db->bind(':email', $email);
+
+    $row = $this->db->single();
+
+    if (!$row) {
+      return false;
+    }
+    return $row;
+  }
+
   // Update user profile
   public function update($data)
   {
     $this->db->query(
       'UPDATE users 
        SET
+        username = :username,
         password = :password
          WHERE id = :user_id 
       '
     );
 
+    $this->db->bind(':username', $data['username']);
     $this->db->bind(':password', $data['password']);
+    $this->db->bind(':user_id', $data['user_id']);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public function verifyEmail($data)
+  {
+    $this->db->query(
+      'UPDATE users 
+         SET
+          email_verified = :email_verified
+           WHERE id = :user_id AND email_vkey = :email_vkey
+        '
+    );
+
+    $this->db->bind(':email_verified', $data['email_verified']);
+    $this->db->bind(':email_vkey', $data['email_vkey']);
+    $this->db->bind(':user_id', $data['user_id']);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  public function changeEmail($data)
+  {
+    $this->db->query(
+      'UPDATE users 
+         SET
+          email = :new_email,
+          new_email = null
+           WHERE id = :user_id AND email_vkey = :email_vkey AND new_email IS NOT NULL
+        '
+    );
+
+    $this->db->bind(':new_email', $data['new_email']);
+    $this->db->bind(':email_vkey', $data['email_vkey']);
     $this->db->bind(':user_id', $data['user_id']);
 
     if ($this->db->execute()) {
@@ -105,8 +209,8 @@ class User
       'UPDATE users 
        SET
         first_name = :first_name, middle_name = :middle_name, last_name = :last_name, 
-        gender = :gender, fb_account_name = :fb_account_name, contact_number = :contact_number, 
-        birthdate = :birthdate, address = :address
+        gender = :gender, fb_account_name = :fb_account_name, email = :email, 
+        contact_number = :contact_number, birthdate = :birthdate, address = :address
          WHERE id = :user_id 
       '
     );
@@ -116,6 +220,7 @@ class User
     $this->db->bind(':last_name', $data['last_name']);
     $this->db->bind(':gender', $data['gender']);
     $this->db->bind(':fb_account_name', $data['fb_account_name']);
+    $this->db->bind(':email', $data['email']);
     $this->db->bind(':contact_number', $data['contact_number']);
     $this->db->bind(':birthdate', $data['birthdate']);
     $this->db->bind(':address', $data['address']);
@@ -218,12 +323,94 @@ class User
     }
   }
 
+
+  public function getRows()
+  {
+    $sql = 'SELECT * FROM users';
+    $this->db->query($sql);
+
+    $row = $this->db->resultSet();
+    return $row;
+  }
+
+  public function getRowsByColumn($column, $value)
+  {
+    $sql = 'SELECT * FROM users WHERE ' . $column . ' = :' . $column;
+    $this->db->query($sql);
+
+    $this->db->bind(':' . $column, $value);
+    $row = $this->db->resultSet();
+
+    return $row;
+  }
+
+  public function getRowByColumn($column, $value)
+  {
+    $sql = 'SELECT * FROM users WHERE ' . $column . ' = :' . $column;
+    $this->db->query($sql);
+
+    $this->db->bind(':' . $column, $value);
+    $row = $this->db->single();
+
+    return $row;
+  }
+
+  public function getRowsWithColumns(array $columns, array $values)
+  {
+    if (sizeof($columns) !== sizeof($values)) {
+      die('Error: columns and values must have the same length');
+    }
+
+    $i = 0;
+    $setString = '';
+    foreach ($columns as $column) {
+      if (++$i === count($columns)) {
+        $setString .= $column . ' = :' . $column;
+        break;
+      }
+      $setString .= $column . ' = :' . $column . ' AND ';
+    }
+
+    $sql = 'SELECT * FROM users WHERE ' . $setString;
+    $this->db->query($sql);
+
+    for ($i = 0; $i < sizeof($columns); $i++) {
+      $this->db->bind(':' . $columns[$i], $values[$i]);
+    }
+
+    if ($this->db->execute()) {
+      return $this->db->resultSet();
+    } else {
+      return false;
+    }
+
+
+    // return $row;
+  }
+
   // Find user by email
   public function findUserByEmail($email)
   {
     $this->db->query('SELECT * FROM users WHERE email = :email');
     // Bind value
     $this->db->bind(':email', $email);
+
+    $row = $this->db->single();
+
+    // Check row
+    if ($this->db->rowCount() > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // Find user by username
+  public function findUserByUsername($username)
+  {
+    $this->db->query('SELECT * FROM users WHERE username = :username');
+    // Bind value
+    $this->db->bind(':username', $username);
 
     $row = $this->db->single();
 
@@ -259,9 +446,24 @@ class User
     return $row;
   }
 
-  function updateRowById($table, $column, $value, $id)
+  function storeNewEmail($data)
   {
-    $sql = 'UPDATE ' . $table . ' SET ' . $column . ' = :' . $column . ' WHERE id = :id';
+    $sql = 'UPDATE users SET new_email = :new_email WHERE email = :current_email AND email_verified = true';
+    $this->db->query($sql);
+
+    $this->db->bind(':new_email', $data['email']);
+    $this->db->bind(':current_email', $data['current_email']);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  function updateRowById($column, $value, $id)
+  {
+    $sql = 'UPDATE users SET ' . $column . ' = :' . $column . ' WHERE id = :id AND email_verified = true';
     $this->db->query($sql);
 
     $this->db->bind(':' . $column, $value);
@@ -269,6 +471,29 @@ class User
 
     if ($this->db->execute()) {
       return true;
+    } else {
+      return false;
+    }
+  }
+  function resetPasswordAndReturnUnencryptedVersion($id)
+  {
+    $permitted_chars = uniqid();
+    $offset = strlen($permitted_chars) - 5;
+    $newPassword = substr(str_shuffle($permitted_chars), 0, $offset);
+    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+    
+    $sql = 'UPDATE users 
+            SET 
+              password = :password 
+              WHERE id = :id 
+              AND email_verified = true';
+    $this->db->query($sql);
+
+    $this->db->bind(':password', $hashedPassword);
+    $this->db->bind(':id', $id);
+
+    if ($this->db->execute()) {
+      return $newPassword;
     } else {
       return false;
     }

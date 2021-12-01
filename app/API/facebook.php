@@ -48,8 +48,8 @@ function getFacebookLoginUrl()
 		'client_id' => FB_APP_ID,
 		'redirect_uri' => FB_REDIRECT_URI,
 		'state' => FB_APP_STATE,
-		'scope' => ['email', 'public_profile'],
-		'auth_type' => 'rerequest'
+		'scope' => ['email'],
+		'auth_type' => 'reauthenticate'
 	);
 
 	// return login url
@@ -96,7 +96,7 @@ function getFacebookUserInfo($accessToken)
 	$endpoint = FB_GRAPH_DOMAIN . 'me';
 
 	$params = array( // params for the endpoint
-		'fields' => 'first_name,last_name,email,picture',
+		'fields' => 'email',
 		'access_token' => $accessToken
 	);
 
@@ -115,27 +115,31 @@ function tryAndLoginWithFacebook($get, $usersController)
 {
 	$userModel = $usersController->userModel;
 
-	// assume fail
+	// initialize return data
 	$status = 'fail';
 	$message = '';
+	$user = '';
+	$emailConfirmation = '';
+	$isAdded = false;
+	$reason = '';
 
 	// reset session vars
 	$_SESSION['fb_access_token'] = array();
 	$_SESSION['fb_user_info'] = array();
 	$_SESSION['eci_login_required_to_connect_facebook'] = false;
 
-	if (isset($get['error'])) { 
+	if (isset($get['error'])) {
 		// error comming from facebook GET vars
 		$message = $get['error_description'];
-		redirect('users/login');
-	} else { 
+		// die($message);
+	} else {
 		// no error in facebook GET vars
 		// get an access token with the code facebook sent us
 		$accessTokenInfo = getAccessTokenWithCode($get['code']);
 
 		if ($accessTokenInfo['has_errors']) { // there was an error getting an access token with the code
 			$message = $accessTokenInfo['error_message'];
-		} else { 
+		} else {
 			// we have access token! :D
 			// set access token in the session
 
@@ -151,44 +155,76 @@ function tryAndLoginWithFacebook($get, $usersController)
 				// save user info to session
 				$_SESSION['fb_user_info'] = $fbUserInfo['fb_response'];
 
-				// check for user with facebook id
 				$userInfoWithId = $userModel->getRowWithValue('users', 'fb_user_id', $fbUserInfo['fb_response']['id']);
+				$loggedInUser = $userModel->getRowWithValue('users', 'id', $_SESSION['user_id'] ?? '');
 
-				// check for user with email
-				$userInfoWithEmail = $userModel->getRowWithValue('users', 'email', $fbUserInfo['fb_response']['email']);
-				if ($userInfoWithId || ($userInfoWithEmail && !$userInfoWithEmail->password)) { 
-					// user has logged in with facebook before so we found them
-					// update user
-					$userModel->updateRowById('users', 'fb_access_token', $_SESSION['fb_access_token'], $userInfoWithEmail->id);
 
-					if (empty($userInfoWithEmail->fb_user_id)) {
-						$userModel->updateRowById('users', 'fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithEmail->id);
+				if ($userInfoWithId) {
+					//check if the registration is done inside or outside
+					if (isLoggedIn()) {
+
+						if ($userInfoWithId->id != $loggedInUser->id) {
+							$status = 'fail';
+							$reason = 'accountTaken';
+							$message = 'This facebook account is already taken. Try again.';
+						} else {
+							$status = 'fail';
+							$reason = 'accountTaken';
+							$message = 'You are currently using this facebook account. Try again.';
+						}
+					} else {
+						if (!$userInfoWithId->email_verified) {
+							$status = 'fail';
+							$reason = 'unverifiedEmail';
+							$message = 'Your email is still not verified. Please check your email to verify your account.';
+							$emailConfirmation = [
+								'email_confirmation_type' => 'register',
+								'id_type' => 'fb_user_id',
+								'id' => $fbUserInfo['fb_response']['id'],
+								'receiver_email' => $fbUserInfo['fb_response']['email']
+							];
+						} else {
+							$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $userInfoWithId->id);
+
+							$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithId->id);
+
+							$status = 'ok';
+							$message = 'You have successfully logged in using your facebook account';
+							$user = $userInfoWithId;
+						}
 					}
-
-					if ($userInfoWithEmail) {
-						$usersController->createUserSession($userInfoWithEmail, false);
-					}
-
-				} elseif ($userInfoWithEmail && !$userInfoWithEmail->fb_user_id) {
-					/*
-					existing account exists for the email and has not logged in 
-					with facebook before
-					*/
-					$_SESSION['eci_login_required_to_connect_facebook'] = true;
 				} else {
-					// sign up and sign in users if not found with id/email 			
-					$fbUserInfo['fb_response']['fb_access_token'] = $_SESSION['fb_access_token'];
-			
-					$userModel->register($fbUserInfo['fb_response']);
-					$userInfo = $userModel->getRowWithValue('users', 'email', $fbUserInfo['fb_response']['email']);
+					if (isLoggedIn()) {
+						$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $loggedInUser->id);
 
-					if ($userInfo) {
-						$usersController->createUserSession($userInfo, false);
+						$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $loggedInUser->id);
+
+						$status = 'ok';
+						$message = 'Facebook was added to your user account successfully.';
+						$isAdded = true;
+					} else {
+						if ($userModel->register(
+							[
+								'email' => $fbUserInfo['fb_response']['email'],
+								'fb_user_id' => $fbUserInfo['fb_response']['id'],
+								'fb_access_token' => $accessTokenInfo['fb_response']['access_token']
+							]
+						)) {
+
+							$status = 'ok';
+							$message = 'You successfully registered using your Facebook account.';
+							$emailConfirmation = [
+								'email_confirmation_type' => 'register',
+								'id_type' => 'fb_user_id',
+								'id' => $fbUserInfo['fb_response']['id'],
+								'receiver_email' => $fbUserInfo['fb_response']['email']
+							];
+						}
 					}
 				}
 			} else {
-				$message = 'Invalid credentials';
-				redirect('users/login');
+				$status = 'fail';
+				$message = 'Invalid credentials. Try again.';
 			}
 		}
 	}
@@ -196,5 +232,9 @@ function tryAndLoginWithFacebook($get, $usersController)
 	return array( // return status and message of login
 		'status' => $status,
 		'message' => $message,
+		'user' => $user,
+		'emailConfirmation' => $emailConfirmation,
+		'added' => $isAdded,
+		'reason' => $reason
 	);
 }

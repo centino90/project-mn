@@ -24,10 +24,10 @@
         </a>
       </div>
     </div>
-    <div class="container mx-auto px-6">
-      <div class="mt-1 border-t-2 border-secondary-300">
+    <div class="mx-auto px-6">
+      <div class="mt-1 border-t ">
         <p class="text-sm text-center py-6 text-primary-400 font-bold">
-          © 2021 - PDO-DCC
+          © 2021 - <?php echo SITENAME ?>
         </p>
       </div>
     </div>

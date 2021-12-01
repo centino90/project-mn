@@ -1,11 +1,11 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
 <!-- Profile sidebar -->
-<?php require APPROOT . '/views/inc/profileSidebar.php'; ?>
+<?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
 <div class="flex flex-col w-full" x-data="app()">
   <div class="min-w-full px-4 lg:px-1">
-    <form action="<?php echo URLROOT; ?>/profiles/personalInfo" method="post">
+    <form action="<?php echo URLROOT; ?>/profiles/personalInfo" method="post" @submit.prevent="if (confirm('Confirm the changes of your personal information?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
       <!-- <div class="text-black text-center">
       <?php flash('update_success'); ?>
       </div> -->
@@ -35,7 +35,7 @@
           </ol>
         </nav>
       </div>
-      
+
       <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
         <div class="w-64 flex-shrink-0">
           <span class="text-2xl font-bold">Personal information</span>
@@ -166,6 +166,21 @@
           </div>
         </div>
 
+        <!-- Email -->
+        <div x-bind="formGroup">
+          <label x-bind="formGroup.formLabel">
+            Email 
+          </label>
+          <div x-bind="formGroup.inputContainer">
+            <input type="email" value="<?php echo $data['email'] ?>" x-bind="formGroup.formInput" name="email">
+            <?php if (!empty($data['email_err'])) : ?>
+              <div x-bind="formGroup.formInputError">
+                <?php echo $data['email_err']; ?> !
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+
         <!-- Home address -->
         <div x-bind="formGroup">
           <label x-bind="formGroup.formLabel">
@@ -185,7 +200,7 @@
         <div x-bind="formGroup" x-show="onEditMode">
           <label x-bind="formGroup.formLabel"></label>
           <div x-bind="formGroup.inputContainer">
-            <input type="submit" value="Update" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+            <input type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
             </input>
           </div>
         </div>
@@ -234,11 +249,15 @@
           },
           [':class']() {
             let defaultClass = 'form-input'
+            let uppercase =  this.$el.getAttribute('type') != 'email' ? 'uppercase' : ''
 
-            return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-secondary-300`
+            return !this.onEditMode ? `${defaultClass} border-0 ${uppercase}` : `${defaultClass} border-secondary-300`
           },
         },
         formInputError: {
+          ['x-show']() {
+            return this.onEditMode
+          },
           [':class']() {
             return 'form-input-err'
           }
@@ -252,6 +271,7 @@
           this.serverData.last_name_err !== '' ||
           this.serverData.gender_err !== '' ||
           this.serverData.fb_account_name_err !== '' ||
+          this.serverData.email_err !== '' ||
           this.serverData.contact_number_err !== '' ||
           this.serverData.birthdate_err !== '' ||
           this.serverData.address_err !== ''

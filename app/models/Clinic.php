@@ -149,6 +149,15 @@ class Clinic
     return $row;
   }
 
+  public function getRows()
+  {
+    $sql = 'SELECT * FROM clinics';
+    $this->db->query($sql);
+
+    $row = $this->db->resultSet();
+    return $row;
+  }
+
   function updateRowById($table, $column, $value, $id)
   {
     $sql = 'UPDATE ' . $table . ' SET ' . $column . ' = :' . $column . ' WHERE id = :id';

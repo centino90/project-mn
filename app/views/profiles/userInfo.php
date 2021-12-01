@@ -1,7 +1,7 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 
 <!-- Profile sidebar -->
-<?php require APPROOT . '/views/inc/profileSidebar.php'; ?>
+<?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
 <div class="flex flex-col w-full mx-auto" x-data="app()">
     <div class="min-w-full px-4 lg:px-1">
@@ -32,7 +32,7 @@
             </nav>
         </div>
 
-        <form action="<?php echo URLROOT; ?>/profiles/userInfo" method="POST">
+        <form action="<?php echo URLROOT; ?>/profiles/userInfo" method="POST" x-data="{hasPassword: <?php echo $data['has_password'] ?>}" @submit.prevent="if (confirm('Change password?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
             <!-- <div class="text-black text-center">
         <?php flash('update_success'); ?>
       </div> -->
@@ -42,17 +42,17 @@
                     <span class="text-2xl font-bold">User profile</span>
                 </div>
                 <div>
-                    <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="!onEditMode">
+                    <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         <?php if ($data['has_password']) : ?>
                             Change password
                         <?php else : ?>
-                            Create password
+                            Create credentials
                         <?php endif; ?>
                     </button>
-                    <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
+                    <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -62,35 +62,69 @@
             </header>
 
             <div class="flex flex-col gap-y-8">
-                <!-- Email -->
+                <!-- Activation type -->
                 <div x-bind="formGroup">
-                    <label class="form-label">Email</label>
+                    <label class="form-label">Activation type(s)</label>
                     <div x-bind="formGroup.inputContainer">
                         <span class="flex flex-wrap gap-3 text-sm p-3">
-                            <span><?php echo $data['email'] ?></span>
-
                             <div>
-                                <?php if ($data['has_facebook_auth']) : ?>
-                                    <span class="bg-blue-100 text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Facebook activated</span>
-                                <?php endif ?>
-                                <?php if ($data['has_google_auth']) : ?>
-                                    <span class="bg-danger-100 text-danger-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Google activated</span>
-                                <?php endif ?>
                                 <?php if ($data['has_password']) : ?>
                                     <span class="bg-secondary-100 text-secondary-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Password activated</span>
+                                <?php else : ?>
+                                    <span @click="onEditMode = !onEditMode" class="cursor-pointer hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Create username and password</span>
+                                <?php endif ?>
+                                <?php if ($data['has_facebook_auth']) : ?>
+                                    <a href="<?php echo getFacebookLoginUrl(); ?>" @click.prevent="if (confirm('Change facebook auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-blue-100 text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Facebook activated</a>
+                                <?php else : ?>
+                                    <a href="<?php echo getFacebookLoginUrl(); ?>" class="hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Activate Facebook</a>
+                                    <span class="text-danger-600"><?php echo $_SESSION['fb_account_taken'] ?? '' ?></span>
+                                <?php endif ?>
+                                <?php if ($data['has_google_auth']) : ?>
+                                    <a href="<?php echo getGoogleLoginUrl(); ?>" @click.prevent="if (confirm('Change google auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-danger-100 text-danger-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Google activated</a>
+                                <?php else : ?>
+                                    <a href="<?php echo getGoogleLoginUrl(); ?>" class="hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Activate Google</a>
+                                    <span class="text-danger-600"><?php echo $_SESSION['google_account_taken'] ?? '' ?></span>
                                 <?php endif ?>
                             </div>
                         </span>
                     </div>
                 </div>
 
-                <!-- Password -->
+                <!-- Email -->
                 <div x-bind="formGroup">
-                    <label x-bind="formGroup.formLabel">
-                        Password
+                    <label class="form-label">
+                        Email
                     </label>
                     <div x-bind="formGroup.inputContainer">
-                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode ? '******' : ''" name="password">
+                        <span class="text-sm p-3">
+                            <?php echo $data['email'] ?>
+                        </span>
+                        <a href="<?php echo URLROOT?>/users/updateEmail" class="text-blue-500 ml-3 p-3 rounded-md hover:underline hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">Change email</a>
+                    </div>
+                </div>
+
+                <!-- Old Password -->
+                <div x-bind="formGroup">
+                    <label x-bind="formGroup.formLabel">
+                        Old Password
+                    </label>
+                    <div x-bind="formGroup.inputContainer">
+                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode && hasPassword ? '******' : ''" name="old_password" autocomplete="new-password">
+                        <?php if (!empty($data['old_password_err'])) : ?>
+                            <div x-bind="formGroup.formInputError">
+                                <?php echo $data['old_password_err']; ?> !
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div x-bind="formGroup" x-show="onEditMode">
+                    <label x-bind="formGroup.formLabel">
+                        New password
+                    </label>
+                    <div x-bind="formGroup.inputContainer">
+                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode && hasPassword ? '******' : ''" name="password" autocomplete="new-password">
                         <?php if (!empty($data['password_err'])) : ?>
                             <div x-bind="formGroup.formInputError">
                                 <?php echo $data['password_err']; ?> !
@@ -102,10 +136,10 @@
                 <!-- Confirm password -->
                 <div x-bind="formGroup" x-show="onEditMode">
                     <label x-bind="formGroup.formLabel">
-                        Confirm password
+                        Confirm new password
                     </label>
                     <div x-bind="formGroup.inputContainer">
-                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode ? '******' : ''" name="confirm_password">
+                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode ? '******' : ''" name="confirm_password" autocomplete="new-password">
                         <?php if (!empty($data['confirm_password_err'])) : ?>
                             <div x-bind="formGroup.formInputError">
                                 <?php echo $data['confirm_password_err']; ?> !
@@ -118,7 +152,7 @@
                 <div x-bind="formGroup" x-show="onEditMode">
                     <label x-bind="formGroup.formLabel"></label>
                     <div x-bind="formGroup.inputContainer">
-                        <input type="submit" value="Update" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+                        <input type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
                         </input>
                     </div>
                 </div>
@@ -136,8 +170,6 @@
                 } else {
                     this.onEditMode = false
                 }
-                console.log(this.checkServerValidationError())
-                console.log(this.serverData)
             },
             onEditMode: false,
             serverData: <?php echo json_encode($data); ?>,
@@ -185,6 +217,7 @@
 
             checkServerValidationError: function() {
                 if (
+                    this.serverData.old_password_err !== '' ||
                     this.serverData.password_err !== '' ||
                     this.serverData.confirm_password_err !== ''
                 ) {

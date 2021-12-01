@@ -15,10 +15,22 @@
 	define( 'GOOGLE_CLIENT_SECRET', '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' );
 	define( 'GOOGLE_REDIRECT_URI', 'https://www.pda-dcc.com/users/login' );
 
+  // MAIL settings
+  define('MAIL_MAILER', 'smtp');
+  define('MAIL_HOST', 'smtp.mailtrap.io');
+  define('MAIL_PORT', '587');
+  define('MAIL_USERNAME', '5751f0c27c5469');
+  define('MAIL_PASSWORD', '9a4457a2f0275c');
+  define('MAIL_ENCRYPTION', null);
+  define('MAIL_FROM_ADDRESS', 'c2c439914d-5fcf45@inbox.mailtrap.io');
+  define('MAIL_FROM_NAME', 'PDA-DCC');
+
 // APP ROOT
   define('APPROOT', dirname(dirname(__FILE__)));
   // URL Root
   define('URLROOT', 'https://www.pda-dcc.com');
+  // Site Name
+
   // App Version
   define('APPVERSION', '1.0.0'); 
-  define('SITENAME', 'PDO-DCC');
+  define('SITENAME', 'PDA-DCC');
