@@ -74,13 +74,13 @@
                                     <span @click="onEditMode = !onEditMode" class="cursor-pointer hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Create username and password</span>
                                 <?php endif ?>
                                 <?php if ($data['has_facebook_auth']) : ?>
-                                    <a href="<?php echo getFacebookLoginUrl(); ?>" @click.prevent="if (confirm('Change facebook auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-blue-100 text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Facebook activated</a>
+                                    <a href="<?php echo getFacebookLoginUrl(); ?>" @click.prevent="if (confirm('Change facebook auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-blue-100 text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full hover:underline">Change Facebook</a>
                                 <?php else : ?>
                                     <a href="<?php echo getFacebookLoginUrl(); ?>" class="hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Activate Facebook</a>
                                     <span class="text-danger-600"><?php echo $_SESSION['fb_account_taken'] ?? '' ?></span>
                                 <?php endif ?>
                                 <?php if ($data['has_google_auth']) : ?>
-                                    <a href="<?php echo getGoogleLoginUrl(); ?>" @click.prevent="if (confirm('Change google auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-danger-100 text-danger-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Google activated</a>
+                                    <a href="<?php echo getGoogleLoginUrl(); ?>" @click.prevent="if (confirm('Change google auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-danger-100 text-danger-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full hover:underline">Change Google</a>
                                 <?php else : ?>
                                     <a href="<?php echo getGoogleLoginUrl(); ?>" class="hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Activate Google</a>
                                     <span class="text-danger-600"><?php echo $_SESSION['google_account_taken'] ?? '' ?></span>

@@ -37,8 +37,11 @@
                 </div>
             </header>
 
-            <div class="flex flex-col gap-y-8">
-
+            <div class="flex flex-col text-lg lg:w-3/4 text-justify gap-y-8">
+                <p>
+                    PDA is the National Association of Dentists, Technologists and Hygienists in the Philippines. 
+                    It is a non stock non profit Organization comprising of 18,000 members.
+                </p>
             </div>
         </form>
     </div>
