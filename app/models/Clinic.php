@@ -63,27 +63,27 @@ class Clinic
       } else {
         return false;
       }
-    }
-
-    $this->db->query(
-      'INSERT INTO clinics 
-      (user_id, name, street, district, city, contact_number)
-      VALUES
-      (:user_id, :name, :street, :district, :city, :contact_number)
-      '
-    );
-
-    $this->db->bind(':name', $data['clinic_name']);
-    $this->db->bind(':street', $data['clinic_street']);
-    $this->db->bind(':district', $data['clinic_district']);
-    $this->db->bind(':city', $data['clinic_city']);
-    $this->db->bind(':contact_number', $data['clinic_contact_number']);
-    $this->db->bind(':user_id', $data['user_id']);
-
-    if ($this->db->execute()) {
-      return true;
     } else {
-      return false;
+      $this->db->query(
+        'INSERT INTO clinics 
+        (user_id, name, street, district, city, contact_number)
+        VALUES
+        (:user_id, :name, :street, :district, :city, :contact_number)
+        '
+      );
+
+      $this->db->bind(':name', $data['clinic_name']);
+      $this->db->bind(':street', $data['clinic_street']);
+      $this->db->bind(':district', $data['clinic_district']);
+      $this->db->bind(':city', $data['clinic_city']);
+      $this->db->bind(':contact_number', $data['clinic_contact_number']);
+      $this->db->bind(':user_id', $data['user_id']);
+
+      if ($this->db->execute()) {
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 

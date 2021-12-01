@@ -343,7 +343,7 @@ class Users extends Controller
   */
   public function forgotPassword()
   {
-    redirectAuthUserWithRole();
+    // redirectAuthUserWithRole();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -404,18 +404,6 @@ class Users extends Controller
   */
   public function handlePasswordResetRequest($data = null)
   {
-    redirectAuthUserWithRole();
-
-    if (!isset($data)) {
-      $data = $_SESSION['email_confirmation_info'];
-      $emailVkey = $this->userModel->regenerateEmailVkey($data['id_type'], $data['id']);
-
-      $data['vkey'] = $emailVkey;
-
-      unset($_SESSION['email_confirmation_info']);
-    }
-    $_SESSION['email_confirmation_info'] = $data;
-
     $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
     if ($unverifiedUser) {
       $mail = new PHPMailer(true);
@@ -444,7 +432,7 @@ class Users extends Controller
 
         $mail->send();
 
-        $this->view('users/redirectPage', $data = ['message' => 'Your new password was sent to your email.', 'reason' => 'passwordReset']);
+        $this->view('users/redirectPage', $data = ['message' => 'Your new password was sent to your email.', 'reason' => 'passwordReset', 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
       }
@@ -768,7 +756,6 @@ class Users extends Controller
         && empty($data['clinic_contact_number_err'])
       ) {
         if ($this->model('Clinic')->updateOrInsert($data)) {
-          $_SESSION['current_registration_step'] = 'registerEmergencyInfo';
           redirect('users/registerEmergencyInfo');
         } else {
           die('Something went wrong');
