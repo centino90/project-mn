@@ -46,6 +46,7 @@
           <?php endif; ?>
         </div>
 
+        <!-- forgot password -->
         <div class="flex items-center">
           <div class="text-sm">
             <a href="<?php echo URLROOT; ?>/users/forgotPassword" class="font-medium text-primary-600 hover:text-primary-500 hover:underline">

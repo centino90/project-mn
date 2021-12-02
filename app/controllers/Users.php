@@ -45,8 +45,8 @@ class Users extends Controller
 
     //Check Google API request code
     if (isset($_GET['code'])) {
+      // try and log the user in with $_GET code from google 
       $gg = tryAndLoginWithGoogle($_GET, $this);
-
       $data = $gg;
 
       if ($gg['status'] == 'fail') {
@@ -140,6 +140,7 @@ class Users extends Controller
   {
     if (!isset($data)) {
       $data = $_SESSION['email_confirmation_info'];
+      // die(var_dump($data));
       $emailVkey = $this->userModel->regenerateEmailVkey($data['id_type'], $data['id']);
 
       $data['vkey'] = $emailVkey;
@@ -173,7 +174,7 @@ class Users extends Controller
         // $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
 
         $mail->send();
-        redirect('users/handleEmailConfirmation');
+        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
       }
@@ -199,11 +200,6 @@ class Users extends Controller
       // Validate email
       if (empty($data['email'])) {
         $data['email_err'] = 'Please enter email';
-      } else {
-
-        if (!$this->userModel->findUserByEmail($data['email'])) {
-          $data['email_err'] = 'No user found';
-        }
       }
 
       // Validate Password
@@ -215,19 +211,36 @@ class Users extends Controller
       if (empty($data['email_err']) && empty($data['password_err'])) {
 
         // Check and set logged in user
-        $verifiedUser = $this->userModel->getVerifiedUserByEmail($data['email']);
+        $requestedUser = $this->userModel->getRowByColumn('email', $data['email']);
+        if ($requestedUser) {
+          // if inputted email exist in db
+          $hashed_password = $requestedUser->password;
+          if (password_verify($data['password'], $hashed_password)) {
+            if (!$requestedUser->email_verified) {
+              // if requested user is not yet verified (email)
+              $emailConfirmation =  [
+                'email_confirmation_type' => 'register',
+                'id_type' => 'email',
+                'id' => $data['email'],
+                'receiver_email' => $data['email'],
+                'reason' => 'unverifiedEmail',
+                'message' => $data['email'] . ' is not yet verified. Verify first to enable your account.'
+              ];
+              $_SESSION['email_confirmation_info'] = $emailConfirmation;
 
-        if (!$verifiedUser) {
-          $this->view('users/redirect', $data = ['message' => 'email is not verified']);
-          return;
-        }
-
-        $hashed_password = $verifiedUser->password;
-        if (password_verify($data['password'], $hashed_password)) {
-          $this->createUserSession($verifiedUser);
+              $this->view('users/redirectPage', $emailConfirmation);
+              return;
+            }
+            // login user
+            $this->createUserSession($requestedUser);
+          } else {
+            // if password do not match
+            $data['password_err'] = 'Email or password is not correct';
+            $this->view('users/login', $data);
+          }
         } else {
-          $data['password_err'] = 'Password incorrect';
-
+          // if inputted email does not exist in db
+          $data['password_err'] = 'Email or password is not correct';
           $this->view('users/login', $data);
         }
       } else {
@@ -306,9 +319,10 @@ class Users extends Controller
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
         if (!$this->userModel->register($data)) {
-          die('Something went wrong');
+         $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
         }
 
+        // initialize data to pass as params for email sending
         $this->handleUserRegistration(
           [
             'email_confirmation_type' => 'register',

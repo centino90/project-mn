@@ -475,6 +475,21 @@ class User
       return false;
     }
   }
+  function updateUserById($column, $value, $id)
+  {
+    $sql = 'UPDATE users SET ' . $column . ' = :' . $column . ' WHERE id = :id';
+    $this->db->query($sql);
+
+    $this->db->bind(':' . $column, $value);
+    $this->db->bind(':id', $id);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   function resetPasswordAndReturnUnencryptedVersion($id)
   {
     $permitted_chars = uniqid();

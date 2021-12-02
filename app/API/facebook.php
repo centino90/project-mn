@@ -131,14 +131,12 @@ function tryAndLoginWithFacebook($get, $usersController)
 	if (isset($get['error'])) {
 		// error comming from facebook GET vars
 		$message = $get['error_description'];
-		// die($message);
 	} else {
-		// no error in facebook GET vars
 		// get an access token with the code facebook sent us
 		$accessTokenInfo = getAccessTokenWithCode($get['code']);
 
 		if ($accessTokenInfo['has_errors']) { // there was an error getting an access token with the code
-			$message = $accessTokenInfo['error_message'];
+			$message = 'Your facebook access token was already used. Try again';
 		} else {
 			// we have access token! :D
 			// set access token in the session
@@ -176,7 +174,7 @@ function tryAndLoginWithFacebook($get, $usersController)
 						if (!$userInfoWithId->email_verified) {
 							$status = 'fail';
 							$reason = 'unverifiedEmail';
-							$message = 'Your email is still not verified. Please check your email to verify your account.';
+							$message = 'Your email ' . $userInfoWithId->email . ' is still not verified. Please check your email to verify your account.';
 							$emailConfirmation = [
 								'email_confirmation_type' => 'register',
 								'id_type' => 'fb_user_id',
@@ -185,7 +183,6 @@ function tryAndLoginWithFacebook($get, $usersController)
 							];
 						} else {
 							$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $userInfoWithId->id);
-
 							$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithId->id);
 
 							$status = 'ok';
@@ -196,29 +193,51 @@ function tryAndLoginWithFacebook($get, $usersController)
 				} else {
 					if (isLoggedIn()) {
 						$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $loggedInUser->id);
-
 						$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $loggedInUser->id);
 
 						$status = 'ok';
 						$message = 'Facebook was added to your user account successfully.';
 						$isAdded = true;
 					} else {
-						if ($userModel->register(
-							[
-								'email' => $fbUserInfo['fb_response']['email'],
-								'fb_user_id' => $fbUserInfo['fb_response']['id'],
-								'fb_access_token' => $accessTokenInfo['fb_response']['access_token']
-							]
-						)) {
+						$userInfoWithEmail = $userModel->getRowWithValue('users', 'email', $fbUserInfo['fb_response']['email']);
 
-							$status = 'ok';
-							$message = 'You successfully registered using your Facebook account.';
-							$emailConfirmation = [
-								'email_confirmation_type' => 'register',
-								'id_type' => 'fb_user_id',
-								'id' => $fbUserInfo['fb_response']['id'],
-								'receiver_email' => $fbUserInfo['fb_response']['email']
-							];
+						if ($userInfoWithEmail) {
+							if (!$userInfoWithEmail->email_verified) {
+								$status = 'fail';
+								$reason = 'unverifiedEmail';
+								$message = 'You have an existing account with the email ' . $userInfoWithEmail->email . ' and is still not verified. Please verify your email first before adding facebook authentication.';
+								$emailConfirmation = [
+									'email_confirmation_type' => 'register',
+									'id_type' => 'email',
+									'id' => $fbUserInfo['fb_response']['email'],
+									'receiver_email' => $fbUserInfo['fb_response']['email']
+								];
+							} else {
+								$userModel->updateUserById('fb_access_token', $_SESSION['fb_access_token'], $userInfoWithEmail->id);
+								$userModel->updateUserById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithEmail->id);
+
+								$status = 'ok';
+								$message = 'Facebook was added to your user account successfully.';
+								$isAdded = true;
+							}
+						} else {
+							if ($userModel->register(
+								[
+									'email' => $fbUserInfo['fb_response']['email'],
+									'fb_user_id' => $fbUserInfo['fb_response']['id'],
+									'fb_access_token' => $accessTokenInfo['fb_response']['access_token']
+								]
+							)) {
+
+								$status = 'ok';
+								$message = 'You successfully registered using your Facebook account.';
+								$emailConfirmation = [
+									'email_confirmation_type' => 'register',
+									'id_type' => 'fb_user_id',
+									'id' => $fbUserInfo['fb_response']['id'],
+									'receiver_email' => $fbUserInfo['fb_response']['email']
+								];
+							}
 						}
 					}
 				}

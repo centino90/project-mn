@@ -61,10 +61,11 @@
           <?php endif; ?>
         </div>
 
-        <div class="flex items-center justify-end">
+        <!-- forgot password -->
+        <div class="flex items-center">
           <div class="text-sm">
-            <a href="<?php echo URLROOT; ?>/users/login" class="font-medium text-primary-600 hover:text-primary-500">
-              Login instead?
+            <a href="<?php echo URLROOT; ?>/users/forgotPassword" class="font-medium text-primary-600 hover:text-primary-500 hover:underline">
+              Forgot password?
             </a>
           </div>
         </div>
@@ -73,6 +74,12 @@
         <div class="my-4">
           <input type="submit" x-ref="submit" value="Sign up" class="form-btn bg-primary-500 text-white w-full py-2 px-4">
           </input>
+        </div>
+
+        <div class="text-sm text-center">
+          <a href="<?php echo URLROOT; ?>/users/login" class="font-medium hover:text-primary-500 hover:underline">
+            Already have an account? <span class="text-primary-600">Sign in</span>
+          </a>
         </div>
 
         <div class="text-sm text-center">

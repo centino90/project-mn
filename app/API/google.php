@@ -58,7 +58,6 @@ function tryAndLoginWithGoogle($get, $usersController)
 	if (isset($get['error'])) {
 		// error comming from google GET vars
 		$message = $get['error_description'];
-		redirect('users/login');
 	} else {
 		// no error in google GET vars
 		// get an access token with the code google sent us
@@ -67,8 +66,7 @@ function tryAndLoginWithGoogle($get, $usersController)
 
 		if (isset($accessTokenInfo['error'])) {
 			// there was an error getting an access token with the code
-			$message = $accessTokenInfo['error'];
-			die($message);
+			$message = 'Your google access token was already used. Try again';
 		} else {
 			// we have access token! :D
 			$_SESSION['google_access_token'] = $accessTokenInfo['access_token'];
@@ -108,7 +106,7 @@ function tryAndLoginWithGoogle($get, $usersController)
 						if (!$userInfoWithId->email_verified) {
 							$status = 'fail';
 							$reason = 'unverifiedEmail';
-							$message = 'Your email is still not verified. Please check your email to verify your account.';
+							$message = 'Your email ' . $userInfoWithId->email . ' is still not verified. Please check your email to verify your account.';
 							$emailConfirmation = [
 								'email_confirmation_type' => 'register',
 								'id_type' => 'google_user_id',
@@ -117,7 +115,6 @@ function tryAndLoginWithGoogle($get, $usersController)
 							];
 						} else {
 							$userModel->updateRowById('google_access_token', $_SESSION['google_access_token'], $userInfoWithId->id);
-
 							$userModel->updateRowById('google_user_id', $googleUserInfo->id, $userInfoWithId->id);
 
 							$status = 'ok';
@@ -128,28 +125,51 @@ function tryAndLoginWithGoogle($get, $usersController)
 				} else {
 					if (isLoggedIn()) {
 						$userModel->updateRowById('google_access_token', $_SESSION['google_access_token'], $loggedInUser->id);
-
 						$userModel->updateRowById('google_user_id', $googleUserInfo->id, $loggedInUser->id);
 
 						$status = 'ok';
 						$message = 'Google was added to your user account successfully.';
 						$isAdded = true;
 					} else {
-						if ($userModel->register(
-							[
-								'google_user_id' => $googleUserInfo->id,
-								'google_access_token' => $_SESSION['google_access_token']
-							]
-						)) {
+						$userInfoWithEmail = $userModel->getRowWithValue('users', 'email', $googleUserInfo->email);
 
-							$status = 'ok';
-							$message = 'You successfully registered using your Google account.';
-							$emailConfirmation = [
-								'email_confirmation_type' => 'register',
-								'id_type' => 'google_user_id',
-								'id' => $googleUserInfo->id,
-								'receiver_email' => $googleUserInfo->email
-							];
+						if ($userInfoWithEmail) {
+							if (!$userInfoWithEmail->email_verified) {
+								$status = 'fail';
+								$reason = 'unverifiedEmail';
+								$message = 'You have an existing account with the email ' . $userInfoWithEmail->email . ' and is still not verified. Please verify your email first before adding google authentication.';
+								$emailConfirmation = [
+									'email_confirmation_type' => 'register',
+									'id_type' => 'email',
+									'id' => $googleUserInfo->email,
+									'receiver_email' => $googleUserInfo->email
+								];
+							} else {
+								$userModel->updateUserById('google_access_token', $_SESSION['google_access_token'], $userInfoWithEmail->id);
+								$userModel->updateUserById('google_user_id', $googleUserInfo->id, $userInfoWithEmail->id);
+
+								$status = 'ok';
+								$message = 'Facebook authentication was added to your existing user account with the same email. You can now sign in using your facebook account.';
+								$isAdded = true;
+							}
+						} else {
+							if ($userModel->register(
+								[
+									'email' => $googleUserInfo->email,
+									'google_user_id' => $googleUserInfo->id,
+									'google_access_token' => $_SESSION['google_access_token']
+								]
+							)) {
+
+								$status = 'ok';
+								$message = 'You successfully registered using your Google account.';
+								$emailConfirmation = [
+									'email_confirmation_type' => 'register',
+									'id_type' => 'google_user_id',
+									'id' => $googleUserInfo->id,
+									'receiver_email' => $googleUserInfo->email
+								];
+							}
 						}
 					}
 				}
