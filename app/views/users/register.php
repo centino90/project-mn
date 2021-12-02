@@ -80,7 +80,7 @@
           <a href="<?php echo URLROOT; ?>/users/login" class="font-medium hover:text-primary-500 hover:underline">
             Already have an account? <span class="text-primary-600">Sign in</span>
           </a>
-        </div>       
+        </div>      
       </div>
     </form>
   </div>

@@ -13,7 +13,7 @@ class Users extends Controller
 
   public function index()
   {
-    // $this->view('inc/templatePasswordReset');
+    // $this->view('inc/templateVerifyEmail');
     redirect('users/login');
   }
 
@@ -141,7 +141,6 @@ class Users extends Controller
   {
     if (!isset($data)) {
       $data = $_SESSION['email_confirmation_info'];
-      // die(var_dump($data));
       $emailVkey = $this->userModel->regenerateEmailVkey($data['id_type'], $data['id']);
 
       $data['vkey'] = $emailVkey;
@@ -458,7 +457,7 @@ class Users extends Controller
         $about_url = URLROOT . '/about';
         $privacy_url = URLROOT . '/about/privacy';
         $terms_url = URLROOT . '/about/terms';
-        $subject = 'Email Verification';
+        $subject = 'Password Reset';
 
         $message = file_get_contents($email_template);
         $message = str_replace('{{password}}', $password, $message);
