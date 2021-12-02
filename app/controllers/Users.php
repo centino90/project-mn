@@ -433,7 +433,7 @@ class Users extends Controller
   public function handlePasswordResetRequest($data = null)
   {
     $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
-    if ($unverifiedUser) {
+    if ($unverifiedUser->email_verified) {
       $mail = new PHPMailer(true);
 
       try {
@@ -448,8 +448,8 @@ class Users extends Controller
         $mail->SMTPSecure = 'tls';
 
         //Recipients
-        $mail->setFrom(MAIL_FROM_ADDRESS, 'Mailer');
-        $mail->addAddress($data['receiver_email'], 'Regitering user');
+        $mail->setFrom(MAIL_FROM_ADDRESS, 'pda-dcc.com');
+        $mail->addAddress($data['receiver_email'], 'PDA-DCC member');
 
         //Content
         $email_template = APPROOT . '/views/inc/templatePasswordReset.php';
@@ -474,6 +474,8 @@ class Users extends Controller
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
       }
+    } else {
+      $this->view('users/redirectPage', $data = ['message' => 'Your email is not yet verified. You have to verify your email first before you can request a password reset.']);
     }
   }
 
