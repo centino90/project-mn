@@ -17,12 +17,12 @@ define('GOOGLE_REDIRECT_URI', 'https://www.pda-dcc.com/users/login');
 
 // MAIL settings
 define('MAIL_MAILER', 'smtp');
-define('MAIL_HOST', 'smtp.mailtrap.io');
+define('MAIL_HOST', 'smtp.hostinger.com');
 define('MAIL_PORT', '587');
-define('MAIL_USERNAME', '5751f0c27c5469');
-define('MAIL_PASSWORD', '9a4457a2f0275c');
+define('MAIL_USERNAME', 'test1@pda-dcc.com');
+define('MAIL_PASSWORD', 'Tropawzpoge123');
 define('MAIL_ENCRYPTION', null);
-define('MAIL_FROM_ADDRESS', 'c2c439914d-5fcf45@inbox.mailtrap.io');
+define('MAIL_FROM_ADDRESS', 'test1@pda-dcc.com');
 define('MAIL_FROM_NAME', 'PDA-DCC');
 
 // APP ROOT
