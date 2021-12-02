@@ -13,6 +13,7 @@ class Users extends Controller
 
   public function index()
   {
+    // $this->view('inc/templatePasswordReset');
     redirect('users/login');
   }
 
@@ -163,16 +164,30 @@ class Users extends Controller
         $mail->SMTPSecure = 'tls';
 
         //Recipients
-        $mail->setFrom(MAIL_FROM_ADDRESS, 'Mailer');
-        $mail->addAddress($data['receiver_email'], 'Regitering user');
+        $mail->setFrom(MAIL_FROM_ADDRESS, 'pda-dcc.com');
+        $mail->addAddress($data['receiver_email'], 'PDA-DCC member');
 
         //Content
-        $mail->isHTML(true);
-        $mail->Subject = 'Here is the subject';
-        $mail->Body    =  '<h1>Confirm Registration</h1>' .
-          'Click this <a href="' . URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->email_vkey . '">link</a> to continue registration';
-        // $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+        $email_template = APPROOT . '/views/inc/templateVerifyEmail.php';
+        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->email_vkey;
+        $about_url = URLROOT . '/about';
+        $privacy_url = URLROOT . '/about/privacy';
+        $terms_url = URLROOT . '/about/terms';
+        $subject = 'Email Verification';
 
+        $message = file_get_contents($email_template);
+        $message = str_replace('{{verify_url}}', $verify_url, $message);
+        $message = str_replace('{{about_url}}', $about_url, $message);
+        $message = str_replace('{{privacy_url}}', $privacy_url, $message);
+        $message = str_replace('{{terms_url}}', $terms_url, $message);
+
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->MsgHTML($message);
+
+        // $mail->Body    =  '<h1>Confirm Registration</h1>' .
+        //   'Click this <a href="' . URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->email_vkey . '">link</a> to continue registration';
+        // // $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
         $mail->send();
         $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
@@ -319,7 +334,7 @@ class Users extends Controller
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
         if (!$this->userModel->register($data)) {
-         $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
+          $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
         }
 
         // initialize data to pass as params for email sending
@@ -438,14 +453,24 @@ class Users extends Controller
         $mail->addAddress($data['receiver_email'], 'Regitering user');
 
         //Content
+        $email_template = APPROOT . '/views/inc/templatePasswordReset.php';
+        $password = $this->userModel->resetPasswordAndReturnUnencryptedVersion($unverifiedUser->id);
+        $about_url = URLROOT . '/about';
+        $privacy_url = URLROOT . '/about/privacy';
+        $terms_url = URLROOT . '/about/terms';
+        $subject = 'Email Verification';
+
+        $message = file_get_contents($email_template);
+        $message = str_replace('{{password}}', $password, $message);
+        $message = str_replace('{{about_url}}', $about_url, $message);
+        $message = str_replace('{{privacy_url}}', $privacy_url, $message);
+        $message = str_replace('{{terms_url}}', $terms_url, $message);
+
         $mail->isHTML(true);
-        $mail->Subject = 'Here is the subject';
-        $mail->Body    =  '<h1>Password Reset</h1>' .
-          'Your new password: ' .  $this->userModel->resetPasswordAndReturnUnencryptedVersion($unverifiedUser->id);
-        // $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+        $mail->Subject = $subject;
+        $mail->MsgHTML($message);
 
         $mail->send();
-
         $this->view('users/redirectPage', $data = ['message' => 'Your new password was sent to your email.', 'reason' => 'passwordReset', 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";

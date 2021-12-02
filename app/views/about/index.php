@@ -33,7 +33,7 @@
         <form action="<?php echo URLROOT; ?>/members/clinicInfo" method="POST">
             <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
                 <div class="w-64 flex-shrink-0">
-                    <span class="text-2xl font-bold">About PDO-DCC</span>
+                    <span class="text-2xl font-bold">About PDA-DCC</span>
                 </div>
             </header>
 
