@@ -30,7 +30,7 @@ function flash($name = '', $label = '', $message = '', $class = 'bg-green-600')
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <label class="text-left">' . $_SESSION[$name] . '</label>
-        </div>'.
+        </div>' .
         '<small class="text-secondary-500 text-left">' . $_SESSION[$name . "_message"] . '</small>' .
         '</div>' .
         '<a href="#" @click="open = !open" >' .
@@ -65,17 +65,17 @@ function isAdmin()
     return false;
   }
 }
-function isMember()
+function isOfficer()
 {
-  if ($_SESSION['role'] == 'member') {
+  if ($_SESSION['role'] == 'officer') {
     return true;
   } else {
     return false;
   }
 }
-function isSuperAdmin()
+function isMember()
 {
-  if ($_SESSION['role'] == 'super_admin') {
+  if ($_SESSION['role'] == 'member') {
     return true;
   } else {
     return false;
@@ -100,7 +100,16 @@ function passwordRegistered()
 function isIdleUser()
 {
   //check user if idle for 10mins
-  if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 10 * 60)) {
+  if (isset($_SESSION['login_time_stamp']) && (time() - $_SESSION['login_time_stamp'] > 60 * 10)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function isEmailVerified()
+{
+  if (isset($_SESSION['email_verified'])) {
     return true;
   } else {
     return false;
@@ -110,7 +119,7 @@ function isIdleUser()
 /* REDIRECTS */
 function redirectAuthUserWithRole()
 {
-  if (isLoggedIn()) {
+  if (isLoggedIn() && isEmailVerified()) {
     if (isAdmin()) {
       redirect('profiles/userInfo');
       return;
@@ -118,10 +127,10 @@ function redirectAuthUserWithRole()
     redirect('profiles/userInfo');
   }
 }
-function redirectUnAuthUser()
+function redirectIfNotOfficer()
 {
-  if (!isLoggedIn()) {
-    redirect('users/login');
+  if (!isOfficer()) {
+    redirect('profiles/userInfo');
   }
 }
 function redirectIfNotAdmin()
@@ -130,10 +139,35 @@ function redirectIfNotAdmin()
     redirect('profiles/userInfo');
   }
 }
+function redirectIfNotLoggedIn()
+{
+  if (!isLoggedIn()) {
+    redirect('users/login');
+  }
+}
+function redirectIfNotAuthUser()
+{
+  if (!isLoggedIn() || !isEmailVerified()) {
+    redirect('users/login');
+  }
+}
+function redirectIfEmailAndPassNotRegistered()
+{
+  if (!$_SESSION['password_registered']) {
+    redirect('users/login');
+  }
+}
+function redirectIfEmailAndPassRegistered()
+{
+  if ($_SESSION['password_registered']) {
+    redirect('profiles/userInfo');
+  }
+}
+
 function redirectFullyRegisteredUser()
 {
-  if (isLoggedIn() && isCompleteInfo()) {
-    redirect('users/registerPrcInfo');
+  if (isLoggedIn() && isEmailVerified() && isCompleteInfo()) {
+    redirect('profiles/userInfo');
   }
 }
 function redirectNotFullyRegisteredUser()
@@ -141,9 +175,10 @@ function redirectNotFullyRegisteredUser()
   if (isLoggedIn() && !isCompleteInfo() && passwordRegistered()) {
     redirect('users/registerPrcInfo');
   } else if (isLoggedIn() && !isCompleteInfo() && !passwordRegistered()) {
-    redirect('users/registerPassword');
+    redirect('users/registerEmailPassword'); //temp
   }
 }
+
 function redirectInactiveUserOrRegenerateTimer()
 {
   if (isIdleUser()) {

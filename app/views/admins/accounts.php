@@ -2,7 +2,7 @@
 
 <?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
-<div class="flex flex-col w-full">
+<div class="flex flex-col w-full px-4 lg:px-1">
   <!-- <div class="text-black text-center">
     <?php flash('login_status'); ?>
   </div> -->
@@ -33,47 +33,39 @@
     </nav>
   </div>
 
-  <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
+  <header class="flex flex-col gap-10 mb-10">
     <div class="w-64 flex-shrink-0">
       <span class="text-2xl font-bold">Accounts</span>
     </div>
-    <!-- <div>
-      <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="!onEditMode">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-        Enable editing
-      </button>
-      <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        Disable editing
-      </button>
-    </div> -->
   </header>
 
-  <div class="bg-white">
-    <nav class="flex flex-col sm:flex-row">
-      <button class="text-secondary-600 py-4 px-6 block hover:text-blue-500 focus:outline-none text-blue-500 border-b-2 font-medium border-blue-500">
-        Tab 1
-      </button>
-      <button class="text-secondary-600 py-4 px-6 block hover:text-blue-500 focus:outline-none">
-        Tab 2
-      </button>
-      <button class="text-secondary-600 py-4 px-6 block hover:text-blue-500 focus:outline-none">
-        Tab 3
-      </button>
-      <button class="text-secondary-600 py-4 px-6 block hover:text-blue-500 focus:outline-none">
-        Tab 4
-      </button>
+  <div class="mb-4">
+    <a href="<?php echo URLROOT ?>/admins/createAccount" class="inline-flex gap-2 py-3 px-4 font-bold rounded-md bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+      </svg>
+      Create account
+    </a>
+  </div>
+
+  <div class="bg-white px-6 lg:px-0">
+    <nav class="flex justify-center lg:justify-start">
+      <a href="<?php echo URLROOT ?>/admins/accounts" class="py-4 px-6 block hover:text-blue-500 focus:outline-none <?php if ($data['current_tab'] == 'all') : ?>text-blue-500 border-b-2 font-medium border-blue-500 <?php else : ?>text-secondary-600<?php endif ?>">
+        All
+      </a>
+      <a href="<?php echo URLROOT ?>/admins/accounts?filter=member" class="py-4 px-6 block hover:text-blue-500 focus:outline-none <?php if ($data['current_tab'] == 'member') : ?>text-blue-500 border-b-2 font-medium border-blue-500 <?php else : ?>text-secondary-600<?php endif ?>">
+        Members
+      </a>
+      <a href="<?php echo URLROOT ?>/admins/accounts?filter=officer" class="py-4 px-6 block hover:text-blue-500 focus:outline-none <?php if ($data['current_tab'] == 'officer') : ?>text-blue-500 border-b-2 font-medium border-blue-500 <?php else : ?>text-secondary-600<?php endif ?>">
+        Officers
+      </a>
     </nav>
   </div>
 
   <div class="flex flex-col gap-y-8">
-    <div class="align-middle inline-block min-w-full px-1">
-      <div class="shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg">
-        <table class="min-w-full divide-y divide-secondary-200">
+    <div class="align-middle inline-block min-w-full">
+      <div class="shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg overflow-x-auto">
+        <table id="myTable" class="min-w-full divide-y divide-secondary-200">
           <thead class="bg-secondary-50">
             <tr>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
@@ -83,7 +75,7 @@
                 Profession
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Contact no.
+                Role
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
                 Status
@@ -97,6 +89,11 @@
               <tr>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
                   <?php echo arrangeFullname($member->first_name, $member->middle_name, $member->last_name) ?>
+                  <?php if ($member->id == $_SESSION['user_id']) : ?>
+                    <span class="bg-primary-100 text-primary-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">
+                      You
+                    </span>
+                  <?php endif ?>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="text-sm text-secondary-900">
@@ -104,7 +101,7 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                  <?php echo $member->contact_number ?>
+                  <?php echo $member->role ?>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <?php if ($member->is_active) : ?>
@@ -136,5 +133,54 @@
   </div>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('alpine:init', () => {
+
+
+    })
+
+    const dataTable = new simpleDatatables.DataTable("#myTable", {
+      layout: {
+        top: "{search}{select}",
+        // bottom: "{info}{pager}"
+      },
+      labels: {
+        placeholder: "Search for accounts",
+        perPage: "{select}",
+        noRows: "Sorry, there are no accounts to search.",
+        // info: "Showing {start} to {end} of {rows} entries",
+      },
+      searchable: true,
+      perPage: 5,
+      fixedColumns: true,
+      fixedHeight: true,      
+    })
+
+    dataTable.on("datatable.init", function () {
+      console.log(this.columns())
+      // this.columns().hide([0, 1])
+    })
+
+    // const roleSelector = document.querySelector('#role_selector')
+    // roleSelector.addEventListener('change', function() {
+    //   let rows = dataTable.rows().dt.data
+    //   rows.forEach(el => {
+    //     let role = el.cells[2].textContent.trim()
+    //     console.log(dataTable.rows())
+    //     if (role == 'admin') {
+    //       //  console.log(dataTable.rows())
+    //     }
+    //   })
+    //   // console.log(rows)
+    //   // console.log(dataTable.wrapper.querySelector('.dataTable-search input').value = this.value)
+    // })
+    // dataTable.on('datatable.search', function(query, matched) {
+    //   console.log(dataTable.wrapper.querySelector('.dataTable-search input').value = matched)
+    // });
+
+    // console.log(dataTable.searchData)
+  })
+</script>
 
 <?php require APPROOT . '/views/inc/footer.php'; ?>

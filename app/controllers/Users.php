@@ -9,6 +9,7 @@ class Users extends Controller
   public function __construct()
   {
     $this->userModel = $this->model('User');
+    // $this->dog = new Mailer;
   }
 
   public function index()
@@ -24,22 +25,19 @@ class Users extends Controller
     if (isset($_GET['state']) && FB_APP_STATE == $_GET['state']) {
       // try and log the user in with $_GET vars from facebook 
       $fb = tryAndLoginWithFacebook($_GET, $this);
-      $data = $fb;
 
       if ($fb['status'] == 'fail') {
         if ($fb['reason'] == 'unverifiedEmail') {
-          $_SESSION['email_confirmation_info'] = $fb['emailConfirmation'];
-          $this->view('users/redirectPage', $data);
+          // $_SESSION['email_confirmation_info'] = $fb['emailConfirmation'];
+          $this->view('users/redirectPage', $fb);
         } else {
-          $this->view('users/redirectPage', $data);
+          $this->view('users/redirectPage', $fb);
         }
       } else if ($fb['status'] == 'ok') {
         if ($fb['user']) {
           $this->createUserSession($fb['user'], false);
-        } else if ($fb['emailConfirmation']) {
-          $this->handleUserRegistration($fb['emailConfirmation']);
         } else if ($fb['added']) {
-          $this->view('users/redirectPage', $data);
+          $this->view('users/redirectPage', $fb);
         }
       }
     }
@@ -48,67 +46,82 @@ class Users extends Controller
     if (isset($_GET['code'])) {
       // try and log the user in with $_GET code from google 
       $gg = tryAndLoginWithGoogle($_GET, $this);
-      $data = $gg;
 
       if ($gg['status'] == 'fail') {
         if ($gg['reason'] == 'unverifiedEmail') {
           $_SESSION['email_confirmation_info'] = $gg['emailConfirmation'];
-          $this->view('users/redirectPage', $data);
+          $this->view('users/redirectPage', $gg);
         } else {
-          $this->view('users/redirectPage', $data);
+          $this->view('users/redirectPage', $gg);
         }
       } else if ($gg['status'] == 'ok') {
         if ($gg['user']) {
           $this->createUserSession($gg['user'], false);
-        } else if ($gg['emailConfirmation']) {
-          $this->handleUserRegistration($gg['emailConfirmation']);
         } else if ($gg['added']) {
-          $this->view('users/redirectPage', $data);
+          $this->view('users/redirectPage', $gg);
         }
       }
+    }
+
+    // if (isset($_GET['code'])) {
+    //   // try and log the user in with $_GET code from google 
+    //   $gg = tryAndLoginWithGoogle($_GET, $this);
+    //   $data = $gg;
+
+    //   if ($gg['status'] == 'fail') {
+    //     if ($gg['reason'] == 'unverifiedEmail') {
+    //       $_SESSION['email_confirmation_info'] = $gg['emailConfirmation'];
+    //       $this->view('users/redirectPage', $data);
+    //     } else {
+    //       $this->view('users/redirectPage', $data);
+    //     }
+    //   } else if ($gg['status'] == 'ok') {
+    //     if ($gg['user']) {
+    //       $this->createUserSession($gg['user'], false);
+    //     } else if ($gg['emailConfirmation']) {
+    //       $this->handleUserRegistration($gg['emailConfirmation']);
+    //     } else if ($gg['added']) {
+    //       $this->view('users/redirectPage', $data);
+    //     }
+    //   }
+    // }
+  }
+
+  public function handleRegisterConfirmation()
+  {
+    // die(var_dump($_POST));
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $d = $this->userModel->updateAuthCredentials(
+        [
+          'access_token' => 'fb_access_token',
+          'auth_id' => 'fb_user_id'
+        ],
+        [
+          'access_token' => $_POST['access_token'],
+          'auth_id' => $_POST['auth_id'],
+        ],
+        $_POST['user_id']
+      );
+      die($d);
+      // $userModel->updateUserById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithEmail->id);
     }
   }
 
   public function handleEmailConfirmation()
   {
-    if (isset($_GET['id']) && isset($_GET['vkey']) && isset($_GET['type']) && isset($_GET['newEmail'])) {
+    if (isset($_GET['type'])) {
       $confirmationType = $_GET['type'];
-      $userId = $_GET['id'];
-      $newEmail = $_GET['newEmail'];
-      $userEmailVkey = $_GET['vkey'];
 
-      $rows = $this->userModel->getRowsWithColumns(['id', 'email_vkey'], [$userId, $userEmailVkey]);
+      if ($confirmationType == 'ACCOUNT_REGISTRATION') {
+        if (isset($_GET['id']) && isset($_GET['vkey'])) {
+          $userId = $_GET['id'];
+          $accountRegistrationVkey = $_GET['vkey'];
 
-      if ($rows) {
-        if ($rows[0]->email_verified && !$rows[0]->changing_email) {
-          $this->view('users/redirectPage', $data = ['message' => 'This email is already verified.']);
-        } else if ($rows[0]->email_verified && $rows[0]->changing_email) {
-          if ($confirmationType == 'change') {
+          $rows = $this->userModel->getRowsWithColumns(['id', 'account_registration_vkey'], [$userId, $accountRegistrationVkey]);
 
-            if ($newEmail != $rows[0]->new_email) {
-              $this->view('users/redirectPage', $data = ['message' => 'These credentials are not correct. Try again.']);
-              return;
-            }
-
-            if (!$this->userModel->changeEmail(
-              [
-                'user_id' => $rows[0]->id,
-                'email_vkey' => $rows[0]->email_vkey,
-                'new_email' => $rows[0]->new_email
-              ]
-            )) {
-              $this->view('users/redirectPage', $data = ['message' => 'User verification failed. Try again.']);
-              return;
-            }
-
-            if ($this->userModel->updateRowById('changing_email', false, $rows[0]->id)) {
-              $this->view('users/redirectPage', $data = ['message' => 'Your email was successfully changed. Sign in again.']);
-              sessionDestroyAll();
-            }
-          }
-        } else {
-          if ($confirmationType == 'register') {
-
+          if ($rows) {
             if (!$this->userModel->verifyEmail(
               [
                 'user_id' => $rows[0]->id,
@@ -116,36 +129,100 @@ class Users extends Controller
                 'email_verified' => true
               ]
             )) {
-              $this->view('users/redirectPage', $data = ['message' => 'User verification failed. Try again.']);
+              // if user id or verification key is not correct
+              $this->view('users/redirectPage', ['message' => 'User verification failed. Try again.']);
               return;
             }
 
             $verifiedUser = $this->userModel->getRowsWithColumns(['id', 'email_verified'], [$userId, true]);
-
-            if (!$verifiedUser) {
-              $this->view('users/redirectPage', $data = ['message' => 'User was not verified. Try again.']);
-              return;
+            if ($verifiedUser) {
+              $this->userModel->regenerateVkey('account_registration_vkey', 'email', $rows[0]->email);
+              $this->createUserSession($verifiedUser[0]);
             }
-            $this->createUserSession($verifiedUser[0]);
+          } else {
+            // id or vkey is not correct
+            $this->view('users/redirectPage', ['message' => 'These verification credentials are not correct.']);
           }
         }
-      } else {
-        $this->view('users/redirectPage', $data = ['message' => 'These user credentials are not correct.']);
+      } elseif ($confirmationType == 'CHANGE_EMAIL') {
+        if (isset($_GET['id']) && isset($_GET['vkey']) && isset($_GET['newEmail'])) {
+          $userId = $_GET['id'];
+          $newEmail = $_GET['newEmail'];
+          $changeEmailVkey = $_GET['vkey'];
+
+          $rows = $this->userModel->getRowsWithColumns(['id', 'change_email_vkey'], [$userId, $changeEmailVkey]);
+
+          if ($rows) {
+            if ($rows[0]->email_verified && !$rows[0]->changing_email) {
+              $this->view('users/redirectPage', ['message' => 'This verification key is already used or replaced.']);
+              return;
+            } else if ($rows[0]->email_verified && $rows[0]->changing_email) {
+              if ($newEmail != $rows[0]->new_email) {
+                $this->view('users/redirectPage', ['message' => 'These credentials are not correct. Try again.']);
+                return;
+              }
+
+              if (!$this->userModel->changeEmail(
+                [
+                  'user_id' => $rows[0]->id,
+                  'email_vkey' => $rows[0]->email_vkey,
+                  'new_email' => $rows[0]->new_email
+                ]
+              )) {
+                $this->view('users/redirectPage', ['message' => 'User verification failed. Try again.']);
+                return;
+              }
+
+              if ($this->userModel->updateRowById('changing_email', false, $rows[0]->id)) {
+                $this->view('users/redirectPage', ['message' => 'Your email was successfully changed. Sign in again.']);
+                sessionDestroyAll();
+              }
+            } else {
+              die('not verified');
+            }
+          } else {
+            $this->view('users/redirectPage', $data = ['message' => 'These verification credentials are not correct.']);
+          }
+        }
+      } elseif ($confirmationType == 'FORGOT_PASSWORD') {
+        if (isset($_GET['id']) && isset($_GET['vkey'])) {
+          $userId = $_GET['id'];
+          $forgotPasswordVkey = $_GET['vkey'];
+
+          $rows = $this->userModel->getRowsWithColumns(['id', 'forgot_password_vkey'], [$userId, $forgotPasswordVkey]);
+
+          if ($rows) {
+            if (empty($rows[0]->new_password)) {
+              $this->view('users/redirectPage', ['message' => 'This verification key is already used or replaced.']);
+              return;
+            }
+            $newPassword = $this->userModel->resetPasswordAndReturnUnencryptedVersion($rows[0]->id, $rows[0]->email_vkey);
+
+            if ($this->userModel->updateRowById('new_password', null, $rows[0]->id)) {
+              $this->view('users/redirectPage', ['message' => 'Your password was successfully resetted. Here is your new password: <b>' . $newPassword . '</b>', 'reason' => 'passwordReset', 'email' => $rows[0]->email]);
+              sessionDestroyAll();
+            }
+          } else {
+            $this->view('users/redirectPage', ['message' => 'These verification credentials are not correct.']);
+          }
+        }
       }
     }
 
-    $this->view('users/redirectPage', $data = ['message' => 'The confirmation link was sent to your email. Please check and click the link to enable your user account.']);
+    $this->view('users/redirectPage', ['message' => 'Invalid credentials. Try again']);
   }
 
   public function handleUserRegistration($data = null)
   {
-    if (!isset($data)) {
-      $data = $_SESSION['email_confirmation_info'];
-      $emailVkey = $this->userModel->regenerateEmailVkey($data['id_type'], $data['id']);
-
-      $data['vkey'] = $emailVkey;
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($data)) {      
+      if (isset($_POST['vkeyType']) && isset($_POST['id_type']) && isset($_POST['id'])) {
+        $data = $_POST;
+        $vkey = $this->userModel->regenerateVkey($data['vkeyType'], $data['id_type'], $data['id']);
+        $data['vkey'] = $vkey;
+      }
     }
-    unset($_SESSION['email_confirmation_info']);
+
+    $vkeyType = $data['vkeyType'];
 
     $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
     if ($unverifiedUser) {
@@ -168,11 +245,11 @@ class Users extends Controller
 
         //Content
         $email_template = APPROOT . '/views/inc/templateVerifyEmail.php';
-        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->email_vkey;
+        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->$vkeyType;
         $about_url = URLROOT . '/about';
         $privacy_url = URLROOT . '/about/privacy';
         $terms_url = URLROOT . '/about/terms';
-        $subject = 'Email Verification';
+        $subject = 'PDA-DCC ' . str_replace('_', ' ', $data['email_confirmation_type']) . ' VERIFICATION';
 
         $message = file_get_contents($email_template);
         $message = str_replace('{{verify_url}}', $verify_url, $message);
@@ -188,10 +265,54 @@ class Users extends Controller
         //   'Click this <a href="' . URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->email_vkey . '">link</a> to continue registration';
         // // $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
         $mail->send();
+        if (isset($data['logoutAfter']) && $data['logoutAfter']) {
+          sessionDestroyAll();
+        }
         $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
       }
+    }
+  }
+
+  public function abortRegistration()
+  {
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $data = [
+        'email' => trim($_POST['email']),
+
+        'email_err' => ''
+      ];
+
+      // Validate login credentials
+      if (empty($data['email'])) {
+        $data['email_err'] = 'Please enter your email';
+      } else {
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+          $data['email_err'] = 'Please enter your email';
+        }
+      }
+
+      // Check if all errors are empty
+      if (
+        empty($data['email_err'])
+      ) {
+        if (!$this->userModel->deleteUser('email', $data['email'], false, false)) {
+          $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
+        }
+
+        // show abort message
+        $this->view('users/redirectPage', ['message' => 'Your registration was successfully cancelled. Your email is now again open for registration.']);
+      } else {
+        // Load view with errors
+        $this->view('users/register', $data);
+      }
+    } else {
+
+      die('yes');
     }
   }
 
@@ -233,14 +354,16 @@ class Users extends Controller
             if (!$requestedUser->email_verified) {
               // if requested user is not yet verified (email)
               $emailConfirmation =  [
-                'email_confirmation_type' => 'register',
+                'email_confirmation_type' => 'ACCOUNT_REGISTRATION',
                 'id_type' => 'email',
                 'id' => $data['email'],
                 'receiver_email' => $data['email'],
+                'vkeyType' => 'account_registration_vkey',
                 'reason' => 'unverifiedEmail',
-                'message' => $data['email'] . ' is not yet verified. Verify first to enable your account.'
+                'route' => __FUNCTION__,
+                'message' => $data['email'] . ' is not yet verified. Verify first to enable your account.',
+                'cancellable' => true
               ];
-              $_SESSION['email_confirmation_info'] = $emailConfirmation;
 
               $this->view('users/redirectPage', $emailConfirmation);
               return;
@@ -339,10 +462,12 @@ class Users extends Controller
         // initialize data to pass as params for email sending
         $this->handleUserRegistration(
           [
-            'email_confirmation_type' => 'register',
+            'email_confirmation_type' => 'ACCOUNT_REGISTRATION',
             'id_type' => 'email',
             'id' => $data['email'],
-            'receiver_email' => $data['email']
+            'receiver_email' => $data['email'],
+            'vkey' => $this->userModel->regenerateVkey('account_registration_vkey', 'email', $data['email']),
+            'vkeyType' => 'account_registration_vkey'
           ]
         );
       } else {
@@ -397,13 +522,19 @@ class Users extends Controller
 
       // Check if all errors are empty
       if (empty($data['email_err'])) {
+        if (!$this->userModel->storeNewPassword($data['email'])) {
+          $this->view('users/redirectPage', $data = ['message' => 'New password was not stored. Try again']);
+          return;
+        }
 
         $this->handlePasswordResetRequest(
           [
-            'confirmation_type' => 'password_reset',
+            'email_confirmation_type' => 'FORGOT_PASSWORD',
             'id_type' => 'email',
             'id' => $data['email'],
-            'receiver_email' => $data['email']
+            'receiver_email' => $data['email'],
+            'vkey' => $this->userModel->regenerateVkey('forgot_password_vkey', 'email', $data['email']),
+            'vkeyType' => 'forgot_password_vkey',
           ]
         );
       } else {
@@ -433,7 +564,7 @@ class Users extends Controller
   public function handlePasswordResetRequest($data = null)
   {
     $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
-    if ($unverifiedUser->email_verified) {
+    if ($unverifiedUser) {
       $mail = new PHPMailer(true);
 
       try {
@@ -448,19 +579,22 @@ class Users extends Controller
         $mail->SMTPSecure = 'tls';
 
         //Recipients
-        $mail->setFrom(MAIL_FROM_ADDRESS, 'pda-dcc.com');
-        $mail->addAddress($data['receiver_email'], 'PDA-DCC member');
+        $mail->setFrom(MAIL_FROM_ADDRESS, 'Mailer');
+        $mail->addAddress($data['receiver_email'], 'Regitering user');
 
         //Content
-        $email_template = APPROOT . '/views/inc/templatePasswordReset.php';
-        $password = $this->userModel->resetPasswordAndReturnUnencryptedVersion($unverifiedUser->id);
+        // $email_template = APPROOT . '/views/inc/templatePasswordReset.php';
+        $email_template = APPROOT . '/views/inc/templateVerifyEmail.php';
+        // $password = $this->userModel->resetPasswordAndReturnUnencryptedVersion($unverifiedUser->id);
+        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->forgot_password_vkey;
         $about_url = URLROOT . '/about';
         $privacy_url = URLROOT . '/about/privacy';
         $terms_url = URLROOT . '/about/terms';
-        $subject = 'Password Reset';
+        $subject = 'PDA-DCC ' . str_replace('_', ' ', $data['email_confirmation_type']) . ' VERIFICATION';
 
         $message = file_get_contents($email_template);
-        $message = str_replace('{{password}}', $password, $message);
+        // $message = str_replace('{{password}}', $password, $message);
+        $message = str_replace('{{verify_url}}', $verify_url, $message);
         $message = str_replace('{{about_url}}', $about_url, $message);
         $message = str_replace('{{privacy_url}}', $privacy_url, $message);
         $message = str_replace('{{terms_url}}', $terms_url, $message);
@@ -470,16 +604,168 @@ class Users extends Controller
         $mail->MsgHTML($message);
 
         $mail->send();
-        $this->view('users/redirectPage', $data = ['message' => 'Your new password was sent to your email.', 'reason' => 'passwordReset', 'email' => $data['receiver_email']]);
+        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
+        // $this->view('users/redirectPage', $data = ['message' => 'Your new password was sent to your email.', 'reason' => 'passwordReset', 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
       }
-    } else {
-      $this->view('users/redirectPage', $data = ['message' => 'Your email is not yet verified. You have to verify your email first before you can request a password reset.']);
     }
   }
 
   /* AUTH ACCESSIBLE ENDPOINTS */
+
+  public function registerEmailPassword()
+  {
+    redirectIfNotLoggedIn();
+    redirectIfEmailAndPassRegistered();
+    redirectFullyRegisteredUser();
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $data = [
+        'email' => trim($_POST['email']),
+        'password' => trim($_POST['password']),
+        'confirm_password' => trim($_POST['confirm_password']),
+
+        'email_err' => '',
+        'password_err' => '',
+        'confirm_password_err' => ''
+      ];
+
+      // Validate login credentials
+      if (empty($data['email'])) {
+        $data['email_err'] = 'Please enter your email';
+      } else {
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+          $data['email_err'] = 'Please enter your email';
+        }
+
+        if ($this->userModel->findUserByEmail($data['email'])) {
+          $data['email_err'] = 'Email is already taken';
+        }
+      }
+
+      if (empty($data['password'])) {
+        $data['password_err'] = 'Please enter password';
+      } elseif (strlen($data['password']) < 6) {
+        $data['password_err'] = 'Password must be at least 6 characters';
+      }
+      if (empty($data['confirm_password'])) {
+        $data['confirm_password_err'] = 'Please confirm password';
+      } else {
+        if ($data['password'] != $data['confirm_password']) {
+          $data['confirm_password_err'] = 'Passwords do not match';
+        }
+      }
+
+      // Check if all errors are empty
+      if (
+        empty($data['email_err']) && empty($data['password_err']) && empty($data['confirm_password_err'])
+      ) {
+        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+
+        if (!$this->userModel->updateRowsById(['email', 'password'], [$data['email'], $data['password']], $_SESSION['user_id'])) {
+          $data['password_err'] = 'Something went wrong';
+          $this->view('users/registerEmailPassword', $data);
+          return;
+        }
+
+        $this->handleUserRegistration(
+          [
+            'email_confirmation_type' => 'ACCOUNT_REGISTRATION',
+            'id_type' => 'email',
+            'id' => $data['email'],
+            'receiver_email' => $data['email'],
+            'vkey' => $this->userModel->regenerateVkey('account_registration_vkey', 'email', $data['email']),
+            'vkeyType' => 'account_registration_vkey',
+            'logoutAfter' => true
+          ]
+        );
+      } else {
+        // Load view with errors
+        $this->view('users/registerEmailPassword', $data);
+      }
+    } else {
+
+      $data = [
+        'email' => '',
+        'password' => '',
+        'confirm_password' => '',
+
+        'email_err' => '',
+        'password_err' => '',
+        'confirm_password_err' => ''
+      ];
+
+      $this->view('users/registerEmailPassword', $data);
+    }
+  }
+  public function changeRegisteredEmail()
+  {
+    // redirectIfNotAuthUser();
+    // if()
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $data = [
+        'email' => trim($_POST['email']),
+
+        'email_err' => '',
+      ];
+
+      // Validate login credentials
+      if (empty($data['email'])) {
+        $data['email_err'] = 'Please enter your email';
+      } else {
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+          $data['email_err'] = 'Please enter your email';
+        }
+
+        if ($this->userModel->findUserByEmail($data['email'])) {
+          $data['email_err'] = 'Email is already taken';
+        }
+      }
+
+      // Check if all errors are empty
+      if (
+        empty($data['email_err'])
+      ) {
+        if (!$this->userModel->updateRowById('email', $data['email'], $_SESSION['user_id'])) {
+          $data['email_err'] = 'Something went wrong';
+          $this->view('users/registerEmailPassword', $data);
+          return;
+        }
+
+        $this->handleUserRegistration(
+          [
+            'email_confirmation_type' => 'register',
+            'id_type' => 'email',
+            'id' => $data['email'],
+            'receiver_email' => $data['email'],
+            'logoutAfter' => true
+          ]
+        );
+      } else {
+        // Load view with errors
+        $this->view('users/registerEmailPassword', $data);
+      }
+    } else {
+
+      $data = [
+        'email' => '',
+        'password' => '',
+        'confirm_password' => '',
+
+        'email_err' => '',
+        'password_err' => '',
+        'confirm_password_err' => ''
+      ];
+
+      $this->view('users/registerEmailPassword', $data);
+    }
+  }
 
   /* 
     *triggered when user sign in using 3rd party auths*
@@ -489,7 +775,7 @@ class Users extends Controller
   */
   public function registerPassword()
   {
-    redirectUnAuthUser();
+    redirectIfNotAuthUser();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -560,7 +846,9 @@ class Users extends Controller
   */
   public function registerPrcInfo()
   {
-    redirectUnAuthUser();
+    // redirectIfNotAuthUser();
+    redirectIfNotLoggedIn();
+    redirectIfEmailAndPassNotRegistered();
     redirectFullyRegisteredUser();
     redirectInactiveUserOrRegenerateTimer();
 
@@ -634,7 +922,7 @@ class Users extends Controller
   }
   public function registerPersonalInfo()
   {
-    redirectUnAuthUser();
+    redirectIfNotAuthUser();
     redirectFullyRegisteredUser();
     redirectInactiveUserOrRegenerateTimer();
 
@@ -749,7 +1037,7 @@ class Users extends Controller
   }
   public function registerClinicInfo()
   {
-    redirectUnAuthUser();
+    redirectIfNotAuthUser();
     redirectFullyRegisteredUser();
     redirectInactiveUserOrRegenerateTimer();
 
@@ -826,7 +1114,7 @@ class Users extends Controller
   }
   public function registerEmergencyInfo()
   {
-    redirectUnAuthUser();
+    redirectIfNotAuthUser();
     redirectFullyRegisteredUser();
     redirectInactiveUserOrRegenerateTimer();
 
@@ -897,7 +1185,7 @@ class Users extends Controller
   */
   public function updateEmail()
   {
-    redirectUnAuthUser();
+    redirectIfNotAuthUser();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -960,16 +1248,19 @@ class Users extends Controller
             return;
           }
 
-          if ($this->userModel->updateRowById('changing_email', true, $verifiedUser->id)) {
-            $this->handleUserRegistration(
-              [
-                'email_confirmation_type' => 'change',
-                'id_type' => 'email',
-                'id' => $data['current_email'],
-                'receiver_email' => $data['email']
-              ]
-            );
-          }
+          $this->handleUserRegistration(
+            [
+              'email_confirmation_type' => 'CHANGE_EMAIL',
+              'id_type' => 'email',
+              'id' => $data['current_email'],
+              'receiver_email' => $data['email'],
+              'vkey' => $this->userModel->regenerateVkey('change_email_vkey', 'email', $data['current_email']),
+              'vkeyType' => 'change_email_vkey'
+            ]
+          );
+          // if ($this->userModel->updateRowById('changing_email', true, $verifiedUser->id)) {
+
+          // }
         } else {
           $data['password_err'] = 'Password incorrect';
 
@@ -998,6 +1289,7 @@ class Users extends Controller
 
   public function createUserSession(object $user, bool $notThirdParty = true): void
   {
+    $_SESSION['email_verified'] = $user->email_verified ? true : false;
     $_SESSION['user_id'] = $user->id;
     $_SESSION['user_email'] = $user->email;
     $_SESSION['user_username'] = $user->username;
@@ -1005,11 +1297,19 @@ class Users extends Controller
     $_SESSION['role'] = $user->role;
     $_SESSION['password_registered'] = true;
 
-    if (empty($user->password) && !empty($user->fb_user_id) || empty($user->password) &&  !empty($user->google_user_id)) {
+    if (empty($user->email) && empty($user->password)) {
       $_SESSION['password_registered'] = false;
       $_SESSION["login_time_stamp"] = time();
 
-      redirect('users/registerPassword');
+      $this->view('users/registerEmailPassword', [
+        'email' => '',
+        'password' => '',
+        'confirm_password' => '',
+
+        'email_err' => '',
+        'password_err' => '',
+        'confirm_password_err' => '',
+      ]);
     }
 
     if (
@@ -1044,10 +1344,20 @@ class Users extends Controller
 
   public function logout()
   {
-    redirectUnAuthUser();
+    redirectIfNotAuthUser();
 
     sessionDestroyAll();
     redirect('users/login');
+  }
+
+  public function restartSessionTimer()
+  {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['current_timestamp'])) {
+      // session_regenerate_id(true);
+      $_SESSION['login_time_stamp'] = $_POST['current_timestamp'];
+
+      echo json_encode(['ok' => true, 'status' => 200, 'message' => 'Session timer was successfully restarted']);
+    }
   }
 
   public function __destruct()

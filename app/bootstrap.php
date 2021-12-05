@@ -21,6 +21,8 @@ require_once 'helpers/string_helper.php';
 require_once 'helpers/url_helper.php';
 require_once 'helpers/session_helper.php';
 
+require_once 'helpers/mailer.php';
+
 // APIs
 require_once 'API/facebook.php';
 require_once 'API/google.php';

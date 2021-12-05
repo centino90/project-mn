@@ -1,15 +1,21 @@
 <?php
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
 class Admins extends Controller
 {
   public function __construct()
   {
-    redirectUnAuthUser();
+    redirectIfNotAuthUser();
     redirectNotFullyRegisteredUser();
     redirectIfNotAdmin();
     redirectInactiveUserOrRegenerateTimer();
 
     $this->userModel = $this->model('User');
     $this->clinicModel = $this->model('Clinic');
+    $this->duesModel = $this->model('Dues');
   }
 
   public function index()
@@ -28,11 +34,15 @@ class Admins extends Controller
   }
   public function accounts()
   {
-    $members = $this->userModel->getRowsWithColumns(['role', 'is_active'], ['member', true]);
+    // die(var_dump(time()));
+    $filtered = 'all';
+    if (isset($_GET['filter'])) {
+      $filtered = $_GET['filter'];
+      $accounts = $this->userModel->getRowsWithColumns(['role', 'email_verified'], [$filtered, true]);
+    } else {
+      $accounts = $this->userModel->getRowsByColumn('email_verified', true);
+    }
     $clinics = $this->clinicModel->getRows();
-    // die(var_dump($clinics));
-    $officers = $this->userModel->getRowsWithColumns(['role', 'is_active'], ['admin', true]);
-    $accounts = $this->userModel->getRowsByColumn('is_active', true);
 
     // die(var_dump($members));
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -40,6 +50,7 @@ class Admins extends Controller
 
       $data = [
         'current_route' => __FUNCTION__,
+        'current_tab' => $filtered,
         'user_id' => $_SESSION['user_id'] ?? '',
 
         'prc_number' => trim($_POST['prc_number']),
@@ -89,9 +100,10 @@ class Admins extends Controller
 
       $data = [
         'current_route' => __FUNCTION__,
+        'current_tab' => $filtered,
 
         'accounts' => $accounts,
-        'members' => $members,
+        // 'members' => $members,
         'clinics' => $clinics,
         'prc_number' => $user->prc_number,
         'prc_registration_date' => $user->prc_registration_date,
@@ -110,34 +122,142 @@ class Admins extends Controller
     }
   }
 
-  public function licenseInfo()
+  public function createAccount()
   {
-    $fieldOfPracticeOptions = [
-      'General Practice',
-      'Endodontics',
-      'Prosthodontics',
-      'Orthodontics',
-      'Oral and maxillofacial surgery',
-      'Pedodontics',
-      'Periodontics'
-    ];
-    $typeOfPracticeOptions = [
-      'Government Dentist',
-      'Clinic Owner',
-      'Dental Associate',
-      'School Dentist',
-      'None Practicing'
-    ];
-
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
+
+      $data = [
+        'current_route' => 'accounts',
+
+        'role' => trim($_POST['role']),
+        'email' => trim($_POST['email']),
+
+        'role_err' => '',
+        'email_err' => '',
+      ];
+
+      // Validate prc info
+      if (empty($data['role'])) {
+        $data['role_err'] = 'Please select a role';
+      }
+
+      // Validate login credentials
+      if (empty($data['email'])) {
+        $data['email_err'] = 'Please enter your email';
+      } else {
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+          $data['email_err'] = 'Please enter your email';
+        }
+
+        if ($this->userModel->findUserByEmail($data['email'])) {
+          $data['email_err'] = 'Email is already taken';
+        }
+      }
+
+      // Check if errors are empty
+      if (empty($data['role_err']) && empty($data['email_err'])) {
+        $autoPassword = uniqid();
+        $data['password'] = password_hash($autoPassword, PASSWORD_DEFAULT);
+        if (!$this->userModel->register($data)) {
+          $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
+        }
+
+        // initialize data to pass as params for email sending
+        $this->handleUserRegistrationViaAdmin(
+          [
+            'email_confirmation_type' => 'ACCOUNT_REGISTRATION',
+            'id_type' => 'email',
+            'id' => $data['email'],
+            'receiver_email' => $data['email'],
+            'vkey' => $this->userModel->regenerateVkey('account_registration_vkey', 'email', $data['email']),
+            'password' => $autoPassword
+          ]
+        );
+      } else {
+        // Load view with errors
+        $this->view('admins/createAccount', $data);
+      }
+    } else {
+      $data = [
+        'current_route' => 'accounts',
+        'role' => '',
+        'email' => '',
+
+        'role_err' => '',
+        'email_err' => '',
+      ];
+
+      $this->view('admins/createAccount', $data);
+    }
+  }
+  public function handleUserRegistrationViaAdmin($data = null)
+  {
+    if (!isset($data)) {
+      $data = $_SESSION['email_confirmation_info'];
+      $emailVkey = $this->userModel->regenerateEmailVkey($data['id_type'], $data['id']);
+
+      $data['vkey'] = $emailVkey;
+    }
+    unset($_SESSION['email_confirmation_info']);
+
+    $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
+    if ($unverifiedUser) {
+      $mail = new PHPMailer(true);
+
+      try {
+        //Server settings                
+        $mail->isSMTP();
+        $mail->Host       = MAIL_HOST;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = MAIL_USERNAME;
+        $mail->Password   = MAIL_PASSWORD;
+        $mail->Port       = MAIL_PORT;
+        $mail->SMTPSecure = 'tls';
+
+        //Recipients
+        $mail->setFrom(MAIL_FROM_ADDRESS, 'pda-dcc.com');
+        $mail->addAddress($data['receiver_email'], 'PDA-DCC member');
+
+        //Content
+        $email_template = APPROOT . '/views/inc/templateEmailAndPassword.php';
+        $password = $data['password'];
+        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->account_registration_vkey;
+        $about_url = URLROOT . '/about';
+        $privacy_url = URLROOT . '/about/privacy';
+        $terms_url = URLROOT . '/about/terms';
+        $subject = 'PDA-DCC ' . str_replace('_', ' ', $data['email_confirmation_type']) . ' VERIFICATION';
+
+        //message html templating
+        $message = file_get_contents($email_template);
+        $message = str_replace('{{verify_url}}', $verify_url, $message);
+        $message = str_replace('{{password}}', $password, $message);
+        $message = str_replace('{{about_url}}', $about_url, $message);
+        $message = str_replace('{{privacy_url}}', $privacy_url, $message);
+        $message = str_replace('{{terms_url}}', $terms_url, $message);
+        $mail->isHTML(true);
+
+        //set subject and message
+        $mail->Subject = $subject;
+        $mail->MsgHTML($message);
+
+        $mail->send();
+        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link and password was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
+      } catch (Exception $e) {
+        echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+      }
+    }
+  }
+
+
+  public function report()
+  {
+    // die(var_dump($members));
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       $data = [
         'current_route' => __FUNCTION__,
-        'user_id' => $_SESSION['user_id'] ?? '',
-        'field_practice_options' => $fieldOfPracticeOptions,
-        'type_practice_options' => $typeOfPracticeOptions,
 
         'prc_number' => trim($_POST['prc_number']),
         'prc_registration_date' => trim($_POST['prc_registration_date']),
@@ -179,216 +299,44 @@ class Admins extends Controller
         }
       } else {
         // Load view with errors
-        $this->view('licenseInfo', $data);
+        $this->view('admins/report', $data);
       }
     } else {
       $user = $this->userModel->getUserById($_SESSION['user_id']);
-
+      $amounts = $this->duesModel->getTotalAmountBetweenYears('2019', '2021');
       $data = [
         'current_route' => __FUNCTION__,
-        'field_practice_options' => $fieldOfPracticeOptions,
-        'type_practice_options' => $typeOfPracticeOptions,
+        'amounts' => $amounts,
+        'dates' => $this->generateYearsBetween(),
 
         'prc_number' => $user->prc_number,
-        'prc_registration_date' => $user->prc_registration_date,
-        'prc_expiration_date' => $user->prc_expiration_date,
-        'field_practice' => $user->field_practice,
-        'type_practice' => $user->type_practice,
 
         'prc_number_err' => '',
-        'prc_registration_date_err' => '',
-        'prc_expiration_date_err' => '',
-        'field_practice_err' => '',
-        'type_practice_err' => '',
       ];
 
-      $this->view('licenseInfo', $data);
+      $this->view('admins/report', $data);
     }
   }
-  public function personalInfo()
-  {
-    $genderOptions = [
-      'Male',
-      'Female'
-    ];
 
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
-
-      $data = [
-        'current_route' => __FUNCTION__,
-        'user_id' => $_SESSION['user_id'] ?? '',
-        'gender_options' => $genderOptions,
-
-        'first_name' => trim($_POST['first_name']),
-        'middle_name' => trim($_POST['middle_name']),
-        'last_name' => trim($_POST['last_name']),
-        'birthdate' => trim($_POST['birthdate']),
-        'gender' => trim($_POST['gender']),
-        'contact_number' => trim($_POST['contact_number']),
-        'fb_account_name' => trim($_POST['fb_account_name']),
-        'address' => trim($_POST['address']),
-
-        'first_name_err' => '',
-        'middle_name_err' => '',
-        'last_name_err' => '',
-        'gender_err' => '',
-        'fb_account_name_err' => '',
-        'contact_number_err' => '',
-        'birthdate_err' => '',
-        'address_err' => '',
-      ];
-
-      // Validate Personal info
-      if (empty($data['first_name'])) {
-        $data['first_name_err'] = 'Please enter your firstname';
-      }
-      if (empty($data['middle_name'])) {
-        $data['middle_name_err'] = 'Please enter your middlename';
-      }
-      if (empty($data['last_name'])) {
-        $data['last_name_err'] = 'Please enter your lastname';
-      }
-      if (empty($data['birthdate'])) {
-        $data['birthdate_err'] = 'Please enter your your birthdate';
-      }
-      if (empty($data['gender'])) {
-        $data['gender_err'] = 'Please select your gender';
-      }
-      if (empty($data['contact_number'])) {
-        $data['contact_number_err'] = 'Please enter your contact number';
-      }
-      if (empty($data['fb_account_name'])) {
-        $data['fb_account_name_err'] = 'Please enter your fb account name';
-      }
-      if (empty($data['address'])) {
-        $data['address_err'] = 'Please enter your home address';
-      }
-
-      if (
-        empty($data['first_name_err']) && empty($data['middle_name_err'])
-        && empty($data['last_name_err']) && empty($data['birthdate_err'])
-        && empty($data['gender_err']) && empty($data['contact_number_err'])
-        && empty($data['fb_account_name_err']) && empty($data['address_err'])
-      ) {
-
-        if ($this->userModel->updatePersonalInfo($data)) {
-          flash('update_success', 'Your personal profile was updated');
-          redirect('personalInfo');
-        } else {
-          die('Something went wrong');
-        }
-      } else {
-        // Load view with errors
-        $this->view('personalInfo', $data);
-      }
-    } else {
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
-
-      $data = [
-        'current_route' => __FUNCTION__,
-        'gender_options' => $genderOptions,
-
-        'first_name' => $user->first_name,
-        'middle_name' => $user->middle_name,
-        'last_name' => $user->last_name,
-        'birthdate' => $user->birthdate,
-        'gender' => $user->gender,
-        'contact_number' => $user->contact_number,
-        'fb_account_name' => $user->fb_account_name,
-        'address' => $user->address,
-
-        'first_name_err' => '',
-        'middle_name_err' => '',
-        'last_name_err' => '',
-        'gender_err' => '',
-        'fb_account_name_err' => '',
-        'contact_number_err' => '',
-        'birthdate_err' => '',
-        'address_err' => '',
-      ];
-
-      $this->view('personalInfo', $data);
-    }
-  }
-  public function clinicInfo()
+  public function filterData()
   {
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
 
-      $data = [
-        'current_route' => __FUNCTION__,
-        'user_id' => $_SESSION['user_id'] ?? '',
-
-        'clinic_name' => trim($_POST['clinic_name']),
-        'clinic_street' => trim($_POST['clinic_street']),
-        'clinic_district' => trim($_POST['clinic_district']),
-        'clinic_city' => trim($_POST['clinic_city']),
-        'clinic_contact_number' => trim($_POST['clinic_contact_number']),
-
-        'clinic_name_err' => '',
-        'clinic_street_err' => '',
-        'clinic_district_err' => '',
-        'clinic_city_err' => '',
-        'clinic_contact_number_err' => '',
-      ];
-
-      // Validate clinic info
-      if (empty($data['clinic_name'])) {
-        $data['clinic_name_err'] = 'Please enter your clinic name';
-      }
-      if (empty($data['clinic_street'])) {
-        $data['clinic_street_err'] = 'Please enter your clinic street';
-      }
-      if (empty($data['clinic_district'])) {
-        $data['clinic_district_err'] = 'Please enter your clinic district';
-      }
-      if (empty($data['clinic_city'])) {
-        $data['clinic_city_err'] = 'Please enter your clinic city';
-      }
-      if (empty($data['clinic_contact_number'])) {
-        $data['clinic_contact_number_err'] = 'Please enter your clinic contact number';
-      }
-
-      // Check if errors are empty
-      if (
-        empty($data['clinic_name_err']) && empty($data['clinic_street_err'])
-        && empty($data['clinic_district_err']) && empty($data['clinic_city_err'])
-        && empty($data['clinic_contact_number_err'])
-      ) {
-
-        if ($this->model('Clinic')->updateOrInsert($data)) {
-          flash('update_success', 'Your clinic information was updated');
-          redirect('clinicInfo');
-        } else {
-          die('Something went wrong');
-        }
-      } else {
-        // Load view with errors
-        $this->view('clinicInfo', $data);
-      }
-    } else {
-      $clinic = $this->model('Clinic')->getClinicById($_SESSION['user_id']);
-
-      $data = [
-        'current_route' => __FUNCTION__,
-
-        'clinic_name' => $clinic->name,
-        'clinic_street' =>  $clinic->street,
-        'clinic_district' =>  $clinic->district,
-        'clinic_city' =>  $clinic->city,
-        'clinic_contact_number' =>  $clinic->contact_number,
-
-        'clinic_name_err' => '',
-        'clinic_street_err' => '',
-        'clinic_district_err' => '',
-        'clinic_city_err' => '',
-        'clinic_contact_number_err' => '',
-      ];
-
-      $this->view('clinicInfo', $data);
+      $amounts = $this->duesModel->getTotalAmountBetweenYears($_POST['startYear'], $_POST['endYear']);
+      echo json_encode(['data' => $amounts, 'status' => 'ok', 'code' => 200, 'message' => 'request successful']);
     }
+  }
+
+  public function generateYearsBetween($startYear = 1980, $endYear = null)
+  {
+    $endYear = $endYear ?? idate('Y') + 1;
+    $years = [];
+    for ($i = $startYear; $i <= $endYear; $i++) {
+      array_push($years, $startYear);
+      $startYear++;
+    }
+
+    return array_reverse($years);
   }
 }

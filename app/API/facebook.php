@@ -49,7 +49,7 @@ function getFacebookLoginUrl()
 		'redirect_uri' => FB_REDIRECT_URI,
 		'state' => FB_APP_STATE,
 		'scope' => ['email'],
-		'auth_type' => 'reauthenticate'
+		'auth_type' => 'rerequest'
 	);
 
 	// return login url
@@ -119,9 +119,15 @@ function tryAndLoginWithFacebook($get, $usersController)
 	$status = 'fail';
 	$message = '';
 	$user = '';
-	$emailConfirmation = '';
+	// $emailConfirmation = '';
 	$isAdded = false;
 	$reason = '';
+	$email_confirmation_type = '';
+	$id_type = '';
+	$id = '';
+	$receiver_email = '';
+	$vkeyType = '';
+	$cancellable = false;
 
 	// reset session vars
 	$_SESSION['fb_access_token'] = array();
@@ -160,7 +166,6 @@ function tryAndLoginWithFacebook($get, $usersController)
 				if ($userInfoWithId) {
 					//check if the registration is done inside or outside
 					if (isLoggedIn()) {
-
 						if ($userInfoWithId->id != $loggedInUser->id) {
 							$status = 'fail';
 							$reason = 'accountTaken';
@@ -171,16 +176,24 @@ function tryAndLoginWithFacebook($get, $usersController)
 							$message = 'You are currently using this facebook account. Try again.';
 						}
 					} else {
-						if (!$userInfoWithId->email_verified) {
+						if (!$userInfoWithId->email_verified && $userInfoWithId->email) {
 							$status = 'fail';
 							$reason = 'unverifiedEmail';
 							$message = 'Your email ' . $userInfoWithId->email . ' is still not verified. Please check your email to verify your account.';
-							$emailConfirmation = [
-								'email_confirmation_type' => 'register',
-								'id_type' => 'fb_user_id',
-								'id' => $fbUserInfo['fb_response']['id'],
-								'receiver_email' => $fbUserInfo['fb_response']['email']
-							];
+							// $emailConfirmation = [
+							// 	'email_confirmation_type' => 'ACCOUNT_REGISTRATION',
+							// 	'id_type' => 'fb_user_id',
+							// 	'id' => $fbUserInfo['fb_response']['id'],
+							// 	'receiver_email' => $userInfoWithId->email,
+							// 	'vkeyType' => 'account_registration_vkey',
+							// 	'cancellable' => true
+							// ];
+							$email_confirmation_type = 'ACCOUNT_REGISTRATION';
+							$id_type = 'fb_user_id';
+							$id = $fbUserInfo['fb_response']['id'];
+							$receiver_email = $userInfoWithId->email;
+							$vkeyType = 'account_registration_vkey';
+							$cancellable = true;
 						} else {
 							$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $userInfoWithId->id);
 							$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithId->id);
@@ -199,48 +212,22 @@ function tryAndLoginWithFacebook($get, $usersController)
 						$message = 'Facebook was added to your user account successfully.';
 						$isAdded = true;
 					} else {
-						$userInfoWithEmail = $userModel->getRowWithValue('users', 'email', $fbUserInfo['fb_response']['email']);
+						if ($userModel->register(
+							[
+								'fb_user_id' => $fbUserInfo['fb_response']['id'],
+								'fb_access_token' => $accessTokenInfo['fb_response']['access_token']
+							]
+						)) {
 
-						if ($userInfoWithEmail) {
-							if (!$userInfoWithEmail->email_verified) {
-								$status = 'fail';
-								$reason = 'unverifiedEmail';
-								$message = 'You have an existing account with the email ' . $userInfoWithEmail->email . ' and is still not verified. Please verify your email first before adding facebook authentication.';
-								$emailConfirmation = [
-									'email_confirmation_type' => 'register',
-									'id_type' => 'email',
-									'id' => $fbUserInfo['fb_response']['email'],
-									'receiver_email' => $fbUserInfo['fb_response']['email']
-								];
-							} else {
-								$userModel->updateUserById('fb_access_token', $_SESSION['fb_access_token'], $userInfoWithEmail->id);
-								$userModel->updateUserById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithEmail->id);
-
-								$status = 'ok';
-								$message = 'Facebook was added to your user account successfully.';
-								$isAdded = true;
-							}
-						} else {
-							if ($userModel->register(
-								[
-									'email' => $fbUserInfo['fb_response']['email'],
-									'fb_user_id' => $fbUserInfo['fb_response']['id'],
-									'fb_access_token' => $accessTokenInfo['fb_response']['access_token']
-								]
-							)) {
-
-								$status = 'ok';
-								$message = 'You successfully registered using your Facebook account.';
-								$emailConfirmation = [
-									'email_confirmation_type' => 'register',
-									'id_type' => 'fb_user_id',
-									'id' => $fbUserInfo['fb_response']['id'],
-									'receiver_email' => $fbUserInfo['fb_response']['email']
-								];
-							}
+							$status = 'ok';
+							$message = 'You successfully registered using your Facebook account.';
+							$user = $userModel->getRowByColumn('fb_user_id', $fbUserInfo['fb_response']['id']);
 						}
 					}
 				}
+			} else if (empty($fbUserInfo['fb_response']['email'])) {
+				$status = 'fail';
+				$message = 'You have to enable permission to access your email. Try again.';
 			} else {
 				$status = 'fail';
 				$message = 'Invalid credentials. Try again.';
@@ -252,8 +239,14 @@ function tryAndLoginWithFacebook($get, $usersController)
 		'status' => $status,
 		'message' => $message,
 		'user' => $user,
-		'emailConfirmation' => $emailConfirmation,
+		// 'emailConfirmation' => $emailConfirmation,
 		'added' => $isAdded,
-		'reason' => $reason
+		'reason' => $reason,
+		'email_confirmation_type' => $email_confirmation_type,
+		'id_type' => $id_type,
+		'id' => $id,
+		'receiver_email' => $receiver_email,
+		'vkeyType' => $vkeyType,
+		'cancellable' => $cancellable,
 	);
 }

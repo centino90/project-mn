@@ -1,4 +1,7 @@
 <?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -8,7 +11,7 @@ class Profiles extends Controller
 {
     public function __construct()
     {
-        redirectUnAuthUser();
+        redirectIfNotAuthUser();
         redirectNotFullyRegisteredUser();
         redirectInactiveUserOrRegenerateTimer();
 

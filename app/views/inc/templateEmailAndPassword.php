@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title><?php echo SITENAME; ?></title>
+    <title>PDA-DCC</title>
 </head>
 <style>
     :root {
@@ -21,7 +21,7 @@
 
         <div style="max-width: 600px; border-radius: 8px;margin: 0 auto;">
             <h1 style="gap: 10px;display: flex; align-items: center; justify-content: center; margin-bottom: 60px;">
-                Verify your email
+                Verify your email and copy your password
             </h1>
 
             <div>
@@ -38,16 +38,33 @@
 
                         <p>If this link did not work, redo your action and resend another verification request.</p>
 
-                        <div>
-                            Regards,
-                            <b>PDA-DCC</b>
-                        </div>
+                    </div>
+
+                    <br>
+
+                    <p>Here is an uncrypted version of your system-generated password. You can change them later after you have logged in.</p>
+
+                    <br>
+
+                    <div style="display:inline-block;margin: 20px 0; padding: 15px;border: 2px solid #D946EF ;border-radius: 5px;color:#D946EF;font-weight: bold;text-decoration:none;">
+                        {{password}}
+                    </div>
+
+                    <br>
+
+                    <p>You can always request a password reset as long as you have access to your email.</p>
+
+                    <br>
+
+                    <div>
+                        Regards,
+                        <b>PDA-DCC</b>
                     </div>
                 </center>
             </div>
 
             <br>
-            
+
             <footer style="margin-top: 50px;">
                 <ul>
                     <center>
