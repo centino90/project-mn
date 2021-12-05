@@ -179,15 +179,7 @@ function tryAndLoginWithFacebook($get, $usersController)
 						if (!$userInfoWithId->email_verified && $userInfoWithId->email) {
 							$status = 'fail';
 							$reason = 'unverifiedEmail';
-							$message = 'Your email ' . $userInfoWithId->email . ' is still not verified. Please check your email to verify your account.';
-							// $emailConfirmation = [
-							// 	'email_confirmation_type' => 'ACCOUNT_REGISTRATION',
-							// 	'id_type' => 'fb_user_id',
-							// 	'id' => $fbUserInfo['fb_response']['id'],
-							// 	'receiver_email' => $userInfoWithId->email,
-							// 	'vkeyType' => 'account_registration_vkey',
-							// 	'cancellable' => true
-							// ];
+							$message = 'Your email ' . $userInfoWithId->email . ' is still not verified. Please check your email to verify your account.';	
 							$email_confirmation_type = 'ACCOUNT_REGISTRATION';
 							$id_type = 'fb_user_id';
 							$id = $fbUserInfo['fb_response']['id'];
@@ -239,7 +231,6 @@ function tryAndLoginWithFacebook($get, $usersController)
 		'status' => $status,
 		'message' => $message,
 		'user' => $user,
-		// 'emailConfirmation' => $emailConfirmation,
 		'added' => $isAdded,
 		'reason' => $reason,
 		'email_confirmation_type' => $email_confirmation_type,

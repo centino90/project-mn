@@ -28,7 +28,6 @@ class Users extends Controller
 
       if ($fb['status'] == 'fail') {
         if ($fb['reason'] == 'unverifiedEmail') {
-          // $_SESSION['email_confirmation_info'] = $fb['emailConfirmation'];
           $this->view('users/redirectPage', $fb);
         } else {
           $this->view('users/redirectPage', $fb);
@@ -49,7 +48,6 @@ class Users extends Controller
 
       if ($gg['status'] == 'fail') {
         if ($gg['reason'] == 'unverifiedEmail') {
-          $_SESSION['email_confirmation_info'] = $gg['emailConfirmation'];
           $this->view('users/redirectPage', $gg);
         } else {
           $this->view('users/redirectPage', $gg);
