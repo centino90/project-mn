@@ -29,20 +29,18 @@
                 <hr>
                 <br>
                 <center>
-                    <div style="display: flex; justify-content:center; align-items:center; flex-direction:column">
                         <p>Please click the button below to verify your email address.</p>
-
-                        <a href="{{verify_url}}" style="margin: 20px 0; padding: 15px;background-color: #D946EF;border-radius: 5px;color:#fff;font-weight: bold;text-decoration:none;">
+                        <br>
+                        <a href="{{verify_url}}" style="display: inline-block;margin: 20px 0; padding: 15px;background-color: #D946EF;border-radius: 5px;color:#fff;font-weight: bold;text-decoration:none;">
                             Verify email address
                         </a>
-
+                        <br>
                         <p>If this link did not work, redo your action and resend another verification request.</p>
-
+                        <br>
                         <div>
                             Regards,
                             <b>PDA-DCC</b>
                         </div>
-                    </div>
                 </center>
             </div>
 

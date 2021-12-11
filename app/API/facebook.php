@@ -49,7 +49,7 @@ function getFacebookLoginUrl()
 		'redirect_uri' => FB_REDIRECT_URI,
 		'state' => FB_APP_STATE,
 		'scope' => ['email'],
-		'auth_type' => 'rerequest'
+		'auth_type' => 'reauthorize'
 	);
 
 	// return login url

@@ -31,6 +31,8 @@
                 <center>
                     <p>Here is an uncrypted version of your new password.</p>
 
+                    <br>
+
                     <div style="display:inline-block;margin: 20px 0; padding: 15px;border: 2px solid #D946EF ;border-radius: 5px;color:#D946EF;font-weight: bold;text-decoration:none;">
                         {{password}}
                     </div>

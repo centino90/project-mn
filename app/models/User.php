@@ -8,6 +8,14 @@ class User
     $this->db = new Database;
   }
 
+  public function userToClinic()
+  {
+    $sql = 'SELECT users.*, clinics.name as clinic_name, clinics.district as clinic_district, clinics.street as clinic_street, clinics.city as clinic_city, clinics.contact_number as clinic_contact_no FROM `users` LEFT JOIN clinics on users.id = clinics.user_id';
+    $this->db->query($sql);
+
+    $row = $this->db->resultSet();
+    return $row;
+  }
   // Regsiter user
   public function register($data)
   {
@@ -15,9 +23,9 @@ class User
 
     $this->db->query(
       'INSERT INTO users 
-        (first_name, last_name, email, role, username, password, is_admin, fb_user_id, fb_access_token, google_user_id, google_access_token, email_vkey) 
+        (first_name, last_name, email, role, password, fb_user_id, fb_access_token, google_user_id, google_access_token, email_vkey) 
       VALUES
-        (:first_name, :last_name, :email, :role, :username, :password, :is_admin, :fb_user_id, :fb_access_token, :google_user_id, :google_access_token, :email_vkey)
+        (:first_name, :last_name, :email, :role, :password, :fb_user_id, :fb_access_token, :google_user_id, :google_access_token, :email_vkey)
       '
     );
 
@@ -26,9 +34,7 @@ class User
     $this->db->bind(':email', $data['email'] ?? null);
     $this->db->bind(':role', $data['role'] ?? 'member');
     $this->db->bind(':email_vkey', $emailVkey ?? null);
-    $this->db->bind(':username', $data['username'] ?? null);
     $this->db->bind(':password', $data['password'] ?? null);
-    $this->db->bind(':is_admin', $data['is_admin'] ?? null);
     $this->db->bind(':fb_user_id', $data['fb_user_id'] ?? null);
     $this->db->bind(':fb_access_token', $data['fb_access_token'] ?? null);
     $this->db->bind(':google_user_id', $data['google_user_id'] ?? null);
@@ -102,10 +108,10 @@ class User
   }
 
   // Login User
-  public function login($username, $password)
+  public function login($email, $password)
   {
-    $this->db->query('SELECT * FROM users WHERE username = :username AND email_verified = true');
-    $this->db->bind(':username', $username);
+    $this->db->query('SELECT * FROM users WHERE email = :email AND email_verified = true');
+    $this->db->bind(':email', $email);
 
     $row = $this->db->single();
 
@@ -140,13 +146,13 @@ class User
     $this->db->query(
       'UPDATE users 
        SET
-        username = :username,
+        email = :email,
         password = :password
          WHERE id = :user_id 
       '
     );
 
-    $this->db->bind(':username', $data['username']);
+    $this->db->bind(':email', $data['email']);
     $this->db->bind(':password', $data['password']);
     $this->db->bind(':user_id', $data['user_id']);
 
@@ -231,7 +237,7 @@ class User
       'UPDATE users 
        SET
         first_name = :first_name, middle_name = :middle_name, last_name = :last_name, 
-        gender = :gender, fb_account_name = :fb_account_name, email = :email, 
+        gender = :gender, fb_account_name = :fb_account_name,
         contact_number = :contact_number, birthdate = :birthdate, address = :address
          WHERE id = :user_id 
       '
@@ -242,7 +248,6 @@ class User
     $this->db->bind(':last_name', $data['last_name']);
     $this->db->bind(':gender', $data['gender']);
     $this->db->bind(':fb_account_name', $data['fb_account_name']);
-    $this->db->bind(':email', $data['email']);
     $this->db->bind(':contact_number', $data['contact_number']);
     $this->db->bind(':birthdate', $data['birthdate']);
     $this->db->bind(':address', $data['address']);
@@ -427,12 +432,12 @@ class User
     }
   }
 
-  // Find user by username
-  public function findUserByUsername($username)
+  // Find user by email
+  public function findUserByUsername($email)
   {
-    $this->db->query('SELECT * FROM users WHERE username = :username');
+    $this->db->query('SELECT * FROM users WHERE email = :email');
     // Bind value
-    $this->db->bind(':username', $username);
+    $this->db->bind(':email', $email);
 
     $row = $this->db->single();
 

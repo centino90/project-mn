@@ -34,14 +34,7 @@ class Admins extends Controller
   }
   public function accounts()
   {
-    // die(var_dump(time()));
-    $filtered = 'all';
-    if (isset($_GET['filter'])) {
-      $filtered = $_GET['filter'];
-      $accounts = $this->userModel->getRowsWithColumns(['role', 'email_verified'], [$filtered, true]);
-    } else {
-      $accounts = $this->userModel->getRowsByColumn('email_verified', true);
-    }
+    $accounts = $this->userModel->userToClinic();
     $clinics = $this->clinicModel->getRows();
 
     // die(var_dump($members));
@@ -100,7 +93,6 @@ class Admins extends Controller
 
       $data = [
         'current_route' => __FUNCTION__,
-        'current_tab' => $filtered,
 
         'accounts' => $accounts,
         // 'members' => $members,
@@ -321,8 +313,7 @@ class Admins extends Controller
   public function filterData()
   {
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);      
       $amounts = $this->duesModel->getTotalAmountBetweenYears($_POST['startYear'], $_POST['endYear']);
       echo json_encode(['data' => $amounts, 'status' => 'ok', 'code' => 200, 'message' => 'request successful']);
     }

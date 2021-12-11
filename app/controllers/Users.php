@@ -60,6 +60,12 @@ class Users extends Controller
         }
       }
     }
+  }
+
+  /* GUEST ACCESSIBLE ENDPOINTS */
+  public function login(string $authMessage = ''): void
+  {
+    redirectAuthUserWithRole();
 
     // if (isset($_GET['code'])) {
     //   // try and log the user in with $_GET code from google 
@@ -212,7 +218,7 @@ class Users extends Controller
 
   public function handleUserRegistration($data = null)
   {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($data)) {      
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($data)) {
       if (isset($_POST['vkeyType']) && isset($_POST['id_type']) && isset($_POST['id'])) {
         $data = $_POST;
         $vkey = $this->userModel->regenerateVkey($data['vkeyType'], $data['id_type'], $data['id']);
@@ -412,13 +418,22 @@ class Users extends Controller
         'email' => trim($_POST['email']),
         'password' => trim($_POST['password']),
         'confirm_password' => trim($_POST['confirm_password']),
+        'g_recaptcha_response' => trim($_POST['g-recaptcha-response']),
         'is_admin' => false,
 
 
         'email_err' => '',
         'password_err' => '',
-        'confirm_password_err' => ''
+        'confirm_password_err' => '',
+        'g_recaptcha_response_err' => ''
       ];
+
+      // Validate recaptcha
+      $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . RECAPTCHA_SECRET . '&response=' . $data['g_recaptcha_response']);
+      $responseData = json_decode($verifyResponse);
+      if (!$responseData->success) {
+        $data['g_recaptcha_response_err'] = 'Please check the recaptcha';
+      }
 
       // Validate login credentials
       if (empty($data['email'])) {
@@ -449,7 +464,7 @@ class Users extends Controller
       // Check if all errors are empty
       if (
         empty($data['email_err']) && empty($data['password_err'])
-        && empty($data['confirm_password_err'])
+        && empty($data['confirm_password_err']) && empty($data['g_recaptcha_response_err'])
       ) {
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
@@ -478,10 +493,12 @@ class Users extends Controller
         'email' => '',
         'password' => '',
         'confirm_password' => '',
+        'g_recaptcha_response' => '',
 
         'email_err' => '',
         'password_err' => '',
-        'confirm_password_err' => ''
+        'confirm_password_err' => '',
+        'g_recaptcha_response_err' => ''
       ];
 
       $this->view('users/register', $data);
@@ -501,9 +518,18 @@ class Users extends Controller
 
       $data = [
         'email' => trim($_POST['email']),
+        'g_recaptcha_response' => trim($_POST['g-recaptcha-response']),
 
         'email_err' => '',
+        'g_recaptcha_response_err' => ''
       ];
+
+      // Validate recaptcha
+      $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . RECAPTCHA_SECRET . '&response=' . $data['g_recaptcha_response']);
+      $responseData = json_decode($verifyResponse);
+      if (!$responseData->success) {
+        $data['g_recaptcha_response_err'] = 'Please check the recaptcha';
+      }
 
       // Validate login credentials
       if (empty($data['email'])) {
@@ -519,7 +545,7 @@ class Users extends Controller
       }
 
       // Check if all errors are empty
-      if (empty($data['email_err'])) {
+      if (empty($data['email_err']) && empty($data['g_recaptcha_response_err'])) {
         if (!$this->userModel->storeNewPassword($data['email'])) {
           $this->view('users/redirectPage', $data = ['message' => 'New password was not stored. Try again']);
           return;
@@ -543,8 +569,10 @@ class Users extends Controller
 
       $data = [
         'email' => '',
+        'g_recaptcha_response' => '',
 
-        'email_err' => ''
+        'email_err' => '',
+        'g_recaptcha_response_err' => ''
       ];
 
       $this->view('users/forgotPassword', $data);

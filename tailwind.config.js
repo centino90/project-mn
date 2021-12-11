@@ -33,7 +33,7 @@ module.exports = {
     extend: {
       opacity: ['disabled'],
       cursor: ['hover', 'focus', 'disabled'],
-      pointerEvents: ['hover', 'focus', 'disabled'],
+      pointerEvents: ['hover', 'focus', 'disabled']
     },
   },
   plugins: [

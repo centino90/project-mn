@@ -154,7 +154,7 @@
     hover:bg-primary-600
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
     font-bold 
-    disabled:opacity-50 disabled:text-secondary-100 disabled:cursor-wait disabled:pointer-events-none
+    disabled:opacity-50 disabled:cursor-wait disabled:pointer-events-none
     rounded-md;
 }
 
@@ -197,35 +197,258 @@
 /* Breadcrumbs */
 
 /* Datatable Plugin */
-.dataTables-empty {
+// .dataTables-empty {
+// 	@apply
+//     p-4
+//     text-center;
+// }
+
+// .dataTable-container {
+//     td {
+//         @apply
+//         px-6 py-4 
+//         whitespace-nowrap 
+//         text-sm text-secondary-800;
+//     }
+// }
+
+// .dataTable-top {
+//     @apply
+//     p-6
+//     flex justify-between items-center;
+
+//     .dataTable-search {
+//         @apply
+//         w-3/4
+//         mr-4;
+//     }
+//     .dataTable-dropdown {
+//         @apply
+//         w-1/4;
+//     }
+//     input,select,textarea {
+//         @apply 
+//         h-10 w-full rounded-md
+//         border-secondary-300 focus:border-primary-500 
+//         sm:text-sm 
+//         focus:ring-primary-500;        
+//     }
+
+//     label {
+//         @apply
+//         text-sm;    
+//     }
+// }
+
+// .dataTable-bottom {
+//     @apply
+//     p-6
+//     flex justify-between items-center flex-wrap gap-4
+//     border-t;
+
+//     .dataTable-info {
+//         @apply
+//         text-sm;
+//     }
+
+//     /* PAGER */
+//     .dataTable-pagination ul {
+//         @apply
+//         m-0 pl-0;
+//     }
+
+//     .dataTable-pagination li {
+//         // list-style: none;
+//         @apply
+//         float-left;
+//     }
+
+//     .dataTable-pagination {
+//         // @apply
+//         &-list {
+//             @apply
+//             rounded-md
+//             relative z-0 inline-flex rounded-md shadow-sm;
+//         }
+
+//         a {
+//             @apply
+//             inline-flex items-center px-4 py-2 border text-sm font-medium
+//             bg-white border-secondary-300 text-secondary-500 hover:bg-secondary-50
+//             relative
+//             no-underline;
+//         }
+
+//         & .active a {
+//             @apply
+//             hover:bg-secondary-300
+//             hover:bg-secondary-300
+//             cursor-pointer
+//             bg-primary-50 border-primary-500 text-primary-600;
+//         }
+
+//         & .disabled a, &.ellipsis a {
+//             @apply
+//             cursor-not-allowed
+//             hover:cursor-not-allowed	
+//             focus:cursor-not-allowed
+//             opacity-50;
+//         }
+
+//         & .pager {
+//             a {
+//                 @apply
+//                 font-bold;
+//             }
+
+//             &:first-child a {
+//                 @apply
+//                 rounded-l-md;
+//             }
+//             &:last-child a {
+//                 @apply
+//                 rounded-r-md;
+//             }
+//         }
+//     }
+
+// }
+
+
+
+
+
+/* Datatable Plugin */
+.dataTables_empty {
 	@apply
     p-4
     text-center;
 }
 
-.dataTable-container {
-    td {
-        @apply
-        px-6 py-4 
-        whitespace-nowrap 
-        text-sm text-secondary-800;
-    }
+.dataTables_info {
+    @apply
+    lg:w-1/2
+    inline-block
+    w-full
+    text-center
+    lg:text-left
+    p-6
+    text-sm;
 }
 
-.dataTable-top {
+/* PAGER */
+.dataTables_paginate.paging_simple_numbers {
     @apply
+    flex
+    w-full
+    justify-center
     p-6
-    flex justify-between items-center;
+    rounded-md;
 
-    .dataTable-search {
+    a {
         @apply
-        w-3/4
-        mr-4;
+        inline-flex items-center px-4 py-2 border text-sm font-medium
+        bg-white border-secondary-300 text-secondary-500 hover:bg-secondary-50
+        relative
+        cursor-pointer
+        no-underline;
     }
-    .dataTable-dropdown {
+
+    a.current{
         @apply
-        w-1/4;
+        hover:bg-secondary-300
+        hover:bg-secondary-300
+        cursor-pointer
+        bg-primary-50 border-primary-500 text-primary-600;
     }
+
+    a.disabled, a.ellipsis {
+        @apply
+        cursor-not-allowed
+        hover:cursor-not-allowed	
+        focus:cursor-not-allowed
+        opacity-50;
+    }
+
+   .previous, .next  {
+    @apply
+    text-primary-500
+    font-bold;
+   }
+   .previous {
+    @apply
+    text-primary-500
+    rounded-l-md;
+   }
+   .next {
+    @apply
+    rounded-r-md;
+   }
+
+}
+
+.dt-buttons {
+    @apply
+    bg-gradient-to-r from-white to-secondary-50
+    flex gap-3
+    p-6;
+}
+.dt-button {
+    @apply 
+    cursor-pointer
+    inline-flex justify-center items-center
+    px-4 py-2 
+    border border-secondary-400
+    text-secondary-600 
+    hover:bg-secondary-100
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+    font-bold uppercase text-xs
+    disabled:opacity-50 disabled:cursor-wait disabled:pointer-events-none
+    rounded-md;
+
+    &.buttons-copy {
+        @apply
+        border-secondary-400
+        text-secondary-400;
+    }
+    &.buttons-csv {
+        @apply
+        border-success-400
+        text-success-400;
+    }
+    &.buttons-excel {
+        @apply
+        border-success-700
+        text-success-700;
+    }
+    &.buttons-pdf  {
+        @apply
+        border-danger-500
+        text-danger-500;
+    }
+    &.buttons-print {
+        @apply
+        border-blue-500
+        text-blue-500;
+    }
+    &.buttons-collection {
+        @apply
+        border-primary-500
+        text-primary-500;
+    }  
+}
+.dataTables_filter {
+    @apply
+    bg-gradient-to-r from-white to-secondary-50
+    flex
+    w-full
+    p-6;
+    
+    label {
+        @apply
+        text-sm  
+    }
+
     input,select,textarea {
         @apply 
         h-10 w-full rounded-md
@@ -233,83 +456,43 @@
         sm:text-sm 
         focus:ring-primary-500;        
     }
-
-    label {
-        @apply
-        text-sm;    
-    }
 }
 
-.dataTable-bottom {
+
+.dt-button-collection {
+    [role="menu"] {
+        @apply
+        flex flex-wrap 
+        space-y-2
+        w-96
+        h-80
+        overflow-y-auto
+        bg-white
+        p-4
+        shadow-2xl;
+
+        .buttons-colvis {
+            @apply
+            inline-block
+            w-1/2;
+        }
+        .dt-button {
+            @apply
+            flex justify-center items-center
+            w-full;
+        }
+    }
+}
+.dt-button-collection header {
     @apply
-    p-6
-    flex justify-between items-center flex-wrap gap-4
-    border-t;
+    w-full
+    my-3 py-3
+    border-b
+    font-bold text-left;
+}
 
-    .dataTable-info {
-        @apply
-        text-sm;
-    }
-
-    /* PAGER */
-    .dataTable-pagination ul {
-        @apply
-        m-0 pl-0;
-    }
-
-    .dataTable-pagination li {
-        // list-style: none;
-        @apply
-        float-left;
-    }
-
-    .dataTable-pagination {
-        // @apply
-        &-list {
-            @apply
-            rounded-md
-            relative z-0 inline-flex rounded-md shadow-sm;
-        }
-
-        a {
-            @apply
-            inline-flex items-center px-4 py-2 border text-sm font-medium
-            bg-white border-secondary-300 text-secondary-500 hover:bg-secondary-50
-            relative
-            no-underline;
-        }
-
-        & .active a {
-            @apply
-            hover:bg-secondary-300
-            hover:bg-secondary-300
-            cursor-pointer
-            bg-primary-50 border-primary-500 text-primary-600;
-        }
-
-        & .disabled a, &.ellipsis a {
-            @apply
-            cursor-not-allowed
-            hover:cursor-not-allowed	
-            focus:cursor-not-allowed
-            opacity-50;
-        }
-
-        & .pager {
-            a {
-                @apply
-                font-bold;
-            }
-
-            &:first-child a {
-                @apply
-                rounded-l-md;
-            }
-            &:last-child a {
-                @apply
-                rounded-r-md;
-            }
-        }
-    }
-
+.buttons-columnVisibility.active {
+    @apply
+    bg-primary-600
+    text-white;
 }

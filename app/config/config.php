@@ -15,6 +15,10 @@ define('GOOGLE_CLIENT_ID', '716149094685-4no609952083305njj3n077nbd3kf61r.apps.g
 define('GOOGLE_CLIENT_SECRET', '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');
 define('GOOGLE_REDIRECT_URI', 'https://www.pda-dcc.com/users/login');
 
+// Google RECAPTCHA credentials
+define('RECAPTCHA_SITEKEY', '6LcpA30dAAAAAOVfY5fIQgV5BDZsAtBnpo8lkdW1');
+define('RECAPTCHA_SECRET', '6LcpA30dAAAAAGQnG5gzHeDcSiOMEfEaz8_93-a1');
+
 // MAIL settings
 define('MAIL_MAILER', 'smtp');
 define('MAIL_HOST', 'smtp.hostinger.com');

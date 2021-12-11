@@ -24,44 +24,43 @@
                 Verify your email and copy your password
             </h1>
 
-            <div>
-                <h2>Hello,</h2>
-                <hr>
+            <h2>Hello,</h2>
+            <hr>
+            <br>
+            <center>
+                <p>Please click the button below to verify your email address.</p>
+
                 <br>
-                <center>
-                    <div style="display: flex; justify-content:center; align-items:center; flex-direction:column">
-                        <p>Please click the button below to verify your email address.</p>
 
-                        <a href="{{verify_url}}" style="margin: 20px 0; padding: 15px;background-color: #D946EF;border-radius: 5px;color:#fff;font-weight: bold;text-decoration:none;">
-                            Verify email address
-                        </a>
+                <a href="{{verify_url}}" style="display: inline-block;margin: 20px 0; padding: 15px;background-color: #D946EF;border-radius: 5px;color:#fff;font-weight: bold;text-decoration:none;">
+                    Verify email address
+                </a>
 
-                        <p>If this link did not work, redo your action and resend another verification request.</p>
+                <br>
 
-                    </div>
+                <p>If this link did not work, redo your action and resend another verification request.</p>
 
-                    <br>
+                <br>
 
-                    <p>Here is an uncrypted version of your system-generated password. You can change them later after you have logged in.</p>
+                <p>Here is an uncrypted version of your system-generated password. You can change them later after you have logged in.</p>
 
-                    <br>
+                <br>
 
-                    <div style="display:inline-block;margin: 20px 0; padding: 15px;border: 2px solid #D946EF ;border-radius: 5px;color:#D946EF;font-weight: bold;text-decoration:none;">
-                        {{password}}
-                    </div>
+                <div style="display:inline-block;margin: 20px 0; padding: 15px;border: 2px solid #D946EF ;border-radius: 5px;color:#D946EF;font-weight: bold;text-decoration:none;">
+                    {{password}}
+                </div>
 
-                    <br>
+                <br>
 
-                    <p>You can always request a password reset as long as you have access to your email.</p>
+                <p>You can always request a password reset as long as you have access to your email.</p>
 
-                    <br>
+                <br>
 
-                    <div>
-                        Regards,
-                        <b>PDA-DCC</b>
-                    </div>
-                </center>
-            </div>
+                <div>
+                    Regards,
+                    <b>PDA-DCC</b>
+                </div>
+            </center>
 
             <br>
 

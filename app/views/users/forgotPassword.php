@@ -31,9 +31,16 @@
           <?php endif; ?>
         </div>
 
+        <div class="g-recaptcha" id="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITEKEY ?>" data-callback="verifyCheckState"></div>
+        <?php if (!empty($data['g_recaptcha_response_err'])) : ?>
+          <div class="text-sm text-danger-500 px-2 pt-2">
+            <?php echo $data['g_recaptcha_response_err']; ?> !
+          </div>
+        <?php endif; ?>
+
         <!-- Form submit -->
         <div class="my-4">
-          <input type="submit" value="Submit request" x-ref="submit" class="form-btn bg-primary-500 text-white w-full py-2 px-4">
+          <input disabled type="submit" value="Submit request" x-ref="submit" class="form-btn bg-primary-500 text-white w-full py-2 px-4">
           </input>
         </div>
 
@@ -54,6 +61,15 @@
 </div>
 
 <script>
+  let isCaptchaChecked = false
+
+  function verifyCheckState() {
+    isCaptchaChecked = !isCaptchaChecked
+    if (isCaptchaChecked) {
+      document.querySelector('[type="submit"]').disabled = false
+    }
+  }
 </script>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 <?php require APPROOT . '/views/inc/footer.php'; ?>

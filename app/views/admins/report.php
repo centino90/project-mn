@@ -64,9 +64,10 @@
 
   <div class="flex flex-col gap-y-8">
     <div class="align-middle inline-block min-w-full">
-      <div class="flex flex-wrap justify-center lg:justify-start gap-4 mb-4">
+      <div class="flex flex-wrap justify-center items-end lg:justify-start gap-4 mb-4">
         <!-- Start year -->
         <div class="rounded-md">
+        <label class="form-label" for="start_date">Start yr.</label>
           <div class="flex">
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-secondary-300 bg-secondary-50 text-secondary-500 text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -85,8 +86,10 @@
             </div>
           <?php endif; ?>
         </div>
+        
         <!-- End year -->
         <div class="rounded-md">
+        <label class="form-label" for="start_date">End yr.</label>
           <div class="flex">
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-secondary-300 bg-secondary-50 text-secondary-500 text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,42 +110,41 @@
         </div>
 
         <!-- Filter button -->
-        <button type="button" id="filter" @click="getPaymentsBetweenYears()" class="form-btn gap-2 bg-primary-500 text-white px-3 py-1">
-          Filter
+        <button type="button" id="filter" @click="getPaymentsBetweenYears()" class="form-btn gap-2 bg-primary-500 text-white px-3 py-2 text-sm tracking-wide">
+          FILTER
         </button>
       </div>
 
-      <div class="shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg overflow-x-auto">
+      <div class="shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg overflow-x-auto pb-10">
         <table id="myTable" class="min-w-full divide-y divide-secondary-200">
-          <thead class="bg-secondary-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Id
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Member
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Paid amount
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Type
-              </th>
+          <thead class="border-t border-b">
+            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+              PRC ID
+            </th>
+            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+              Member
+            </th>
+            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+              Paid amount
+            </th>
+            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+              Type
+            </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-secondary-200">
+          <tbody class="bg-white divide-y divide-secondary-200 relative">
             <?php foreach ($data['amounts'] as $due) : ?>
-              <tr>
-                <td>
+              <tr class="hover:bg-secondary-100">
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <?php echo $due->id ?>
                 </td>
-                <td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <?php echo arrangeFullname($due->first_name, $due->middle_name, $due->last_name) ?>
                 </td>
-                <td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <?php echo $due->amount ?>
                 </td>
-                <td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <?php echo $due->is_active ? 'active' : 'inactive' ?>
                 </td>
               </tr>
@@ -154,11 +156,13 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
 <script>
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
       init() {
-
+        // console.log($('#myTable').DataTable().columns());
       },
       dates: <?php echo json_encode($data['dates']); ?>,
       startYear: document.querySelector('#start_date').value,
@@ -179,17 +183,14 @@
       },
       getPaymentsBetweenYears: function() {
         const updateRequest = new FormData();
-        updateRequest.append('startYear', this.startYear)
+        updateRequest.append('startYear', this.startYear);
         updateRequest.append('endYear', this.endYear);
+        const dataTable = $('#myTable').DataTable();
+        const tableEmptyRow = $(dataTable.table().container()).find('.dataTables_empty');
 
         // find table rows and remove and set loading cues
-        let rowsToRemove = dataTable.body.querySelectorAll("tr");
-        let indexes = []
-        rowsToRemove.forEach(el => {
-          indexes.push(el.dataIndex)
-        })
-        dataTable.rows().remove(indexes)
-        dataTable.body.querySelector('.dataTables-empty').textContent = 'Please wait...'
+        dataTable.rows().remove().draw()
+        tableEmptyRow.textContent = 'Please wait...'
         this.$el.textContent = 'Please wait...'
 
         // send start and end year then retrieve payments summary data 
@@ -200,8 +201,9 @@
           .then((response) => response.json())
           .then((res) => {
             // remove loading cues
+            console.log(res)
             this.$el.textContent = 'Filter'
-            dataTable.body.querySelector('.dataTables-empty').textContent = 'Sorry, we found no records.'
+            tableEmptyRow.textContent = 'Sorry, we found no records.'
 
             // load new rows on datatable
             let data = res.data
@@ -211,74 +213,136 @@
               ])
             })
           })
-      }
+      },
+      // filterColumnBySelectedTab(newTab) {
+      //   let roleColumn = $('#myTable').DataTable().column(2)
+      //   this.roleTab = newTab
+
+      //   roleColumn
+      //     .search(this.roleTab ? '^' + this.roleTab + '$' : '', true, false)
+      //     .draw();
+      // },
     }))
 
-    // initialize datatable
-    const dataTable = new simpleDatatables.DataTable("#myTable", {
-      layout: {
-        top: "{search}{select}",
+    $('#myTable').DataTable({
+      initComplete: function() {
+        const api = this.api();
+        api.columns('.hidden-first').visible(false)
       },
-      labels: {
-        placeholder: "Search for accounts",
-        perPage: "{select}",
-        noRows: "Sorry, there are no accounts to search.",
-      },
-      searchable: true,
-      perPage: 5,
-      fixedColumns: true,
-      fixedHeight: true,
-    })
-  })
+      dom: 'Bfrtip',
+      buttons: [{
+          extend: 'print',
+          exportOptions: {
+            columns: ':visible :not(.more)'
+          },
+        },
+        {
+          text: 'exports',
+          extend: 'collection',
+          className: 'custom-html-collection border-primary-600',
+          buttons: [
+            '<header>Export all</header>',
+            {
+              extend: 'csv',
+              exportOptions: {
+                columns: ':visible'
+              },
+              customize: function(csv) {
+                console.log(csv)
+                return 'Selected year start:  \n' +
+                  "Selected year end:  \n" +
+                  "Member type:  \n\n" +
+                  csv;
+              }
+            },
+            {
+              extend: 'excel',
+              title: '',
+              exportOptions: {
+                columns: ':visible'
+              },
+              customize: function(xlsx) {
+                var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                var numrows = 4;
+                var clR = $('row', sheet);
 
+                //update Row
+                clR.each(function() {
+                  var attr = $(this).attr('r');
+                  var ind = parseInt(attr);
+                  ind = ind + numrows;
+                  $(this).attr("r", ind);
+                });
 
+                // Create row before data
+                $('row c ', sheet).each(function(index) {
+                  var attr = $(this).attr('r');
 
-  document.addEventListener('DOMContentLoaded', () => {
+                  var pre = attr.substring(0, 1);
+                  var ind = parseInt(attr.substring(1, attr.length));
+                  ind = ind + numrows;
+                  $(this).attr("r", pre + ind);
+                });
 
-    // const dataTable = new simpleDatatables.DataTable("#myTable", {
-    //   layout: {
-    //     top: "{search}{select}",
-    //     // bottom: "{info}{pager}"
-    //   },
-    //   labels: {
-    //     placeholder: "Search for accounts",
-    //     perPage: "{select}",
-    //     noRows: "Sorry, there are no accounts to search.",
-    //     // info: "Showing {start} to {end} of {rows} entries",
-    //   },
-    //   searchable: true,
-    //   perPage: 5,
-    //   fixedColumns: true,
-    //   fixedHeight: true,
-    // })
+                function Addrow(index, data) {
+                  var row = sheet.createElement('row');
+                  row.setAttribute("r", index);
+                  for (i = 0; i < data.length; i++) {
+                    var key = data[i].key;
+                    var value = data[i].value;
 
-    // dataTable.on("datatable.init", function() {
-    //   console.log(this.columns())
-    //   dataTable.rows().remove()
-    //   dataTable.rows().add([
-    //     ['1', '2', '3', '4']
-    //   ])
-    //   // this.columns().hide([0, 1])
-    // })
+                    var c = sheet.createElement('c');
+                    c.setAttribute("t", "inlineStr");
+                    c.setAttribute("s", "2");
+                    c.setAttribute("r", key + index);
 
-    // const roleSelector = document.querySelector('#role_selector')
-    // roleSelector.addEventListener('change', function() {
-    //   let rows = dataTable.rows().dt.data
-    //   rows.forEach(el => {
-    //     let role = el.cells[2].textContent.trim()
-    //     console.log(dataTable.rows())
-    //     if (role == 'admin') {
-    //       //  console.log(dataTable.rows())
-    //     }
-    //   })
-    //   // console.log(rows)
-    //   // console.log(dataTable.wrapper.querySelector('.dataTable-search input').value = this.value)
-    // })
-    // dataTable.on('datatable.search', function(query, matched) {
-    //   console.log(dataTable.wrapper.querySelector('.dataTable-search input').value = matched)
-    // });
+                    var is = sheet.createElement('is');
+                    var t = sheet.createElement('t');
+                    var text = sheet.createTextNode(value)
 
-    // console.log(dataTable.searchData)
+                    t.appendChild(text);
+                    is.appendChild(t);
+                    c.appendChild(is);
+
+                    row.appendChild(c);
+                  }
+
+                  return row;
+                }
+
+                var r1 = Addrow(1, [{
+                  key: 'A',
+                  value: 'Selected year start:'
+                }]);
+                var r2 = Addrow(2, [{
+                  key: 'A',
+                  value: 'Selected year end:'
+                }]);
+                var r3 = Addrow(3, [{
+                  key: 'A',
+                  value: "Member type:"
+                }]);
+                var r4 = Addrow(4, [{
+                  key: 'A',
+                  value: ''
+                }]);
+
+                var sheetData = sheet.getElementsByTagName('sheetData')[0];
+
+                sheetData.insertBefore(r4, sheetData.childNodes[0]);
+                sheetData.insertBefore(r3, sheetData.childNodes[0]);
+                sheetData.insertBefore(r2, sheetData.childNodes[0]);
+                sheetData.insertBefore(r1, sheetData.childNodes[0]);
+              }
+            },
+          ]
+        },
+        {
+          text: 'column visibility',
+          extend: 'colvis'
+        },
+      ],
+    });
   })
 </script>
 

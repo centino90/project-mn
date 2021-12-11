@@ -33,112 +33,117 @@
     </div>
   </footer>
 
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js" integrity="sha512-BkpSL20WETFylMrcirBahHfSnY++H2O1W+UnEEO4yNIl+jI2+zowyoGJpbtk6bx97fBXf++WJHSSK2MV4ghPcg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
   <!-- <script defer src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
   <script defer src="https://unpkg.com/dayjs@1.8.21/plugin/relativeTime.js"></script> -->
   <script src="https://cdn.jsdelivr.net/npm/simple-datatables-classic@latest" type="text/javascript"></script>
   <script src="<?php echo URLROOT; ?>/js/main.bundle.js"></script>
   <script src="<?php echo URLROOT; ?>/js/vendor.bundle.js"></script>
+  <!-- <script src="https://www.google.com/recaptcha/api.js" async defer></script> -->
   <!-- <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script> -->
 
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      inactivityTime();
+        inactivityTime();
 
-      function inactivityTime() {
-        var time;
-        window.onload = resetTimer;
-        // DOM Events
-        document.onclick = resetTimer;
-        document.onscroll = resetTimer;
+        function inactivityTime() {
+          var time;
+          window.onload = resetTimer;
+          // DOM Events
+          document.onclick = resetTimer;
+          document.onscroll = resetTimer;
 
-        function logout() {
-          alert("You are now logged out.")
-        }
+          function logout() {
+            alert("You are now logged out.")
+          }
 
-        function resetTimer() {
-          clearTimeout(time);
-          time = setTimeout(logout, 300000) // 5minutes
-          // 1000 milliseconds = 1 second
-        }
-      };
-    })
+          function resetTimer() {
+            clearTimeout(time);
+            time = setTimeout(logout, 300000) // 5minutes
+            // 1000 milliseconds = 1 second
+          }
+        };
+      })
 
 
-    // let timer, currSeconds = 0;
-    // /* Set a new interval */
-    // timer =
-    //   setInterval(startIdleTimer, 1000);
+      // let timer, currSeconds = 0;
+      // /* Set a new interval */
+      // timer =
+      //   setInterval(startIdleTimer, 1000);
 
-    // function resetTimer() {
-    //   /* Hide the timer text */
-    //   // document.querySelector(".timertext")
-    //   //         .style.display = 'none';
+      // function resetTimer() {
+      //   /* Hide the timer text */
+      //   // document.querySelector(".timertext")
+      //   //         .style.display = 'none';
 
-    //   /* Clear the previous interval */
-    //   clearInterval(timer);
+      //   /* Clear the previous interval */
+      //   clearInterval(timer);
 
-    //   /* Reset the seconds of the timer */
-    //   currSeconds = 0;
+      //   /* Reset the seconds of the timer */
+      //   currSeconds = 0;
 
-    //   /* Set a new interval */
-    //   timer =
-    //     setInterval(startIdleTimer, 1000);
-    // }
+      //   /* Set a new interval */
+      //   timer =
+      //     setInterval(startIdleTimer, 1000);
+      // }
 
-    // // Define the events that would reset the timer
-    // window.onmousedown = resetTimer;
-    // window.ontouchstart = resetTimer;
-    // window.onclick = resetTimer;
-    // window.onkeypress = resetTimer;
-    // window.onscroll = resetTimer;
+      // // Define the events that would reset the timer
+      // window.onmousedown = resetTimer;
+      // window.ontouchstart = resetTimer;
+      // window.onclick = resetTimer;
+      // window.onkeypress = resetTimer;
+      // window.onscroll = resetTimer;
 
-    // let userSession = '<?php echo $_SESSION["user_id"] ?? '' ?>'
-    // // only start timer if user is logged in
-    // if (userSession) {
-    //   function startIdleTimer() {
-    //     /* Increment the
-    //         timer seconds */
-    //     currSeconds++;
+      // let userSession = '<?php echo $_SESSION["user_id"] ?? '' ?>'
+      // // only start timer if user is logged in
+      // if (userSession) {
+      //   function startIdleTimer() {
+      //     /* Increment the
+      //         timer seconds */
+      //     currSeconds++;
 
-    //     // logout users if they are idle for 10mins
-    //     if (currSeconds == 60) {
-    //       alert('The system will log you out for security reasons. You have been idle for 10 mins.')
-    //       window.location.href = '<?php echo URLROOT . "/users/logout" ?>'
-    //     }
+      //     // logout users if they are idle for 10mins
+      //     if (currSeconds == 60) {
+      //       alert('The system will log you out for security reasons. You have been idle for 10 mins.')
+      //       window.location.href = '<?php echo URLROOT . "/users/logout" ?>'
+      //     }
 
-    //     let currentUnixTimestamp = Math.round((new Date()).getTime() / 1000)
-    //     setInterval(() => {
-    //       const updateRequest = new FormData();
-    //       updateRequest.append('current_timestamp', currentUnixTimestamp)
+      //     let currentUnixTimestamp = Math.round((new Date()).getTime() / 1000)
+      //     setInterval(() => {
+      //       const updateRequest = new FormData();
+      //       updateRequest.append('current_timestamp', currentUnixTimestamp)
 
-    //       if (currSeconds < 300) {
-    //         console.log('refreshed timer')
-    //         const response = fetch('<?php echo URLROOT . "/users/restartSessionTimer" ?>', {
-    //             method: 'POST',
-    //             body: updateRequest
-    //           })
-    //           .then((response) => response.json())
-    //           .then((res) => {
-    //             if (!res.ok) {
-    //               console.error('there is something wrong')
-    //             }
-    //           })
-    //       } else {
-    //         console.log('continue timer')
-    //       }
-    //     }, 60000); // 5minutes
-    //     // /* Set the timer text
-    //     //     to the new value */
-    //     // document.querySelector(".secs")
-    //     //   .textContent = currSeconds;
+      //       if (currSeconds < 300) {
+      //         console.log('refreshed timer')
+      //         const response = fetch('<?php echo URLROOT . "/users/restartSessionTimer" ?>', {
+      //             method: 'POST',
+      //             body: updateRequest
+      //           })
+      //           .then((response) => response.json())
+      //           .then((res) => {
+      //             if (!res.ok) {
+      //               console.error('there is something wrong')
+      //             }
+      //           })
+      //       } else {
+      //         console.log('continue timer')
+      //       }
+      //     }, 60000); // 5minutes
+      //     // /* Set the timer text
+      //     //     to the new value */
+      //     // document.querySelector(".secs")
+      //     //   .textContent = currSeconds;
 
-    //     // /* Display the timer text */
-    //     // document.querySelector(".timertext")
-    //     //   .style.display = 'block';
-    //   }
-    // }
-  </script>
-  </body>
+      //     // /* Display the timer text */
+      //     // document.querySelector(".timertext")
+      //     //   .style.display = 'block';
+      //   }
+      // }
+      <
+      /> < /
+    body >
 
-  </html>
+      <
+      /html>
