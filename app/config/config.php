@@ -8,12 +8,12 @@ define('DB_NAME', 'u704967255_PaymentSystem');
 // fb credentials
 define('FB_APP_ID', '4649891738473679');
 define('FB_APP_SECRET', '3f981db9771fa424b0870a9eb4e4a4f4');
-define('FB_REDIRECT_URI', 'https://www.pda-dcc.com/users/login');
+define('FB_REDIRECT_URI', 'https://www.pda-dcc.com/users/redirectPage');
 
 // GOOGLE credentials
 define('GOOGLE_CLIENT_ID', '716149094685-4no609952083305njj3n077nbd3kf61r.apps.googleusercontent.com');
 define('GOOGLE_CLIENT_SECRET', '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');
-define('GOOGLE_REDIRECT_URI', 'https://www.pda-dcc.com/users/login');
+define('GOOGLE_REDIRECT_URI', 'https://www.pda-dcc.com/users/redirectPage');
 
 // Google RECAPTCHA credentials
 define('RECAPTCHA_SITEKEY', '6LcpA30dAAAAAOVfY5fIQgV5BDZsAtBnpo8lkdW1');
