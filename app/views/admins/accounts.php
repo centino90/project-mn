@@ -55,43 +55,41 @@
       </div>
 
       <div class="flex gap-3">
-        <select class="form-input" @change="roleTab = $event.target.value; filterColumnBySelectedTab($event.target.value)">
-          <option value="">Select role</option>
-          <option value="member">Members</option>
-          <option value="officer">Officers</option>
-          <option value="admin">Admins</option>
-        </select>
+        <div class="w-full lg:w-auto">
+          <label for="" class="form-label">Role</label>
+          <select class="form-input" @change="roleTab = $event.target.value; filterColumnBySelectedTab($event.target.value)">
+            <option value="">Select role</option>
+            <option value="member">Members</option>
+            <option value="officer">Officers</option>
+            <option value="admin">Admins</option>
+          </select>
+        </div>
 
-        <select class="form-input" @change="status = $event.target.value; filterColumnByStatus($event.target.value)" name="" id="">
-          <option value="">Select status</option>
-          <option value="Active">Active</option>
-          <option value="Unverified">Unverified</option>
-          <option value="Inactive">Inactive</option>
-        </select>
-
-        <select class="form-input" @change="practiceType = $event.target.value; filterColumnByPracticeType($event.target.value)" name="" id="">
-          <option value="">Select practice type</option>
-          <option value="Government Dentist">Government Dentist</option>
-          <option value="Clinic Owner">Clinic Owner</option>
-          <option value="Dental Associate">Dental Associate</option>
-          <option value="School Dentist">School Dentist</option>
-          <option value="None Practicing">None Practicing</option>
-        </select>
+        <div class="w-full lg:w-auto">
+          <label for="" class="form-label">Status</label>
+          <select class="form-input" @change="status = $event.target.value; filterColumnByStatus($event.target.value)" name="" id="">
+            <option value="">Select status</option>
+            <option value="Active">Active</option>
+            <option value="Unverified">Unverified</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
       </div>
     </nav>
   </div>
 
+  <!-- style="max-width: 1230px; " -->
   <div class="flex flex-col gap-y-8">
     <div class="align-middle inline-block min-w-full">
-      <div class="shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg overflow-x-auto pb-10">
-        <table id="myTable" class="min-w-full divide-y divide-secondary-200">
+      <div class="table-container shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg overflow-x-auto pb-10">
+        <table id="myTable" class="divide-y divide-secondary-200">
           <thead class="border-t border-b">
             <tr>
               <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
                 Name
               </th>
               <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Practice type
+                Email Address
               </th>
               <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
                 Role
@@ -130,7 +128,7 @@
                 Contact number
               </th>
               <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Email Address
+                Practice type
               </th>
               <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
                 Facebook Account Name
@@ -167,11 +165,13 @@
           <tbody class="bg-white divide-y divide-secondary-200 relative">
             <?php foreach ($data['accounts'] as $member) : ?>
               <tr class="hover:bg-secondary-100">
-                <td class="px-6 py-4 whitespace-nowrap text-sm <?php if ($member->id == $_SESSION['user_id']) : ?> text-primary-600 font-semibold <?php else : ?> text-secondary-500 <?php endif ?>">
-                  <?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>
+                <td class="px-6 py-4 w-6 whitespace-wrap text-sm <?php if ($member->id == $_SESSION['user_id']) : ?> text-primary-600 font-semibold <?php endif ?>">
+                  <a href="#" class="hover:underline hover:text-primary-600 hover:bg-primary-50">
+                    <?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>
+                  </a>
                 </td>
-                <td class="px-6 py-4 text-sm text-secondary-900 whitespace-nowrap">
-                  <?php echo $member->type_practice ?>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
+                  <?php echo $member->email ?>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
                   <?php echo $member->role ?>
@@ -186,25 +186,23 @@
                   <?php endif; ?>
                 </td>
                 <td class="more" x-data="{ dropdownOpen: false }">
-                  <button @click="dropdownOpen = !dropdownOpen" class="whitespace-nowrap text-base font-medium text-secondary-500 hover:text-secondary-900">
+                  <button @click="dropdownOpen = !dropdownOpen" class="relative whitespace-nowrap text-base font-medium text-secondary-500 hover:text-secondary-900">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
                     </svg>
+
+                    <div x-show="dropdownOpen" class="absolute right-0 text-left mt-2 py-2 w-48 bg-white rounded-md shadow-2xl z-20 overflow-y-auto">
+                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                        Set to inactive
+                      </a>
+                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                        Set as officer
+                      </a>
+                    </div>
                   </button>
 
+                  <!-- backdrop -->
                   <div x-show="dropdownOpen" @click="dropdownOpen = false" class="fixed inset-0 h-full w-full z-10"></div>
-
-                  <div x-show="dropdownOpen" class="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-2xl z-20 overflow-y-auto">
-                    <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                      View
-                    </a>
-                    <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                      Set to inactive
-                    </a>
-                    <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                      Re-assign role
-                    </a>
-                  </div>
                 </td>
 
                 <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
@@ -234,8 +232,113 @@
                 <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
                   <?php echo $member->contact_number ?>
                 </td>
+                <td class="hidden-first px-6 py-4 text-sm text-secondary-900 whitespace-nowrap">
+                  <?php echo $member->type_practice ?>
+                </td>
                 <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->fb_account_name ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->address ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->clinic_name ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->clinic_street ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->clinic_district ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->clinic_city ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->clinic_contact_no ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->emergency_person_name ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->emergency_address ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->emergency_contact_number ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+
+            <?php foreach ($data['accounts'] as $member) : ?>
+              <tr class="hover:bg-secondary-100">
+                <td class="px-6 py-4 w-6 whitespace-wrap text-sm <?php if ($member->id == $_SESSION['user_id']) : ?> text-primary-600 font-semibold <?php endif ?>">
+                  <a href="#" class="hover:underline hover:text-primary-600 hover:bg-primary-50">
+                    <?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>
+                  </a>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
                   <?php echo $member->email ?>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
+                  <?php echo $member->role ?>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap <?php if ($member->is_active) : ?> text-success-600 <?php elseif (!$member->is_active && !$member->email_verified) : ?>  text-danger-600 <?php else : ?> text-secondary-400 <?php endif ?>">
+                  <?php if ($member->is_active) : ?>
+                    <?php echo 'Active' ?>
+                  <?php elseif (!$member->is_active && !$member->email_verified) : ?>
+                    <?php echo 'Unverified' ?>
+                  <?php else : ?>
+                    <?php echo 'Inactive' ?>
+                  <?php endif; ?>
+                </td>
+                <td class="more" x-data="{ dropdownOpen: false }">
+                  <button @click="dropdownOpen = !dropdownOpen" class="relative whitespace-nowrap text-base font-medium text-secondary-500 hover:text-secondary-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                    </svg>
+
+                    <div x-show="dropdownOpen" class="absolute right-0 text-left mt-2 py-2 w-48 bg-white rounded-md shadow-2xl z-20 overflow-y-auto">
+                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                        Set to inactive
+                      </a>
+                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                        Set as officer
+                      </a>
+                    </div>
+                  </button>
+
+                  <!-- backdrop -->
+                  <div x-show="dropdownOpen" @click="dropdownOpen = false" class="fixed inset-0 h-full w-full z-10"></div>
+                </td>
+
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->created_at ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->prc_number ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->prc_registration_date ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->prc_expiration_date ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->field_practice ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->type_practice ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->birthdate ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->gender ?>
+                </td>
+                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
+                  <?php echo $member->contact_number ?>
+                </td>
+                <td class="hidden-first px-6 py-4 text-sm text-secondary-900 whitespace-nowrap">
+                  <?php echo $member->type_practice ?>
                 </td>
                 <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
                   <?php echo $member->fb_account_name ?>
@@ -276,17 +379,11 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
 <script>
-  $(document).ready(function() {
-
-  });
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
-      init() {
-        // console.log($('#myTable').DataTable().columns());
-      },
       roleTab: '',
       practiceType: '',
       status: '',
@@ -305,15 +402,7 @@
         statusColumn
           .search(this.status ? '^' + this.status + '$' : '', true, false)
           .draw();
-      },
-      filterColumnByPracticeType(practiceType) {
-        let practiceTypeCol = $('#myTable').DataTable().column(1)
-        this.practiceType = practiceType
-
-        practiceTypeCol
-          .search(this.practiceType ? '^' + this.practiceType + '$' : '', true, false)
-          .draw();
-      },
+      }
     }))
 
     $('#myTable').DataTable({
@@ -323,124 +412,11 @@
       },
       dom: 'Bfrtip',
       buttons: [{
-          extend: 'print',
-          exportOptions: {
-            columns: ':visible :not(.more)'
-          },
-        },
-        {
           text: 'exports',
           extend: 'collection',
           className: 'custom-html-collection',
           buttons: [
-            '<header>Export all</header>',
-            {
-              extend: 'csv',
-              exportOptions: {
-                columns: ':not(.more)'
-              },
-              customize: function(csv) {
-                console.log(csv)
-                return 'CHAPTER:______________________                                                                                                                                                  PDA MEMBERSHIP REMITTANCE FORM \n' +
-                  "PRESIDENT'S NAME:______________________\n" +
-                  'TOTAL NUMBER OF MEMBERS REMITTED:______________________\n' +
-                  'TOTAM AMOUNT REMITTED:______________________\n\n' +
-                  csv;
-              }
-            },
-            {
-              extend: 'excel',
-              title: '',
-              exportOptions: {
-                columns: ':not(.more)'
-              },
-              customize: function(xlsx) {
-                var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                var numrows = 6;
-                var clR = $('row', sheet);
-
-                //update Row
-                clR.each(function() {
-                  var attr = $(this).attr('r');
-                  var ind = parseInt(attr);
-                  ind = ind + numrows;
-                  $(this).attr("r", ind);
-                });
-
-                // Create row before data
-                $('row c ', sheet).each(function(index) {
-                  var attr = $(this).attr('r');
-
-                  var pre = attr.substring(0, 1);
-                  var ind = parseInt(attr.substring(1, attr.length));
-                  ind = ind + numrows;
-                  $(this).attr("r", pre + ind);
-                });
-
-                function Addrow(index, data) {
-                  var row = sheet.createElement('row');
-                  row.setAttribute("r", index);
-                  for (i = 0; i < data.length; i++) {
-                    var key = data[i].key;
-                    var value = data[i].value;
-
-                    var c = sheet.createElement('c');
-                    c.setAttribute("t", "inlineStr");
-                    c.setAttribute("s", "2");
-                    c.setAttribute("r", key + index);
-
-                    var is = sheet.createElement('is');
-                    var t = sheet.createElement('t');
-                    var text = sheet.createTextNode(value)
-
-                    t.appendChild(text);
-                    is.appendChild(t);
-                    c.appendChild(is);
-
-                    row.appendChild(c);
-                  }
-
-                  return row;
-                }
-
-                var r1 = Addrow(1, [{
-                  key: 'E',
-                  value: 'PDA MEMBERSHIP REMITTANCE FORM'
-                }]);
-                var r2 = Addrow(2, [{
-                  key: 'A',
-                  value: 'CHAPTER:__________________________'
-                }]);
-                var r3 = Addrow(3, [{
-                  key: 'A',
-                  value: "PRESIDENT'S NAME:__________________________"
-                }]);
-                var r4 = Addrow(4, [{
-                  key: 'A',
-                  value: 'TOTAL NUMBER OF MEMBERS REMITTED:__________________________'
-                }]);
-                var r5 = Addrow(5, [{
-                  key: 'A',
-                  value: 'TOTAL AMOUNT REMITTED:__________________________'
-                }]);
-                var r6 = Addrow(6, [{
-                  key: 'A',
-                  value: ''
-                }]);
-
-
-                var sheetData = sheet.getElementsByTagName('sheetData')[0];
-
-                sheetData.insertBefore(r6, sheetData.childNodes[0]);
-                sheetData.insertBefore(r5, sheetData.childNodes[0]);
-                sheetData.insertBefore(r4, sheetData.childNodes[0]);
-                sheetData.insertBefore(r3, sheetData.childNodes[0]);
-                sheetData.insertBefore(r2, sheetData.childNodes[0]);
-                sheetData.insertBefore(r1, sheetData.childNodes[0]);
-              }
-            },
-
-            '<header>Export visible</header>',
+            '<header>Export to</header>',
             {
               extend: 'csv',
               exportOptions: {
@@ -533,7 +509,6 @@
                   key: 'A',
                   value: ''
                 }]);
-
 
                 var sheetData = sheet.getElementsByTagName('sheetData')[0];
 

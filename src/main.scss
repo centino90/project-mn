@@ -316,9 +316,30 @@
 
 
 
-
-
 /* Datatable Plugin */
+@media (min-width: 1024px) {
+    .table-container {
+      max-width: 720px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .table-container {
+      max-width: 975px;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .table-container {
+      max-width: 1230px;
+    }
+  }
+
+.dataTables_wrapper td {
+    @apply
+    px-6 py-4 text-sm whitespace-nowrap;
+} 
+
 .dataTables_empty {
 	@apply
     p-4
@@ -345,7 +366,7 @@
     p-6
     rounded-md;
 
-    a {
+    a, .ellipsis {
         @apply
         inline-flex items-center px-4 py-2 border text-sm font-medium
         bg-white border-secondary-300 text-secondary-500 hover:bg-secondary-50
@@ -362,7 +383,7 @@
         bg-primary-50 border-primary-500 text-primary-600;
     }
 
-    a.disabled, a.ellipsis {
+    a.disabled, .ellipsis {
         @apply
         cursor-not-allowed
         hover:cursor-not-allowed	
@@ -390,7 +411,7 @@
 .dt-buttons {
     @apply
     bg-gradient-to-r from-white to-secondary-50
-    flex gap-3
+    flex flex-col md:flex-row gap-3
     p-6;
 }
 .dt-button {

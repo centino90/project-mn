@@ -12,6 +12,7 @@ class Profiles extends Controller
         redirectInactiveUserOrRegenerateTimer();
 
         $this->userModel = $this->model('User');
+        $this->duesModel = $this->model('Dues');
     }
 
     public function index()
@@ -23,6 +24,18 @@ class Profiles extends Controller
         // $this->view('users/index', $data);
         unset($_SESSION['login_success']);
         redirect('profiles/userInfo');
+    }
+    public function paymentHistory()
+    {
+        $paymentHistory = $this->duesModel->getAllDuesByUserId('user_id', $_SESSION['user_id']);
+
+        $data = [
+            'current_route' => __FUNCTION__,
+            'paymentHistory' => $paymentHistory,
+            'years' => generateYearsBetween()
+        ];
+
+        $this->view('profiles/paymentHistory', $data);
     }
     public function userInfo()
     {

@@ -188,14 +188,9 @@
         } else {
           this.onEditMode = false
         }
-        // console.log(this.checkIfRegistrationIsExpired())
-        // console.log(this.getRelativeTimeBeforeExpiration())
-
       },
       onEditMode: false,
       serverData: <?php echo json_encode($data); ?>,
-      // registrationDate: serverData.prc_registration_date,
-      // expirationDate: serverData.prc_expiration_date,
       formGroup: {
         [':class']() {
           let defaultClass = 'form-group'

@@ -60,12 +60,6 @@ class Users extends Controller
         }
       }
     }
-  }
-
-  /* GUEST ACCESSIBLE ENDPOINTS */
-  public function login(string $authMessage = ''): void
-  {
-    redirectAuthUserWithRole();
 
     // if (isset($_GET['code'])) {
     //   // try and log the user in with $_GET code from google 
@@ -327,7 +321,6 @@ class Users extends Controller
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
       // Init data
       $data = [
         'email' => trim($_POST['email']),
@@ -1318,7 +1311,6 @@ class Users extends Controller
     $_SESSION['email_verified'] = $user->email_verified ? true : false;
     $_SESSION['user_id'] = $user->id;
     $_SESSION['user_email'] = $user->email;
-    $_SESSION['user_username'] = $user->username;
     $_SESSION['user_name'] = ucwords($user->last_name) . ', ' . ucwords($user->first_name) . ' ' . ucwords(substr($user->middle_name, 0, 1) . '.');
     $_SESSION['role'] = $user->role;
     $_SESSION['password_registered'] = true;

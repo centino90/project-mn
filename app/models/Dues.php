@@ -110,30 +110,13 @@ class Dues
     }
   }
 
-  // Find clinic by id
-  public function findClinicById($id)
-  {
-    $this->db->query('SELECT * FROM clinics WHERE user_id = :user_id');
-    $this->db->bind(':user_id', $id);
-
-    $row = $this->db->single();
-
-    if ($this->db->rowCount() > 0) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   // Get User by ID
-  public function getClinicById($id)
+  public function getAllDuesByUserId($idType, $id)
   {
-    $this->db->query('SELECT * FROM clinics WHERE user_id = :id');
-    // Bind value
+    $this->db->query('SELECT * FROM dues WHERE ' . $idType . ' = :id ORDER BY date_created');
     $this->db->bind(':id', $id);
 
-    $row = $this->db->single();
-
+    $row = $this->db->resultSet();
     return $row;
   }
 
@@ -175,7 +158,7 @@ class Dues
 
   function getTotalAmountBetweenYears($startYear, $endYear)
   {
-    $sql = 'SELECT users.id AS id, first_name, middle_name, last_name, users.is_active, SUM(dues.amount) AS amount from users INNER JOIN dues on users.id = dues.user_id where YEAR(dues.date_created) BETWEEN :start_year and :end_year group by dues.user_id';
+    $sql = 'SELECT users.id AS id, first_name, middle_name, last_name, IF(users.is_active = 1, "active", "inactive") AS is_active, SUM(dues.amount) AS amount from users INNER JOIN dues on users.id = dues.user_id where YEAR(dues.date_created) BETWEEN :start_year and :end_year group by dues.user_id';
     $this->db->query($sql);
     $this->db->bind(':start_year', $startYear);
     $this->db->bind(':end_year', $endYear);

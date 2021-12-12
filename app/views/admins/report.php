@@ -156,13 +156,14 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
 <script>
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
       init() {
-        // console.log($('#myTable').DataTable().columns());
+        this.startYear = this.startYear == '' ? '2021' : this.startYear
+        this.endYear = this.endYear == '' ? '2022' : this.endYear
       },
       dates: <?php echo json_encode($data['dates']); ?>,
       startYear: document.querySelector('#start_date').value,
@@ -201,16 +202,15 @@
           .then((response) => response.json())
           .then((res) => {
             // remove loading cues
-            console.log(res)
             this.$el.textContent = 'Filter'
             tableEmptyRow.textContent = 'Sorry, we found no records.'
 
             // load new rows on datatable
             let data = res.data
             data.forEach(row => {
-              dataTable.rows().add([
+              dataTable.rows.add([
                 [row.id, row.first_name, row.amount, row.is_active]
-              ])
+              ]).draw()
             })
           })
       },
@@ -230,18 +230,13 @@
         api.columns('.hidden-first').visible(false)
       },
       dom: 'Bfrtip',
-      buttons: [{
-          extend: 'print',
-          exportOptions: {
-            columns: ':visible :not(.more)'
-          },
-        },
+      buttons: [
         {
           text: 'exports',
           extend: 'collection',
           className: 'custom-html-collection border-primary-600',
           buttons: [
-            '<header>Export all</header>',
+            '<header>Export to</header>',
             {
               extend: 'csv',
               exportOptions: {

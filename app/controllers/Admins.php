@@ -43,7 +43,6 @@ class Admins extends Controller
 
       $data = [
         'current_route' => __FUNCTION__,
-        'current_tab' => $filtered,
         'user_id' => $_SESSION['user_id'] ?? '',
 
         'prc_number' => trim($_POST['prc_number']),
@@ -299,7 +298,7 @@ class Admins extends Controller
       $data = [
         'current_route' => __FUNCTION__,
         'amounts' => $amounts,
-        'dates' => $this->generateYearsBetween(),
+        'dates' => generateYearsBetween(),
 
         'prc_number' => $user->prc_number,
 
@@ -317,17 +316,5 @@ class Admins extends Controller
       $amounts = $this->duesModel->getTotalAmountBetweenYears($_POST['startYear'], $_POST['endYear']);
       echo json_encode(['data' => $amounts, 'status' => 'ok', 'code' => 200, 'message' => 'request successful']);
     }
-  }
-
-  public function generateYearsBetween($startYear = 1980, $endYear = null)
-  {
-    $endYear = $endYear ?? idate('Y') + 1;
-    $years = [];
-    for ($i = $startYear; $i <= $endYear; $i++) {
-      array_push($years, $startYear);
-      $startYear++;
-    }
-
-    return array_reverse($years);
   }
 }
