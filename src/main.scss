@@ -162,8 +162,8 @@
 
 .sidebar {
     @apply
-    lg:w-64 flex-shrink-0 lg:h-screen 
-    bg-white overflow-hidden border-r 
+    lg:w-64 flex-shrink-0 
+    bg-white overflow-auto border-r 
     mb-8 lg:mb-0
     sm:rounded-lg sm:rounded-b-none;
 }
@@ -197,126 +197,6 @@
 /* Breadcrumbs */
 
 /* Datatable Plugin */
-// .dataTables-empty {
-// 	@apply
-//     p-4
-//     text-center;
-// }
-
-// .dataTable-container {
-//     td {
-//         @apply
-//         px-6 py-4 
-//         whitespace-nowrap 
-//         text-sm text-secondary-800;
-//     }
-// }
-
-// .dataTable-top {
-//     @apply
-//     p-6
-//     flex justify-between items-center;
-
-//     .dataTable-search {
-//         @apply
-//         w-3/4
-//         mr-4;
-//     }
-//     .dataTable-dropdown {
-//         @apply
-//         w-1/4;
-//     }
-//     input,select,textarea {
-//         @apply 
-//         h-10 w-full rounded-md
-//         border-secondary-300 focus:border-primary-500 
-//         sm:text-sm 
-//         focus:ring-primary-500;        
-//     }
-
-//     label {
-//         @apply
-//         text-sm;    
-//     }
-// }
-
-// .dataTable-bottom {
-//     @apply
-//     p-6
-//     flex justify-between items-center flex-wrap gap-4
-//     border-t;
-
-//     .dataTable-info {
-//         @apply
-//         text-sm;
-//     }
-
-//     /* PAGER */
-//     .dataTable-pagination ul {
-//         @apply
-//         m-0 pl-0;
-//     }
-
-//     .dataTable-pagination li {
-//         // list-style: none;
-//         @apply
-//         float-left;
-//     }
-
-//     .dataTable-pagination {
-//         // @apply
-//         &-list {
-//             @apply
-//             rounded-md
-//             relative z-0 inline-flex rounded-md shadow-sm;
-//         }
-
-//         a {
-//             @apply
-//             inline-flex items-center px-4 py-2 border text-sm font-medium
-//             bg-white border-secondary-300 text-secondary-500 hover:bg-secondary-50
-//             relative
-//             no-underline;
-//         }
-
-//         & .active a {
-//             @apply
-//             hover:bg-secondary-300
-//             hover:bg-secondary-300
-//             cursor-pointer
-//             bg-primary-50 border-primary-500 text-primary-600;
-//         }
-
-//         & .disabled a, &.ellipsis a {
-//             @apply
-//             cursor-not-allowed
-//             hover:cursor-not-allowed	
-//             focus:cursor-not-allowed
-//             opacity-50;
-//         }
-
-//         & .pager {
-//             a {
-//                 @apply
-//                 font-bold;
-//             }
-
-//             &:first-child a {
-//                 @apply
-//                 rounded-l-md;
-//             }
-//             &:last-child a {
-//                 @apply
-//                 rounded-r-md;
-//             }
-//         }
-//     }
-
-// }
-
-
-
-/* Datatable Plugin */
 @media (min-width: 1024px) {
     .table-container {
       max-width: 720px;
@@ -335,14 +215,34 @@
     }
   }
 
+.table-container {
+    @apply
+    overflow-x-auto 
+    shadow 
+    border-b border-secondary-200 
+    sm:rounded-lg 
+    pb-10;
+}
+.dataTables_wrapper tbody tr {
+    @apply
+    hover:bg-secondary-100;
+} 
+.dataTables_wrapper thead th {
+    @apply
+    uppercase px-6 py-2 text-xs text-left text-secondary-400 font-bold hover:bg-secondary-100;
+} 
+.dataTables_wrapper tfoot th {
+    @apply
+    uppercase px-6 py-2 text-xs text-left text-black font-bold hover:bg-secondary-100;
+} 
 .dataTables_wrapper td {
     @apply
-    px-6 py-4 text-sm whitespace-nowrap;
+    w-40
+    px-6 py-4 text-sm text-left border-b;
 } 
 
 .dataTables_empty {
 	@apply
-    p-4
     text-center;
 }
 

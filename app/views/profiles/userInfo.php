@@ -33,10 +33,6 @@
         </div>
 
         <form action="<?php echo URLROOT; ?>/profiles/userInfo" method="POST" x-data="{hasPassword: <?php echo $data['has_password'] ?>}" @submit.prevent="if (confirm('Change password?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
-            <!-- <div class="text-black text-center">
-        <?php flash('update_success'); ?>
-      </div> -->
-
             <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
                 <div class="w-64 flex-shrink-0">
                     <span class="text-2xl font-bold">User profile</span>
@@ -62,6 +58,39 @@
             </header>
 
             <div class="flex flex-col gap-y-8">
+                <div x-bind="formGroup">
+                    <label class="form-label">Profile image</label>
+                    <div x-bind="formGroup.inputContainer">
+                        <div>
+                            <?php if (empty($data['profile_image_path'])) : ?>
+                                <!-- Profile image -->
+                                <a href="javascript:void(0)" class="py-2" @click="$refs.profile_input.click()">
+                                    <div style="width: 50px;height:50px">
+                                        <img class="w-full h-full" src="<?php echo URLROOT ?>/public/img/profiles/default-profile.png" alt="profile img">
+                                    </div>
+                                    <span class="text-sm text-primary-500 hover:underline">Choose a profile</span>
+                                    <input type="file" @change="submitProfile" x-ref="profile_input" class="form-input hidden" name="profile_image">
+                                </a>
+                            <?php else : ?>
+                                <div class="py-2">
+                                    <a href="<?php echo URLROOT . '/' . $data['profile_image_path'] ?>" target="_blank" class="py-2">
+                                        <div class="rounded-full overflow-hidden hover:opacity-50" style="width: 50px;height:50px">
+                                            <img class="w-full h-full" src="<?php echo URLROOT . '/' . $data['profile_image_path'] ?>" alt="profile img">
+                                        </div>
+                                    </a>
+
+                                    <a href="javascript:void(0)" class="py-2" @click="$refs.profile_input.click()">
+                                        <span class="text-sm text-primary-500 hover:underline">Update profile</span>
+                                        <input type="file" @change="submitProfile" x-ref="profile_input" class="form-input hidden" name="profile_image">
+                                    </a>
+                                </div>
+                            <?php endif; ?>
+                            <span class="hidden text-danger-600 text-sm" id="profile_img_err">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Activation type -->
                 <div x-bind="formGroup">
                     <label class="form-label">Activation type(s)</label>
@@ -99,7 +128,7 @@
                         <span class="text-sm p-3">
                             <?php echo $data['email'] ?>
                         </span>
-                        <a href="<?php echo URLROOT?>/users/updateEmail" class="text-blue-500 ml-3 p-3 rounded-md hover:underline hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">Change email</a>
+                        <a href="<?php echo URLROOT ?>/users/updateEmail" class="text-blue-500 ml-3 p-3 rounded-md hover:underline hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">Change email</a>
                     </div>
                 </div>
 
@@ -215,6 +244,34 @@
                 },
             },
 
+            submitProfile(event) {
+                const updateRequest = new FormData();
+                const file = event.target.files[0];
+                updateRequest.append('profile_img', file)
+
+                const errorMsg = document.querySelector('#profile_img_err')
+                // greater than 2 mb
+                if (file && file.size > 2 * 1024 * 1024) {
+                    errorMsg.classList.remove('hidden')
+                    errorMsg.textContent = 'File size limit error. Your file size must be below 2 MB'
+                    return
+                }
+
+                const f = fetch('<?php echo URLROOT . "/profiles/profileImage" ?>', {
+                    method: "POST",
+                    body: updateRequest,
+                })
+
+                f.then(data => data.json()
+                    .then(res => {
+                        if (res.status == 'ok') {
+                            window.location.reload()
+                        } else {                            
+                            errorMsg.classList.remove('hidden')
+                            errorMsg.textContent = res.message
+                        }
+                    }))
+            },
             checkServerValidationError: function() {
                 if (
                     this.serverData.old_password_err !== '' ||

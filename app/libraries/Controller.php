@@ -4,6 +4,27 @@
    * Loads the models and views
    */
   class Controller {
+    protected $ROLE_SUPERADMIN = 'superadmin';
+    protected $ROLE_ADMIN = 'admin';
+    protected $ROLE_MEMBER = 'member';
+
+    protected function isSuperAdmin($role)
+    {
+      return $role === $this->ROLE_SUPERADMIN;
+    }
+
+    protected function isAdmin($role)
+    {
+      return $role === $this->ROLE_ADMIN;
+    }
+
+
+    protected function isMember($role)
+    {
+      return $role === $this->ROLE_MEMBER;
+    }
+
+
     // Load model
     public function model($model){
       // Require model file

@@ -2,6 +2,7 @@
 class Clinic
 {
   private $db;
+  private $table = 'clinics';
 
   public function __construct()
   {
@@ -38,6 +39,11 @@ class Clinic
     } else {
       return false;
     }
+  }
+
+  public function update2($columns, $values, $idType, $id)
+  {
+    return $this->db->update($this->table, $columns, $values, $idType, $id);
   }
 
   public function updateOrInsert($data)

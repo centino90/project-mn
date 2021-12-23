@@ -57,6 +57,15 @@ function isLoggedIn()
     return false;
   }
 }
+
+function isSuperAdmin()
+{
+  if ($_SESSION['role'] == 'superadmin') {
+    return true;
+  } else {
+    return false;
+  }
+}
 function isAdmin()
 {
   if ($_SESSION['role'] == 'admin') {
@@ -133,9 +142,15 @@ function redirectIfNotOfficer()
     redirect('profiles/userInfo');
   }
 }
+function redirectIfNotSuperAdmin()
+{
+  if (!isSuperAdmin()) {
+    redirect('profiles/userInfo');
+  }
+}
 function redirectIfNotAdmin()
 {
-  if (!isAdmin()) {
+  if (isMember()) {
     redirect('profiles/userInfo');
   }
 }

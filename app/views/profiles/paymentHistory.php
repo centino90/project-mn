@@ -3,10 +3,6 @@
 <?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
 <div class="flex flex-col w-full px-4 lg:px-1" x-data="app()">
-  <!-- <div class="text-black text-center">
-    <?php flash('login_status'); ?>
-  </div> -->
-
   <div class="mb-4">
     <nav class="text-black" aria-label="Breadcrumb">
       <ol class="list-none p-0 inline-flex text-sm text-secondary-500">
@@ -39,24 +35,10 @@
     </div>
   </header>
 
-  <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
-    <nav class="">
-      <div class="mb-3">
-        <h1 class="text-xl font-bold text-secondary-500">Filters</h1>
-      </div>
-
-      <div class="flex gap-3">
-        <div class="w-full lg:w-auto">
-          <label for="" class="form-label">Year</label>
-          <select @change="year = $event.target.value; filterColumnByYear($event.target.value)" name="year" x-model="year" id="year" class="form-input">
-            <option value="">Select year</option>
-            <template x-for="(year, index) in years.slice(1, -1)" :key="index">
-              <option :value="year" x-text="year"></option>
-            </template>
-          </select>
-        </div>
-
-        <div class="w-full lg:w-auto">
+  <div class="gap-y-8">
+    <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
+      <nav>
+        <div class="md:w-60">
           <label for="" class="form-label">Type</label>
           <select class="form-input" @change="type = $event.target.value; filterColumnByType($event.target.value)" name="type" id="type">
             <option value="">Select type</option>
@@ -64,63 +46,64 @@
             <option value="DCC">DCC</option>
           </select>
         </div>
-      </div>
-    </nav>
-  </div>
+      </nav>
+    </div>
 
-  <div class="flex flex-col gap-y-8">
-    <div class="align-middle inline-block min-w-full">
-      <div class="shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg overflow-x-auto pb-10">
-        <table id="myTable" class="min-w-full divide-y divide-secondary-200">
-          <thead class="border-t border-b">
+    <div class="table-container">
+      <table id="myTable" style="width: 100%">
+        <thead class="border-t border-b">
+          <tr>
+            <th scope="col">
+              Date
+            </th>
+            <th scope="col">
+              Type
+            </th>
+            <th scope="col">
+              Amount
+            </th>
+            <th scope="col">
+              OR No.
+            </th>
+            <th scope="col">
+              Remarks
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white relative">
+          <?php foreach ($data['paymentHistory'] as $payment) : ?>
             <tr>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Year
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Type
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Amount
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                OR No.
-              </th>
+              <td>
+                <?php echo $payment->date_created ?>
+              </td>
+              <td>
+                <?php echo strtoupper($payment->type) ?>
+              </td>
+              <td>
+                <?php echo $payment->amount ?>
+              </td>
+              <td class="text-secondary-500">
+                <?php echo $payment->or_number ?>
+              </td>
+              <td class="text-secondary-500">
+                <?php echo $payment->remarks ?>
+              </td>
             </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-secondary-200 relative">
-            <?php foreach ($data['paymentHistory'] as $payment) : ?>
-              <tr class="hover:bg-secondary-100">
-                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                  <?php echo date("Y", strtotime($payment->date_created)) ?>
-                </td>
-                <td class="px-6 py-4 text-sm text-secondary-900 whitespace-nowrap">
-                  <?php echo strtoupper($payment->type) ?>
-                </td>
-                <td class="px-6 py-4 text-sm text-secondary-900 whitespace-nowrap">
-                  <?php echo $payment->amount ?>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                  <?php echo $payment->or_number ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          <tfoot>
-            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
-            </th>
-            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
-
-            </th>
-            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
-
-            </th>
-            <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-
-            </th>
-          </tfoot>
-          </tbody>
-        </table>
-      </div>
+          <?php endforeach; ?>
+        <tfoot>
+          <th scope="col">
+          </th>
+          <th scope="col">
+          </th>
+          <th scope="col">
+          </th>
+          <th scope="col">
+          </th>
+          <th scope="col">
+          </th>
+        </tfoot>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -134,43 +117,48 @@
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
       init() {
-        this.writeToFooterColumn(0, 'Payment Summary')
-        this.writeToFooterColumn(2, this.calculateTotalAmount())
+        this.writeToFooterColumn(0, 'Payment Summary', 'text')
+        this.writeToFooterColumn(2, this.calculateTotalAmount(2), 'currency')
       },
-      years: <?php echo json_encode($data['years']); ?>,
-      year: '',
       type: '',
-      calculateTotalAmount() {
-        let amountColumn = $('#myTable').DataTable().column(2)
+      calculateTotalAmount(colIndex) {
+        let amountColumn = $('#myTable').DataTable().column(colIndex)
         let rows = $('#myTable').DataTable().rows({
           search: 'applied'
         })
         let rowData = rows.data().toArray()
 
         return rowData.reduce((acc, cur) => {
-          let amount = parseInt(cur[2])
-          if (amount == NaN) return
+          let amount = 0
+          let colString = cur[colIndex]
+          if (typeof(colString) == 'string') {
+            colString = colString.split(',')
+            amount = colString.reduce((acc, cur) => {
+              return acc + parseInt(cur)
+            }, 0)
+          }
+
+          if (isNaN(amount)) return 0
 
           return acc + amount
         }, 0)
       },
-      writeToFooterColumn(colIndex, value) {
+      writeToFooterColumn(colIndex, value, type) {
         let amountColumn = $('#myTable').DataTable().column(colIndex);
 
-        $(amountColumn.footer()).html(
-          value
-        );
-      },
-      filterColumnByYear(year) {
-        let yearColumn = $('#myTable').DataTable().column(0)
-        this.year = year
+        if (type === 'currency') {
+          $(amountColumn.footer()).text(
+            `₱ ${this.formatToCurrency(value)}`
+          )
+          return
+        }
 
-        yearColumn
-          .search(this.year ? '^' + this.year + '$' : '', true, false)
-          .draw();
-
-        this.writeToFooterColumn(2, this.calculateTotalAmount())
+        $(amountColumn.footer()).text(value)
       },
+      formatToCurrency(amount) {
+        return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,")
+      },
+
       filterColumnByType(type) {
         let typeCol = $('#myTable').DataTable().column(1)
         this.type = type
@@ -179,7 +167,7 @@
           .search(this.type ? '^' + this.type + '$' : '', true, false)
           .draw();
 
-        this.writeToFooterColumn(2, this.calculateTotalAmount())
+          this.writeToFooterColumn(2, this.calculateTotalAmount(2), 'currency')
       },
     }))
 

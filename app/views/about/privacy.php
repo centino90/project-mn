@@ -39,79 +39,85 @@
 
             <div class="flex flex-col lg:w-3/4 text-justify text-lg gap-y-8">
                 <p>
-                    In accordance with the Data Privacy Act of 2012 (R.A. 10173) and its Implementing Rules
-                    and Regulations, the <b>PDA-DCC</b> puts forth its efforts to protect the right to privacy
-                    of its stakeholders. Our organization strictly employs its privacy protocols in the collection,
-                    processing, disclosure, storage, and transmission of personal and privileged data as obliged
-                    by the National Privacy Commission. This Institutional Data Privacy Statement (IDPS) of the
-                    PDA-DCC is designed to state the general data privacy framework in which the organization adheres.
-                    Due to the numerous subordinating offices of the organization, this statement may not contain
-                    specific information with regards to the data collection and processing of a particular
-                    office or purpose. Thus, every other privacy statement or notice produced and to be produced by
-                    the PDA-DCC for a particular office or purpose shall be consistent with this
-                    IDPS and with the organization’s Privacy Manual.
+                    The <b>Philippine Dental Association - Davao City Chapter (PDA-DCC)</b> works to preserve its stakeholders' right to
+                    privacy in compliance with the Data Privacy Act of 2012 (R.A. 10173) and its Implementing Rules and Regulations.
+                    As required by the National Privacy Commission, our organization rigorously follows its privacy standards in the
+                    collecting, processing, disclosure, storage, and transport of personal and confidential data. This
+                    privacy policy is intended to describe the data privacy framework to which our organization adheres.
+                    <br> <br>
+                    This privacy policy in particular, does not state the specific information with regards to the data collection and processing
+                    of other PDA chapters nor the PDA. Thus, these policies are unique and are only effective for the usage of pda-dcc.com
+                    and PDA-DCC.
                 </p>
 
-                <h1 class="text-3xl font-semibold">What personal data do we collect?</h1>
+                <h1 class="text-3xl font-semibold">What types of data do we collect?</h1>
                 <p>
-                    As an organization that deals with professional dentists, the PDA-DCC is responsible for collecting specific personal and
-                    privileged data in order to operate appropriately. Such data are categorized into
-                    (but not limited to) the following:
+                    We collect data that are relevant to both the members, officers, and executives of the PDA-DCC.
+                    Such data will be required to allow pda-dcc.com to be operational. Data are categorized into (but not limited to)
+                    the following:
                 </p>
 
                 <ul class="list-disc px-6">
-                    <li>Student personal information</li>
-                    <li>Student academic information</li>
-                    <li>Alumni personal information</li>
-                    <li>Employee personal information</li>
-                    <li>Guidance counselor-counselee privileged information</li>
-                    <li>Doctor-patient privileged information</li>
-                    <li>Community partners’ personal information</li>
-                    <li>Web cookies (organization website)</li>
+                    <li>Personal information</li>
+                    <li>License information</li>
+                    <li>Clinic information</li>
+                    <li>PDA-DCC Membership information</li>
+                    <li>PDA-DCC Annual payments information</li>
                 </ul>
 
-                <h1 class="text-3xl font-semibold">On what purpose are such data being collected?</h1>
+                <h1 class="text-3xl font-semibold">What do we do with the data we collect?</h1>
                 <p>
-                    As an organization that deals with professional dentists, the PDA-DCC needs to collect the aforementioned data in order to
-                    carry on its operations effectively. Student personal and academic data are gathered to supervise
-                    the learners’ educational progress and their overall learning experience within the period they
-                    are enrolled in the organization. Privileged information collected by the organization’s physicians
-                    and counselors intend to protect the welfare of both students and employees. These pieces of
-                    information are kept under strict confidentiality and are processed within their intended purpose.
-                    Records that belong to alumni are also being kept by the organization’s alumni organization for
-                    particular functions such as alumni tracking and homecoming activities. The organization’s community
-                    campaigns lead to the collection of sensitive and privileged information from community partners.
-                    These data, like other data, are guaranteed to be protected and overseen under the principles of
-                    lawfulness, fairness, and transparency.
+                    As an organization that deals with professional dentists, the PDA-DCC needs to collect the aforementioned data
+                    and ensure its effective use. Personal, License, and Clinic data of the members are collected
+                    to correctly identify the members and give them login access. The PDA-DCC Membership information is collected to
+                    ensure that all members are properly registered and give reports to the supervising entities. The PDA-DCC Annual payments data
+                    are recorded into the system by the authorized officers for recording purposes and give reports to the supervising entities.
                 </p>
 
-                <h1 class="text-3xl font-semibold">How long do we store such data?</h1>
                 <p>
-                    The PDA-DCC retains data as long as the organization deems it to be useful for its operations. It is
-                    taken into consideration that different subordinating offices of the organization follow different data
-                    retention protocols. The organization stores the personal and academic data of its students and alumni in
-                    perpetuity. Such data are stored in well-managed digital and physical repositories within the period that
-                    the Commission on Higher Education and the Department of Education require the organization to keep them.
-                    Employee data are being processed by the organization’s HRD office as long as the data subject is employed
-                    by the PDA-DCC. In the event that an employee’s service to the organization is terminated, sensitive records
-                    that belong to that individual such as biometric data, government ID information, and other personal information
-                    are appropriately archived from the organization’s database. Employee data are also stored in perpetuity. Thus,
-                    archival, and not complete deletion, of both digital and physical data is obligatory. The organization also keeps
-                    doctor-patient and counselor-counselee privileged information from its clinic and its Search and Growth Center.
-                    These offices have retention policies that last for five (5) years. After such time, the data are then deleted or
-                    disposed of in a manner that regards confidentiality. The organization’s Community Extension Services Office keeps
-                    personal and privileged data of community partners. These data are kept within the arrangements stated in the contracts
-                    and MOA that bind the PDA-DCC to such community partners. Confidentiality is taken into consideration in the disposal
-                    of any community information by the time any of the said contracts or MOA expires.
+                    All data that are collected by the authorized officers will be registered in our database via pda-dcc.com for organizational
+                    use, and also to give access to the information about the members such as their personal information and payments.
+                    Hence, these pieces of information are kept under strict confidentiality and are processed within their intended purpose.
+                </p>
+
+                <h1 class="text-3xl font-semibold">What choices or controls do you have on your data?</h1>
+                <p>
+                    Our goal is to give you simple and meaningful choices regarding your information. You are given
+                    certain controls over your information that are built directly into your profile settings.
+                    For example, you can:
+                </p>
+
+                <ul class="list-disc px-6">
+                    <li>Edit your information at any time, such as your personal, license, and clinic
+                        information.
+                    </li>
+                    <li>
+                        Change your login credentials such as your email and password, and change your
+                        third-party login channels like Facebook and Google.
+                    </li>
+                </ul>
+
+
+                <h1 class="text-3xl font-semibold">How long do we keep your data?</h1>
+                <p>
+                    The PDA-DCC retains data as long as the organization deems it to be useful for its operations.
+                    For instance, if a pda-dcc account is inactive, his/her data will be archived for organizational
+                    use such as keeping records in case they (members) will be active again.
+                </p>
+
+                <p>
+                    Our organization will store all data required in a well-managed and secure third-party
+                    digital repository.
                 </p>
 
                 <h1 class="text-3xl font-semibold"> How do we protect such data? </h1>
                 <p>
-                    The PDA-DCC and its trusted auxiliary third-parties ensure the availability, confidentiality, and integrity of its
-                    collected data by employing efficient and properly backed-up electronic and physical security systems. These systems intend
-                    to protect such data from misuse, destruction, unauthorized access, and illicit alteration. The organization’s electronic and
-                    physical repositories for sensitive data are guaranteed to be well-maintained and regularly kept up to date under the modern
-                    principles of information security and data privacy.
+                    By utilizing efficient and well backed-up electronic and physical security methods,
+                    we can ensure the availability, confidentiality, and integrity of all the data we collected.
+                    These systems are designed to secure such data from abuse, deletion, illegal access, and
+                    unauthorized modification. Under current information security and data privacy standards,
+                    the organization's electronic and physical repositories for sensitive data are assured to be well-maintained
+                    and frequently kept up to date.
                 </p>
             </div>
         </div>

@@ -6,10 +6,6 @@
 <div class="flex flex-col w-full" x-data="app()">
   <div class="min-w-full px-4 lg:px-1">
     <form action="<?php echo URLROOT; ?>/profiles/licenseInfo" method="POST" @submit.prevent="if (confirm('Confirm the changes of your license information?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
-      <!-- <div class="text-black text-center">
-        <?php flash('update_success'); ?>
-      </div> -->
-
       <div class="mb-4">
         <nav class="text-black" aria-label="Breadcrumb">
           <ol class="list-none p-0 inline-flex text-sm text-secondary-500">
@@ -233,11 +229,8 @@
         }
       },
 
-      // getYearsSinceRegistration: function() {
-      //   return dayjs().year() - dayjs(this.serverData.prc_registration_date).year()
-      // },
       checkIfRegistrationIsExpired: function() {
-        return dayjs(this.serverData.prc_expiration_date).year() < dayjs().year() ? true : false
+        return dayjs(this.serverData.prc_expiration_date) < dayjs() ? true : false
       },
       getRelativeTimeSinceExpiration: function() {
         return `expired ${dayjs(this.serverData.prc_expiration_date).from(dayjs())}`

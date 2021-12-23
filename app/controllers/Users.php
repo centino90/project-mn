@@ -9,12 +9,12 @@ class Users extends Controller
   public function __construct()
   {
     $this->userModel = $this->model('User');
+    $this->activityModel = $this->model('Activity');
     // $this->dog = new Mailer;
   }
 
   public function index()
   {
-    // $this->view('inc/templateVerifyEmail');
     redirect('users/login');
   }
 
@@ -60,29 +60,70 @@ class Users extends Controller
         }
       }
     }
+  }
 
-    // if (isset($_GET['code'])) {
-    //   // try and log the user in with $_GET code from google 
-    //   $gg = tryAndLoginWithGoogle($_GET, $this);
-    //   $data = $gg;
+  /* 
+    *Accepts both post and get requests*
+    post: form-based password reset request
+    get: link-based password reset request (for rerequest or resend usecase)
 
-    //   if ($gg['status'] == 'fail') {
-    //     if ($gg['reason'] == 'unverifiedEmail') {
-    //       $_SESSION['email_confirmation_info'] = $gg['emailConfirmation'];
-    //       $this->view('users/redirectPage', $data);
-    //     } else {
-    //       $this->view('users/redirectPage', $data);
-    //     }
-    //   } else if ($gg['status'] == 'ok') {
-    //     if ($gg['user']) {
-    //       $this->createUserSession($gg['user'], false);
-    //     } else if ($gg['emailConfirmation']) {
-    //       $this->handleUserRegistration($gg['emailConfirmation']);
-    //     } else if ($gg['added']) {
-    //       $this->view('users/redirectPage', $data);
-    //     }
-    //   }
-    // }
+    Resets password and return its unencrypted value
+    and send it to the requestor's email
+  */
+  public function handlePasswordResetRequest($data = null)
+  {
+    $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
+    if ($unverifiedUser) {
+      $mail = new PHPMailer(true);
+
+      try {
+        //Server settings               
+        $mail->isSMTP();
+        $mail->Host       = MAIL_HOST;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = MAIL_USERNAME;
+        $mail->Password   = MAIL_PASSWORD;
+        $mail->Port       = MAIL_PORT;
+        $mail->SMTPSecure = 'tls';
+
+        //Recipients
+        $mail->setFrom(MAIL_FROM_ADDRESS, 'Office of the Philippine Dental Association Davao City Chapter');
+        $mail->addAddress($data['receiver_email'], 'PDA-DCC Member');
+
+        //Content
+        $email_template = APPROOT . '/views/inc/templateVerifyEmail.php';
+        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->forgot_password_vkey;
+        $about_url = URLROOT . '/about';
+        $privacy_url = URLROOT . '/about/privacy';
+        $terms_url = URLROOT . '/about/terms';
+        $subject = 'PDA-DCC ' . str_replace('_', ' ', $data['email_confirmation_type']) . ' VERIFICATION';
+        $logo_url = URLROOT . '/img/PDA-DCC.jpg';
+        $emailTo = $data['receiver_email'];
+        $timestamp = date('Y-m-d H:i:s');
+        $transaction = str_replace('_', ' ', strtolower($data['email_confirmation_type']));
+        $current_year = date('Y');
+
+        $message = file_get_contents($email_template);
+        $message = str_replace('{{verify_url}}', $verify_url, $message);
+        $message = str_replace('{{about_url}}', $about_url, $message);
+        $message = str_replace('{{privacy_url}}', $privacy_url, $message);
+        $message = str_replace('{{terms_url}}', $terms_url, $message);
+        $message = str_replace('{{logo_url}}', $logo_url, $message);
+        $message = str_replace('{{email_to}}', $emailTo, $message);
+        $message = str_replace('{{transaction}}', $transaction, $message);
+        $message = str_replace('{{timestamp}}', $timestamp, $message);
+        $message = str_replace('{{current_year}}', $current_year, $message);
+
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->MsgHTML($message);
+
+        $mail->send();
+        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
+      } catch (Exception $e) {
+        echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+      }
+    }
   }
 
   public function handleRegisterConfirmation()
@@ -238,22 +279,34 @@ class Users extends Controller
         $mail->SMTPSecure = 'tls';
 
         //Recipients
-        $mail->setFrom(MAIL_FROM_ADDRESS, 'pda-dcc.com');
-        $mail->addAddress($data['receiver_email'], 'PDA-DCC member');
+        $mail->setFrom(MAIL_FROM_ADDRESS, 'Office of the Philippine Dental Association Davao City Chapter');
+        $mail->addAddress($data['receiver_email'], 'PDA-DCC Member');
 
         //Content
         $email_template = APPROOT . '/views/inc/templateVerifyEmail.php';
+        $logo_url = URLROOT . '/img/PDA-DCC.jpg';
         $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->$vkeyType;
         $about_url = URLROOT . '/about';
         $privacy_url = URLROOT . '/about/privacy';
         $terms_url = URLROOT . '/about/terms';
         $subject = 'PDA-DCC ' . str_replace('_', ' ', $data['email_confirmation_type']) . ' VERIFICATION';
+        $emailTo = $data['receiver_email'];
+        $timestamp = date('Y-m-d H:i:s');
+        $transaction = str_replace('_', ' ', strtolower($data['email_confirmation_type']));
+        $current_year = date('Y');
+        $current_email = $data['id'];
 
         $message = file_get_contents($email_template);
+        $message = str_replace('{{logo_url}}', $logo_url, $message);
         $message = str_replace('{{verify_url}}', $verify_url, $message);
         $message = str_replace('{{about_url}}', $about_url, $message);
         $message = str_replace('{{privacy_url}}', $privacy_url, $message);
         $message = str_replace('{{terms_url}}', $terms_url, $message);
+        $message = str_replace('{{email_to}}', $emailTo, $message);
+        $message = str_replace('{{transaction}}', $transaction, $message);
+        $message = str_replace('{{timestamp}}', $timestamp, $message);
+        $message = str_replace('{{current_year}}', $current_year, $message);
+        $message = str_replace('{{current_email}}', $current_email, $message);
 
         $mail->isHTML(true);
         $mail->Subject = $subject;
@@ -314,8 +367,80 @@ class Users extends Controller
     }
   }
 
+  /* 
+    confirm if email exist and then send 
+    pword and email to pword reset handler
+  */
+  public function forgotPassword()
+  {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $data = [
+        'email' => trim($_POST['email']),
+        'g_recaptcha_response' => trim($_POST['g-recaptcha-response']),
+
+        'email_err' => '',
+        'g_recaptcha_response_err' => ''
+      ];
+
+      // Validate recaptcha
+      $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . RECAPTCHA_SECRET . '&response=' . $data['g_recaptcha_response']);
+      $responseData = json_decode($verifyResponse);
+      if (!$responseData->success) {
+        $data['g_recaptcha_response_err'] = 'Please check the recaptcha';
+      }
+
+      // Validate login credentials
+      if (empty($data['email'])) {
+        $data['email_err'] = 'Please enter your email';
+      } else {
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+          $data['email_err'] = 'Please enter a valid email format';
+        }
+
+        if (!$this->userModel->findUserByEmail($data['email'])) {
+          $data['email_err'] = 'Email not found';
+        }
+      }
+
+      // Check if all errors are empty
+      if (empty($data['email_err']) && empty($data['g_recaptcha_response_err'])) {
+        if (!$this->userModel->storeNewPassword($data['email'])) {
+          $this->view('users/redirectPage', $data = ['message' => 'New password was not stored. Try again']);
+          return;
+        }
+
+        $this->handlePasswordResetRequest(
+          [
+            'email_confirmation_type' => 'FORGOT_PASSWORD',
+            'id_type' => 'email',
+            'id' => $data['email'],
+            'receiver_email' => $data['email'],
+            'vkey' => $this->userModel->regenerateVkey('forgot_password_vkey', 'email', $data['email']),
+            'vkeyType' => 'forgot_password_vkey',
+          ]
+        );
+      } else {
+        // Load view with errors
+        $this->view('users/forgotPassword', $data);
+      }
+    } else {
+
+      $data = [
+        'email' => '',
+        'g_recaptcha_response' => '',
+
+        'email_err' => '',
+        'g_recaptcha_response_err' => ''
+      ];
+
+      $this->view('users/forgotPassword', $data);
+    }
+  }
+
   /* GUEST ACCESSIBLE ENDPOINTS */
-  public function login(string $authMessage = ''): void
+  public function login(): void
   {
     redirectAuthUserWithRole();
 
@@ -498,141 +623,13 @@ class Users extends Controller
     }
   }
 
-  /* 
-    confirm if email exist and then send 
-    pword and email to pword reset handler
-  */
-  public function forgotPassword()
-  {
-    // redirectAuthUserWithRole();
-
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
-      $data = [
-        'email' => trim($_POST['email']),
-        'g_recaptcha_response' => trim($_POST['g-recaptcha-response']),
-
-        'email_err' => '',
-        'g_recaptcha_response_err' => ''
-      ];
-
-      // Validate recaptcha
-      $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . RECAPTCHA_SECRET . '&response=' . $data['g_recaptcha_response']);
-      $responseData = json_decode($verifyResponse);
-      if (!$responseData->success) {
-        $data['g_recaptcha_response_err'] = 'Please check the recaptcha';
-      }
-
-      // Validate login credentials
-      if (empty($data['email'])) {
-        $data['email_err'] = 'Please enter your email';
-      } else {
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-          $data['email_err'] = 'Please enter a valid email format';
-        }
-
-        if (!$this->userModel->findUserByEmail($data['email'])) {
-          $data['email_err'] = 'Email not found';
-        }
-      }
-
-      // Check if all errors are empty
-      if (empty($data['email_err']) && empty($data['g_recaptcha_response_err'])) {
-        if (!$this->userModel->storeNewPassword($data['email'])) {
-          $this->view('users/redirectPage', $data = ['message' => 'New password was not stored. Try again']);
-          return;
-        }
-
-        $this->handlePasswordResetRequest(
-          [
-            'email_confirmation_type' => 'FORGOT_PASSWORD',
-            'id_type' => 'email',
-            'id' => $data['email'],
-            'receiver_email' => $data['email'],
-            'vkey' => $this->userModel->regenerateVkey('forgot_password_vkey', 'email', $data['email']),
-            'vkeyType' => 'forgot_password_vkey',
-          ]
-        );
-      } else {
-        // Load view with errors
-        $this->view('users/forgotPassword', $data);
-      }
-    } else {
-
-      $data = [
-        'email' => '',
-        'g_recaptcha_response' => '',
-
-        'email_err' => '',
-        'g_recaptcha_response_err' => ''
-      ];
-
-      $this->view('users/forgotPassword', $data);
-    }
-  }
-
-  /* 
-    *Accepts both post and get requests*
-    post: form-based password reset request
-    get: link-based password reset request (for rerequest or resend usecase)
-
-    Resets password and return its unencrypted value
-    and send it to the requestor's email
-  */
-  public function handlePasswordResetRequest($data = null)
-  {
-    $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
-    if ($unverifiedUser) {
-      $mail = new PHPMailer(true);
-
-      try {
-        //Server settings
-        // $mail->SMTPDebug = SMTP::DEBUG_SERVER;                  
-        $mail->isSMTP();
-        $mail->Host       = MAIL_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = MAIL_USERNAME;
-        $mail->Password   = MAIL_PASSWORD;
-        $mail->Port       = MAIL_PORT;
-        $mail->SMTPSecure = 'tls';
-
-        //Recipients
-        $mail->setFrom(MAIL_FROM_ADDRESS, 'Mailer');
-        $mail->addAddress($data['receiver_email'], 'Regitering user');
-
-        //Content
-        // $email_template = APPROOT . '/views/inc/templatePasswordReset.php';
-        $email_template = APPROOT . '/views/inc/templateVerifyEmail.php';
-        // $password = $this->userModel->resetPasswordAndReturnUnencryptedVersion($unverifiedUser->id);
-        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->forgot_password_vkey;
-        $about_url = URLROOT . '/about';
-        $privacy_url = URLROOT . '/about/privacy';
-        $terms_url = URLROOT . '/about/terms';
-        $subject = 'PDA-DCC ' . str_replace('_', ' ', $data['email_confirmation_type']) . ' VERIFICATION';
-
-        $message = file_get_contents($email_template);
-        // $message = str_replace('{{password}}', $password, $message);
-        $message = str_replace('{{verify_url}}', $verify_url, $message);
-        $message = str_replace('{{about_url}}', $about_url, $message);
-        $message = str_replace('{{privacy_url}}', $privacy_url, $message);
-        $message = str_replace('{{terms_url}}', $terms_url, $message);
-
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->MsgHTML($message);
-
-        $mail->send();
-        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
-        // $this->view('users/redirectPage', $data = ['message' => 'Your new password was sent to your email.', 'reason' => 'passwordReset', 'email' => $data['receiver_email']]);
-      } catch (Exception $e) {
-        echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-      }
-    }
-  }
-
   /* AUTH ACCESSIBLE ENDPOINTS */
+  /* 
+    *triggered when user sign in using 3rd party auths*
 
+    Prompts user to register email and password to a newly created user
+    and redirects to the *steps*
+  */
   public function registerEmailPassword()
   {
     redirectIfNotLoggedIn();
@@ -720,148 +717,10 @@ class Users extends Controller
       $this->view('users/registerEmailPassword', $data);
     }
   }
-  public function changeRegisteredEmail()
-  {
-    // redirectIfNotAuthUser();
-    // if()
-
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
-      $data = [
-        'email' => trim($_POST['email']),
-
-        'email_err' => '',
-      ];
-
-      // Validate login credentials
-      if (empty($data['email'])) {
-        $data['email_err'] = 'Please enter your email';
-      } else {
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-          $data['email_err'] = 'Please enter your email';
-        }
-
-        if ($this->userModel->findUserByEmail($data['email'])) {
-          $data['email_err'] = 'Email is already taken';
-        }
-      }
-
-      // Check if all errors are empty
-      if (
-        empty($data['email_err'])
-      ) {
-        if (!$this->userModel->updateRowById('email', $data['email'], $_SESSION['user_id'])) {
-          $data['email_err'] = 'Something went wrong';
-          $this->view('users/registerEmailPassword', $data);
-          return;
-        }
-
-        $this->handleUserRegistration(
-          [
-            'email_confirmation_type' => 'register',
-            'id_type' => 'email',
-            'id' => $data['email'],
-            'receiver_email' => $data['email'],
-            'logoutAfter' => true
-          ]
-        );
-      } else {
-        // Load view with errors
-        $this->view('users/registerEmailPassword', $data);
-      }
-    } else {
-
-      $data = [
-        'email' => '',
-        'password' => '',
-        'confirm_password' => '',
-
-        'email_err' => '',
-        'password_err' => '',
-        'confirm_password_err' => ''
-      ];
-
-      $this->view('users/registerEmailPassword', $data);
-    }
-  }
 
   /* 
-    *triggered when user sign in using 3rd party auths*
-
-    Registers user password to a newly created user
-    and redirects to the *steps*
-  */
-  public function registerPassword()
-  {
-    redirectIfNotAuthUser();
-
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
-      $data = [
-        'password' => trim($_POST['password']),
-        'confirm_password' => trim($_POST['confirm_password']),
-
-        'password_err' => '',
-        'confirm_password_err' => ''
-      ];
-
-      if (empty($data['password'])) {
-        $data['password_err'] = 'Please enter password';
-      } elseif (strlen($data['password']) < 6) {
-        $data['password_err'] = 'Password must be at least 6 characters';
-      }
-      if (empty($data['confirm_password'])) {
-        $data['confirm_password_err'] = 'Please confirm password';
-      } else {
-        if ($data['password'] != $data['confirm_password']) {
-          $data['confirm_password_err'] = 'Passwords do not match';
-        }
-      }
-
-      // Check if all errors are empty
-      if (
-        empty($data['password_err']) && empty($data['confirm_password_err'])
-      ) {
-        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-
-        if (!$this->userModel->updateRowById('password', $data['password'], $_SESSION['user_id'])) {
-          $data['password_err'] = 'Something went wrong';
-          $this->view('users/registerPassword', $data);
-          return;
-        }
-
-        $_SESSION['password_registered'] = false;
-        redirect('users/registerPrcInfo');
-      } else {
-        // Load view with errors
-        $this->view('users/registerPassword', $data);
-      }
-    } else {
-
-      $data = [
-        'password' => '',
-        'confirm_password' => '',
-
-        'password_err' => '',
-        'confirm_password_err' => ''
-      ];
-
-      $this->view('users/registerPassword', $data);
-    }
-  }
-
-  /* 
-    Endpoints for Steps (1 to 4) during registration
-
-    All: they share the same pattern of redirecting from
-    the low to high (step 1 to step ...) or redirecting from high
-    to low. All have standard setups (input validation, user update
-    queries, etc.)
-
-    Step 4. RegisterEmergencyInfo: creates user session and redirects
-    to the home page.
+    Registers/updates user info during
+    post-registration
   */
   public function registerPrcInfo()
   {
@@ -1199,12 +1058,13 @@ class Users extends Controller
 
   /* 
     generates a temporary email and then 
-    pass the subjected user to handleUserRegistration()
+    pass the user to handleUserRegistration()
     with a confirmation type of 'change'
   */
   public function updateEmail()
   {
     redirectIfNotAuthUser();
+    redirectNotFullyRegisteredUser();
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -1277,9 +1137,6 @@ class Users extends Controller
               'vkeyType' => 'change_email_vkey'
             ]
           );
-          // if ($this->userModel->updateRowById('changing_email', true, $verifiedUser->id)) {
-
-          // }
         } else {
           $data['password_err'] = 'Password incorrect';
 
@@ -1306,8 +1163,12 @@ class Users extends Controller
     }
   }
 
-  public function createUserSession(object $user, bool $notThirdParty = true): void
+  public function createUserSession(object $user = null, bool $notThirdParty = true): void
   {
+    if (empty($user)) {
+      exit($this->view('users/redirectPage', ['message' => 'You are illegally accessing a route']));
+    }
+
     $_SESSION['email_verified'] = $user->email_verified ? true : false;
     $_SESSION['user_id'] = $user->id;
     $_SESSION['user_email'] = $user->email;
@@ -1330,37 +1191,61 @@ class Users extends Controller
       ]);
     }
 
+    if (isSuperAdmin()) {
+      $_SESSION['complete_info'] = true;
+      $_SESSION["login_time_stamp"] = time();
+
+      redirectAuthUserWithRole();
+      return;
+    }
+
     if (
       $notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
       && !empty($user->prc_number) && !empty($user->emergency_person_name)
     ) {
-      // flash('login_status', 'You just signed in successfully!');
-
       $_SESSION['complete_info'] = true;
       $_SESSION["login_time_stamp"] = time();
+
+      if ($_SESSION['role'] == 'admin') {
+        $this->activityModel->store(
+          [
+            'user_id' => $_SESSION['user_id'],
+            'initiator' => $_SESSION['user_name'],
+            'message' => $_SESSION['user_name'] . ' (' . $_SESSION['role'] . '): logged in successfully',
+            'type' => 'user_login',
+          ]
+        );
+      }
 
       redirectAuthUserWithRole();
     } else if (
       !$notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
       && !empty($user->prc_number) && !empty($user->emergency_person_name)
     ) {
-      // flash('login_status', 'You just signed in successfully!');
-
       $_SESSION['complete_info'] = true;
       $_SESSION["login_time_stamp"] = time();
 
+      if ($_SESSION['role'] == 'admin') {
+        $this->activityModel->store(
+          [
+            'user_id' => $_SESSION['user_id'],
+            'initiator' => $_SESSION['user_name'],
+            'message' => $_SESSION['user_name'] . ' (' . $_SESSION['role'] . '): logged in successfully',
+            'type' => 'user_login',
+          ]
+        );
+      }
+
       redirectAuthUserWithRole();
     } else {
-      // flash('login_status', 'Proceed to finish registration', 'You are either signed in using 3rd party authenthication or missed some inputs along the steps.');
       $_SESSION['complete_info'] = false;
       $_SESSION["login_time_stamp"] = time();
-
 
       redirectNotFullyRegisteredUser();
     }
   }
 
-  public function logout()
+  public function logout(): void
   {
     redirectIfNotAuthUser();
 
@@ -1368,7 +1253,7 @@ class Users extends Controller
     redirect('users/login');
   }
 
-  public function restartSessionTimer()
+  public function restartSessionTimer(): void
   {
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['current_timestamp'])) {
       // session_regenerate_id(true);
@@ -1378,11 +1263,47 @@ class Users extends Controller
     }
   }
 
+  public function downloadTemplates()
+  {
+    if (isset($_GET['filename'])) {
+      $filename = $_GET['filename'];
+
+      if (!in_array($filename, ['IMPORT_PAYMENTS_TEMPLATE.xlsx'])) {
+        throw new Error('Parameters are not correct');
+      }
+
+      //Read the filename
+      $path = APPROOT . '/storage/';
+      $fullPath = $path . $filename;
+
+      //Check the file exists or not
+      if (file_exists($fullPath)) {
+        //Define header information
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header("Cache-Control: no-cache, must-revalidate");
+        header("Expires: 0");
+        header('Content-Disposition: attachment; filename="' . basename($fullPath) . '"');
+        header('Content-Length: ' . filesize($fullPath));
+        header('Pragma: public');
+
+        //Clear system output buffer
+        flush();
+
+        //Read the size of the file
+        readfile($fullPath);
+
+        //Terminate from the script
+        die();
+      }
+    }
+  }
+
   public function __destruct()
   {
     // unset($_SESSION['email_confirmation_info']);
   }
-
+}
 
   // public function removeThirdPartyAuth($authChannel = null)
   // {
@@ -1403,94 +1324,5 @@ class Users extends Controller
   //     } else {
   //       $this->view('users/redirectPage', $data = ['message' => 'This auth channel does not exist. Try again.']);
   //     }
-  //   }
-  // }
-
-
-  // public function validateAndCheckEmptyInputs($data)
-  // {
-  //   // Validate prc info
-  //   foreach ($data as $key => $value) {
-  //     if (empty($value)) {
-  //       $data[$key . '_err'] = 'Please enter your ' . str_replace('_', ' ', $key);
-  //     }
-  //   }
-
-  //   die(var_dump($data));
-  //   // if (empty($data['prc_number'])) {
-  //   //   $data['prc_number_err'] = 'Please enter your prc number';
-  //   // }
-  //   // if (empty($data['prc_registration_date'])) {
-  //   //   $data['prc_registration_date_err'] = 'Please enter your prc registration date';
-  //   // }
-  //   // if (empty($data['prc_expiration_date'])) {
-  //   //   $data['prc_expiration_date_err'] = 'Please enter your prc expiration date';
-  //   // }
-  //   // if (empty($data['field_practice'])) {
-  //   //   $data['field_practice_err'] = 'Please select your field of practice';
-  //   // }
-  //   // if (empty($data['type_practice'])) {
-  //   //   $data['type_practice_err'] = 'Please select your type of practice';
-  //   // }
-
-  //   // Check if errors are empty
-  //   if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
-  //     return true;
-  //   }
-  //   return false;
-  // }
-}
-
-
-// public function registerDuesInfo()
-  // {
-  //   if (!isLoggedIn()) {
-  //     redirect('users/login');
-  //   }
-  //   if (isLoggedIn() && isCompleteInfo()) {
-  //     redirect('profiles');
-  //   }
-  //   // if ($_SESSION['current_registration_step'] != 'registerDuesInfo') {
-  //   //   redirect('users/' . $_SESSION['current_registration_step']);
-  //   // }
-
-  //   if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  //     $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
-  //     $data = [
-  //       'user_id' => $_SESSION['user_id'] ?? '',
-  //       'payment_option' => trim($_POST['payment_option']),
-  //       'payment_option_err' => ''
-  //     ];
-
-  //     // Validate payment option
-  //     if (empty($data['payment_option'])) {
-  //       $data['payment_option_err'] = 'Please select your payment option';
-  //     }
-
-  //     if (empty($data['payment_option_err'])) {
-  //       if ($this->userModel->updateDuesInfo($data)) {
-  //         $user = $this->userModel->getUserById($_SESSION['user_id']);
-  //         unset($_SESSION['current_registration_info']);
-  //         $this->createUserSession($user);
-
-  //       } else {
-  //         die('Something went wrong');
-  //       }
-  //     } else {
-  //       // Load view with errors
-  //       $this->view('users/registerDuesInfo', $data);
-  //     }
-  //   } else {
-  //     $user = $this->userModel->getUserById($_SESSION['user_id']);
-
-  //     $data = [
-  //       'payment_option' => $user->payment_option ?? '',
-
-  //       'payment_option_err' => ''
-  //     ];
-
-  //     // Load view
-  //     $this->view('users/registerDuesInfo', $data);
   //   }
   // }

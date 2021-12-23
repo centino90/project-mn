@@ -2,20 +2,83 @@
 class User
 {
   private $db;
+  private $table = 'users';
+  private $primaryKey = 'id';
+  private $joinedPrimarykey = '';
 
   public function __construct()
   {
     $this->db = new Database;
+    $this->joinedPrimarykey =  $this->table . '.' . $this->primaryKey;
   }
 
-  public function userToClinic()
+  public function getDatatable($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
   {
-    $sql = 'SELECT users.*, clinics.name as clinic_name, clinics.district as clinic_district, clinics.street as clinic_street, clinics.city as clinic_city, clinics.contact_number as clinic_contact_no FROM `users` LEFT JOIN clinics on users.id = clinics.user_id';
+    $selected = join(',', $columns);
+    $sql = 'SELECT ' . $selected . ' FROM ' .
+      $this->table . ' LEFT JOIN clinics ON clinics.user_id = ' .
+      $this->joinedPrimarykey . ' WHERE 1 ' .
+      $filters . ' ORDER BY ' .
+      $orderColumn . ' ' .
+      $orderType . ' LIMIT ' .
+      $limitRow . ',' .
+      $limitPerpage;
+
     $this->db->query($sql);
 
-    $row = $this->db->resultSet();
-    return $row;
+    return $this->db->resultSet();
   }
+  function countAll()
+  {
+    $sql = 'SELECT count(*) as count FROM ' . $this->table . ' LEFT JOIN clinics ON clinics.user_id = ' . $this->joinedPrimarykey;
+    $this->db->query($sql);
+
+    return $this->db->single();
+  }
+  function countAllWithFilters($filters)
+  {
+    $sql = 'SELECT count(*) as count FROM ' . $this->table . ' LEFT JOIN clinics ON clinics.user_id = ' . $this->joinedPrimarykey . ' WHERE 1 ' . $filters;
+    $this->db->query($sql);
+
+    return $this->db->single();
+  }
+
+  public function getUserClinic($data)
+  {
+    return $this->db->selectWithSingleJoin(
+      $data['id'],
+      $data['idType'],
+      $this->table,
+      'clinics',
+      'users.id',
+      'clinics.user_id',
+      ['users.*', 'clinics.user_id, clinics.name AS clinic_name, clinics.street AS clinic_street, clinics.district AS clinic_district, clinics.city AS clinic_city, clinics.contact_number AS clinic_contact_number'],
+      'desc'
+    );
+  }
+  public function getAllUserClinic()
+  {
+    return $this->db->selectAllWithSingleJoin(
+      $this->table,
+      'clinics',
+      $this->joinedPrimarykey,
+      'clinics.user_id',
+      [
+        'users.*',
+        'clinics.name AS clinic_name',
+        'clinics.street AS clinic_street',
+        'clinics.district AS clinic_district',
+        'clinics.city AS clinic_city',
+        'clinics.contact_number AS clinic_contact_no'
+      ],
+      'desc'
+    );
+  }
+  public function getAll($columns = [], $values = [], $hasAdmin = true)
+  {
+    return $this->db->selectAll($this->table, $columns, $values, $hasAdmin);
+  }
+
   // Regsiter user
   public function register($data)
   {
@@ -161,6 +224,11 @@ class User
     } else {
       return false;
     }
+  }
+
+  public function update2($columns, $values, $idType, $id)
+  {
+    return $this->db->update($this->table, $columns, $values, $idType, $id);
   }
 
   public function verifyEmail($data)
@@ -325,6 +393,25 @@ class User
       return false;
     }
   }
+  public function updateProfileImage($data)
+  {
+    $this->db->query(
+      'UPDATE users 
+      SET
+          profile_img_path = :profile_img_path
+      WHERE id = :user_id 
+      '
+    );
+
+    $this->db->bind(':profile_img_path', $data['profile_img_path']);
+    $this->db->bind(':user_id', $data['user_id']);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   public function insertClinicInfo($data)
   {
@@ -350,6 +437,36 @@ class User
     }
   }
 
+
+  public function haveRows(array $columns, array $values)
+  {
+    if (sizeof($columns) !== sizeof($values)) {
+      throw new Error('Error: columns and values must have the same length');
+    }
+
+    $i = 0;
+    $setString = '';
+    foreach ($columns as $column) {
+      if (++$i === count($columns)) {
+        $setString .= $column . ' = :' . $column;
+        break;
+      }
+      $setString .= $column . ' = :' . $column . ' AND ';
+    }
+
+    $sql = 'SELECT * FROM users WHERE ' . $setString;
+    $this->db->query($sql);
+
+    for ($i = 0; $i < sizeof($columns); $i++) {
+      $this->db->bind(':' . $columns[$i], $values[$i]);
+    }
+
+    if ($this->db->rowCount() > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   public function getRows()
   {
@@ -410,10 +527,8 @@ class User
     } else {
       return false;
     }
-
-
-    // return $row;
   }
+
 
   // Find user by email
   public function findUserByEmail($email)

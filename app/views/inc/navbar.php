@@ -4,7 +4,7 @@
     <div class="flex flex-wrap justify-between items-center border-b border-secondary-100 py-6 md:justify-start md:space-x-10">
       <div class="flex justify-start md:w-0 md:flex-1">
         <a href="<?php echo URLROOT; ?>/" class="font-semibold text-secondary-400">
-          <img class="h-12 w-auto mx-auto sm:h-16" src="<?php echo URLROOT; ?>/img/PDO-DCC.jpg" alt="PDO-DCC logo">
+          <img class="h-12 w-auto mx-auto sm:h-16" src="<?php echo URLROOT; ?>/img/PDA-DCC.jpg" alt="PDO-DCC logo">
           <?php echo SITENAME ?>
         </a>
       </div>

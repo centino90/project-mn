@@ -1,4 +1,5 @@
 <?php
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
@@ -52,6 +53,8 @@ class Profiles extends Controller
                 'has_password' => !empty($user->password) ? true : false,
                 'has_email' => !empty($user->email) ? true : false,
 
+
+                'profile_image_path' => $user->profile_img_path ?? '',
                 'email' => $user->email ?? '',
                 'old_password' => trim($_POST['old_password']),
                 'password' => trim($_POST['password']),
@@ -113,6 +116,7 @@ class Profiles extends Controller
                 'has_email' => !empty($user->email) ? true : false,
 
 
+                'profile_image_path' => $user->profile_img_path,
                 'email' => $user->email,
                 'old_password' => '',
                 'password' => '',
@@ -244,7 +248,6 @@ class Profiles extends Controller
                 'gender' => trim($_POST['gender']),
                 'contact_number' => trim($_POST['contact_number']),
                 'fb_account_name' => trim($_POST['fb_account_name']),
-                'email' => trim($_POST['email']),
                 'address' => trim($_POST['address']),
 
                 'first_name_err' => '',
@@ -252,7 +255,6 @@ class Profiles extends Controller
                 'last_name_err' => '',
                 'gender_err' => '',
                 'fb_account_name_err' => '',
-                'email_err' => '',
                 'contact_number_err' => '',
                 'birthdate_err' => '',
                 'address_err' => '',
@@ -280,13 +282,6 @@ class Profiles extends Controller
             if (empty($data['fb_account_name'])) {
                 $data['fb_account_name_err'] = 'Please enter your fb account name';
             }
-            if (empty($data['email'])) {
-                $data['email_err'] = 'Please enter your email';
-            } else {
-                if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-                    $data['email_err'] = 'Please enter your email';
-                }
-            }
             if (empty($data['address'])) {
                 $data['address_err'] = 'Please enter your home address';
             }
@@ -295,8 +290,7 @@ class Profiles extends Controller
                 empty($data['first_name_err']) && empty($data['middle_name_err'])
                 && empty($data['last_name_err']) && empty($data['birthdate_err'])
                 && empty($data['gender_err']) && empty($data['contact_number_err'])
-                && empty($data['fb_account_name_err']) && empty($data['email_err'])
-                && empty($data['address_err'])
+                && empty($data['fb_account_name_err']) && empty($data['address_err'])
             ) {
 
                 if ($this->userModel->updatePersonalInfo($data)) {
@@ -323,7 +317,6 @@ class Profiles extends Controller
                 'gender' => $user->gender ?? '',
                 'contact_number' => $user->contact_number ?? '',
                 'fb_account_name' => $user->fb_account_name ?? '',
-                'email' => $user->email ?? '',
                 'address' => $user->address ?? '',
 
                 'first_name_err' => '',
@@ -331,7 +324,6 @@ class Profiles extends Controller
                 'last_name_err' => '',
                 'gender_err' => '',
                 'fb_account_name_err' => '',
-                'email_err' => '',
                 'contact_number_err' => '',
                 'birthdate_err' => '',
                 'address_err' => '',
@@ -417,6 +409,243 @@ class Profiles extends Controller
 
             $this->view('profiles/clinicInfo', $data);
         }
+    }
+    public function emergencyInfo()
+    {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+            $data = [
+                'current_route' => __FUNCTION__,
+                'user_id' => $_SESSION['user_id'] ?? '',
+
+                'emergency_person_name' => trim($_POST['emergency_person_name']),
+                'emergency_address' => trim($_POST['emergency_address']),
+                'emergency_contact_number' => trim($_POST['emergency_contact_number']),
+
+                'emergency_person_name_err' => '',
+                'emergency_address_err' => '',
+                'emergency_contact_number_err' => ''
+            ];
+
+            // Validate emergency info
+            if (empty($data['emergency_person_name'])) {
+                $data['emergency_person_name_err'] = 'Please enter their name';
+            }
+            if (empty($data['emergency_address'])) {
+                $data['emergency_address_err'] = 'Please enter their address';
+            }
+            if (empty($data['emergency_contact_number'])) {
+                $data['emergency_contact_number_err'] = 'Please enter their contact number';
+            }
+
+            // Check if errors are empty
+            if (
+                empty($data['emergency_person_name_err']) && empty($data['emergency_address_err'])
+                && empty($data['emergency_contact_number_err'])
+            ) {
+
+                if ($this->model('User')->updateEmergencyInfo($data)) {
+                    flash('update_success', 'Your emergency information was updated');
+                    redirect('profiles/emergencyInfo');
+                } else {
+                    die('Something went wrong');
+                }
+            } else {
+                // Load view with errors
+                $this->view('profiles/emergencyInfo', $data);
+            }
+        } else {
+            $user = $this->model('User')->getUserById($_SESSION['user_id']);
+
+            $data = [
+                'current_route' => __FUNCTION__,
+
+                'emergency_person_name' => $user->emergency_person_name ?? '',
+                'emergency_address' =>  $user->emergency_address ?? '',
+                'emergency_contact_number' =>  $user->emergency_contact_number ?? '',
+
+                'emergency_person_name_err' => '',
+                'emergency_address_err' => '',
+                'emergency_contact_number_err' => ''
+            ];
+
+            $this->view('profiles/emergencyInfo', $data);
+        }
+    }
+    public function profileImage()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Error('Your request method must be in \'POST\'');
+            }
+
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+            if (strpos($contentType, 'multipart/form-data') === false) {
+                throw new Error('Your content type must be in \'multipart/form-data\'');
+            }
+
+            $decoded = $_POST;
+
+            $decoded['profile_img'] = $_FILES['profile_img'];
+            $decoded['message'] = 'Profile image was successfully added!';
+            $decoded['status'] = 'ok';
+            $decoded['errors'] = [];
+
+            if (!isset($decoded["profile_img"]['name'])) {
+                throw new Error('You must submit an image to proceed.');
+            }
+            
+            $filesizeInMb = round(filesize($decoded["profile_img"]['tmp_name']) / 1024 / 1024, 1);
+            if ($filesizeInMb > 2) {
+                throw new Error('File size limit is only 2 MB. Try again');
+            }
+
+            $allowFileExtensions = [
+                'png',
+                'jpg',
+                'svg'
+            ];
+            $file_array = explode(".", $decoded["profile_img"]["name"]);
+            $file_extension = end($file_array);
+
+            if (!in_array($file_extension, $allowFileExtensions)) {
+                throw new Error('The file format of the file you submitted is not valid. You must follow these following formats (.png, .jpg and .svg)');
+            }
+
+            $decoded['filename'] = time() . '.' . $file_extension;
+            $decoded['profile_img_path'] = 'img/profiles/' . $decoded['filename'];
+
+            move_uploaded_file($decoded['profile_img']['tmp_name'], $decoded['profile_img_path']);
+
+            $user = $this->userModel->getUserById($decoded['user_id']);
+            // check if user already has profile img
+            if (!empty($user->profile_img_path)) {
+                $decoded['message'] = 'Profile image was successfully updated!';
+                unlink($user->profile_img_path);
+            }
+
+            // update image
+            if (!$this->userModel->updateProfileImage($decoded)) {
+                throw new Error('Profile image was not successfully added');
+            }
+
+            $reply = json_encode($decoded);
+
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
+        } catch (\Throwable $th) {
+            header("Content-Type: application/json; charset=UTF-8");
+            $decoded['status'] = 'fail';
+            $decoded['message'] = $th->getMessage();
+            $reply = json_encode($decoded);
+
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
+        }
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+            $data = [
+                'current_route' => __FUNCTION__,
+                'user_id' => $_SESSION['user_id'] ?? '',
+
+                'emergency_person_name' => trim($_POST['emergency_person_name']),
+                'emergency_address' => trim($_POST['emergency_address']),
+                'emergency_contact_number' => trim($_POST['emergency_contact_number']),
+
+                'emergency_person_name_err' => '',
+                'emergency_address_err' => '',
+                'emergency_contact_number_err' => ''
+            ];
+
+            // Validate emergency info
+            if (empty($data['emergency_person_name'])) {
+                $data['emergency_person_name_err'] = 'Please enter their name';
+            }
+            if (empty($data['emergency_address'])) {
+                $data['emergency_address_err'] = 'Please enter their address';
+            }
+            if (empty($data['emergency_contact_number'])) {
+                $data['emergency_contact_number_err'] = 'Please enter their contact number';
+            }
+
+            // Check if errors are empty
+            if (
+                empty($data['emergency_person_name_err']) && empty($data['emergency_address_err'])
+                && empty($data['emergency_contact_number_err'])
+            ) {
+
+                if ($this->model('User')->updateEmergencyInfo($data)) {
+                    flash('update_success', 'Your emergency information was updated');
+                    redirect('profiles/emergencyInfo');
+                } else {
+                    die('Something went wrong');
+                }
+            } else {
+                // Load view with errors
+                $this->view('profiles/emergencyInfo', $data);
+            }
+        } else {
+            $user = $this->model('User')->getUserById($_SESSION['user_id']);
+
+            $data = [
+                'current_route' => __FUNCTION__,
+
+                'emergency_person_name' => $user->emergency_person_name ?? '',
+                'emergency_address' =>  $user->emergency_address ?? '',
+                'emergency_contact_number' =>  $user->emergency_contact_number ?? '',
+
+                'emergency_person_name_err' => '',
+                'emergency_address_err' => '',
+                'emergency_contact_number_err' => ''
+            ];
+
+            $this->view('profiles/emergencyInfo', $data);
+        }
+    }
+
+    public function fetchUserProfile()
+    {
+        exit(
+            json_encode([
+                'status' => 'ok',
+                'message' => 'Request successful',
+                'data' => $this->userModel->getAll(['email_verified', 'is_active'], [true, true], false)
+            ])
+        );
+        // exit(json_encode([
+        //     'status' => 'ok',
+        //     'message' => 'Request successful',
+        //     'data' => [
+        //         [
+        //             'id' => '202',
+        //             'prc_number' => '40641',
+        //             'name' => [
+        //                 'last' => 'De Guzman',
+        //                 'first' => 'Albert'
+        //             ],
+        //             'email' => 'adgaerg2003@yahoo.com',
+        //             'picture' => [
+        //                 'thumbnail' => URLROOT . '/public/img/profiles/ansit.jpg'
+        //             ]
+        //         ],
+        //         [
+        //             'id' => '101',
+        //             'prc_number' => '20202103021',
+        //             'name' => [
+        //                 'last' => 'Bandana',
+        //                 'first' => 'John'
+        //             ],
+        //             'email' => 'john@gmail.com',
+        //             'picture' => [
+        //                 'thumbnail' => URLROOT . '/public/img/profiles/ansit.jpg'
+        //             ]
+        //         ],
+        //     ]
+        // ]));
     }
 
     public function __destruct()

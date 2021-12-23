@@ -3,10 +3,6 @@
 <?php require APPROOT . '/views/inc/sidebar.php'; ?>
 
 <div class="flex flex-col w-full px-4 lg:px-1" x-data="app()">
-  <!-- <div class="text-black text-center">
-    <?php flash('login_status'); ?>
-  </div> -->
-
   <div class="mb-4">
     <nav class="text-black" aria-label="Breadcrumb">
       <ol class="list-none p-0 inline-flex text-sm text-secondary-500">
@@ -39,351 +35,405 @@
     </div>
   </header>
 
-  <!-- <div class="mb-4">
-    <a href="<?php echo URLROOT ?>/admins/createAccount" class="inline-flex gap-2 py-3 px-4 uppercase font-bold rounded-md bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-      </svg>
-      Create account
-    </a>
-  </div> -->
+  <!-- Set status modal dialog -->
+  <div x-cloak x-ref="modal" x-transition x-show.transition.opacity="setStatusModalOpen" class="overflow-auto fixed z-20 top-0 left-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center" role="dialog" aria-modal="true">
+    <div class="w-full max-w-screen-sm bg-white rounded-xl shadow-xl flex flex-col absolute divide-y divide-secondary-200">
 
-  <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
-    <nav class="">
-      <div class="mb-3">
-        <h1 class="text-xl font-bold text-secondary-500">Filters</h1>
+      <div class="px-5 py-4 flex items-center justify-between">
+        <h2 class="text-xl text-secondary-700" x-ref="modal_title" x-text="setStatusOperation">
+        </h2>
+
+        <button class="text-secondary-400 hover:text-secondary-600" @click="setStatusModalOpen = false">
+          <svg class="w-4 fill-current transition duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512.001 512.001">
+            <path d="M284.286 256.002L506.143 34.144c7.811-7.811 7.811-20.475 0-28.285-7.811-7.81-20.475-7.811-28.285 0L256 227.717 34.143 5.859c-7.811-7.811-20.475-7.811-28.285 0-7.81 7.811-7.811 20.475 0 28.285l221.857 221.857L5.858 477.859c-7.811 7.811-7.811 20.475 0 28.285a19.938 19.938 0 0014.143 5.857 19.94 19.94 0 0014.143-5.857L256 284.287l221.857 221.857c3.905 3.905 9.024 5.857 14.143 5.857s10.237-1.952 14.143-5.857c7.811-7.811 7.811-20.475 0-28.285L284.286 256.002z" />
+          </svg>
+        </button>
       </div>
 
-      <div class="flex gap-3">
-        <div class="w-full lg:w-auto">
-          <label for="" class="form-label">Role</label>
-          <select class="form-input" @change="roleTab = $event.target.value; filterColumnBySelectedTab($event.target.value)">
-            <option value="">Select role</option>
-            <option value="member">Members</option>
-            <option value="officer">Officers</option>
-            <option value="admin">Admins</option>
-          </select>
+      <div class="py-5 mb-5 overflow-auto" id="modal_content" style="min-height: 300px; max-height: 300px">
+
+        <div class="flex flex-col mx-5 border-b">
+          <label for="remarks" class="form-label">Subject</label>
+          <h1 class="text-secondary-40" x-ref="modal_subject" x-text="setStatusModalSubject"></h1>
         </div>
 
-        <div class="w-full lg:w-auto">
-          <label for="" class="form-label">Status</label>
-          <select class="form-input" @change="status = $event.target.value; filterColumnByStatus($event.target.value)" name="" id="">
-            <option value="">Select status</option>
-            <option value="Active">Active</option>
-            <option value="Unverified">Unverified</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+        <div x-show="enableRemarks" class="flex flex-col px-5 mt-5">
+          <label for="remarks" class="form-label">Remarks (optional)</label>
+          <textarea name="remarks" type="text" x-model="setStatus.remarks" @keydown.enter="addEmail" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
+          </textarea>
         </div>
       </div>
-    </nav>
+
+      <div class="flex">
+        <button @click="setStatusModalOpen = false" class="w-full p=4 rounded-bl-xl text-secondary-600 font-semibold transition duration-150 hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none">Cancel</button>
+        <button x-ref="modal_submit" x-text="setStatusModalSubmit.text" @click="statusChangeForm" :class="setStatusModalSubmit.class.join(' ')" class="w-full p-4 rounded-br-xl disabled:opacity-50 disabled:cursor-wait text-white font-semibold transition duration-150 focus:outline-none"></button>
+      </div>
+    </div>
   </div>
 
-  <!-- style="max-width: 1230px; " -->
-  <div class="flex flex-col gap-y-8">
-    <div class="align-middle inline-block min-w-full">
-      <div class="table-container shadow overflow-hidden border-b border-secondary-200 sm:rounded-lg overflow-x-auto pb-10">
-        <table id="myTable" class="divide-y divide-secondary-200">
-          <thead class="border-t border-b">
+  <div class="gap-y-8">
+
+    <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
+      <nav>
+        <div class="mb-3">
+          <h1 class="text-xl font-bold text-secondary-500">Filters</h1>
+        </div>
+
+        <div class="flex gap-3">
+          <div class="w-full lg:w-auto">
+            <label for="" class="form-label">Role</label>
+            <select class="form-input" @change="roleTab = $event.target.value; filterColumnBySelectedTab($event.target.value)">
+              <option value="">Select role</option>
+              <option value="member">Members</option>
+              <option value="admin">Admins</option>
+            </select>
+          </div>
+
+          <div class="w-full lg:w-auto">
+            <label for="" class="form-label">Status</label>
+            <select class="form-input" @change="status = $event.target.value; filterColumnByStatus($event.target.value)" name="" id="">
+              <option value="">Select status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <div class="table-container">
+      <table id="myTable" style="width: 100%">
+        <thead class="border-t border-b">
+          <tr>
+            <th scope="col">
+              TIMESTAMP
+            </th>
+            <th scope="col">
+              Name
+            </th>
+            <th scope="col">
+              Role
+            </th>
+            <th scope="col">
+              Status
+            </th>
+            <th scope="col" class="hidden-first">
+              Remarks
+            </th>
+            <th scope="col" class="more">
+              More
+            </th>
+
+            <th scope="col" class="hidden-first">
+              Email Address
+            </th>
+            <th scope="col" class="hidden-first">
+              Timestamp of creation
+            </th>
+            <th scope="col" class="hidden-first">
+              PRC license no.
+            </th>
+            <th scope="col" class="hidden-first">
+              PRC Registration date
+            </th>
+            <th scope="col" class="hidden-first">
+              PRC Date of expiry
+            </th>
+            <th scope="col" class="hidden-first">
+              Field of practice
+            </th>
+            <th scope="col" class="hidden-first">
+              Type of practice
+            </th>
+            <th scope="col" class="hidden-first">
+              Date of Birth
+            </th>
+            <th scope="col" class="hidden-first">
+              Gender
+            </th>
+            <th scope="col" class="hidden-first">
+              Contact number
+            </th>
+            <th scope="col" class="hidden-first">
+              Practice type
+            </th>
+            <th scope="col" class="hidden-first">
+              Facebook Account Name
+            </th>
+            <th scope="col" class="hidden-first">
+              Home Address
+            </th>
+            <th scope="col" class="hidden-first">
+              Clinic Registered Name
+            </th>
+            <th scope="col" class="hidden-first">
+              Clinic Street
+            </th>
+            <th scope="col" class="hidden-first">
+              Clinic District
+            </th>
+            <th scope="col" class="hidden-first">
+              Clinic Municipality
+            </th>
+            <th scope="col" class="hidden-first">
+              Clinic Contact
+            </th>
+            <th scope="col" class="hidden-first">
+              Emergency person
+            </th>
+            <th scope="col" class="hidden-first">
+              Emergency person address
+            </th>
+            <th scope="col" class="hidden-first">
+              Emergency person contact
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white relative">
+          <?php foreach ($data['accounts'] as $member) : ?>
             <tr>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Email Address
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Role
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" class="more hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                More
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Timestamp of creation
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                PRC license no.
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                PRC Registration date
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                PRC Date of expiry
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Field of practice
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Type of practice
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Date of Birth
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Gender
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Contact number
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Practice type
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Facebook Account Name
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Home Address
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Clinic Registered Name
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Clinic Street
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Clinic District
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Clinic Municipality
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Clinic Contact
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Emergency person
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Emergency person address
-              </th>
-              <th scope="col" class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                Emergency person contact
-              </th>
+              <td>
+                <?php echo $member->created_at ?>
+              </td>
+              <td class=" <?php if ($member->id == $_SESSION['user_id']) : ?> text-primary-600 font-semibold <?php endif ?>">
+                <a href="<?php echo URLROOT ?>/admins/viewAccount?id=<?php echo $member->id ?>" class="hover:underline hover:text-primary-600 hover:bg-primary-50">
+                  <?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>
+                </a>
+              </td>
+              <td>
+                <?php echo $member->role ?>
+              </td>
+              <td>
+                <span class="rounded-lg px-2 <?php if ($member->is_active) : ?> bg-success-100 text-success-700 <?php else : ?>bg-secondary-100 text-secondary-400 <?php endif ?>"><?php echo $member->is_active ? 'active' : 'inactive' ?></span>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->status_remarks ?>
+              </td>
+              <td class="more" x-data="{ dropdownOpen: false }">
+                <button @click="dropdownOpen = !dropdownOpen" class="relative whitespace-nowrap text-base font-medium text-secondary-500 hover:text-secondary-900">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                  </svg>
+
+                  <div x-show="dropdownOpen" class="absolute right-0 text-left mt-2 py-2 w-48 bg-white rounded-md shadow-2xl z-20 overflow-y-auto">
+                    <!-- set status -->
+                    <?php if ($member->is_active) : ?>
+                      <a @click="openModalOnClick" href="javascript:void(0);" data-userid="<?php echo $member->id ?>" data-remarks="<?php echo $member->status_remarks ?>" data-username="<?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                        Set as inactive
+                      </a>
+                    <?php else : ?>
+                      <a @click="openModalOnClick" href="javascript:void(0);" data-userid="<?php echo $member->id ?>" data-remarks="<?php echo $member->status_remarks ?>" data-username="<?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                        Update remarks
+                      </a>
+                      <a @click="openModalOnClick" href="javascript:void(0);" data-userid="<?php echo $member->id ?>" data-remarks="<?php echo $member->status_remarks ?>" data-username="<?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                        Set as active
+                      </a>
+                    <?php endif ?>
+
+                    <!-- set role -->
+                    <?php if (isSuperAdmin()) : ?>
+                      <?php if ($member->role == 'admin') : ?>
+                        <a @click="if (confirm('Retire admin role?')){ confirmSendAssignRole(<?php echo $member->id ?>) }" href="javascript:void(0);" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                          Retire as admin
+                        </a>
+                      <?php elseif ($member->role == 'member') : ?>
+                        <a @click="if (confirm('Assign admin role?')){ confirmSendAssignRole(<?php echo $member->id ?>) }" href="javascript:void(0);" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                          Set as admin
+                        </a>
+                      <?php endif ?>
+                    <?php endif ?>
+                  </div>
+                </button>
+
+                <!-- backdrop -->
+                <div x-show="dropdownOpen" @click="dropdownOpen = false" class="fixed inset-0 h-full w-full z-10"></div>
+              </td>
+
+              <td class="hidden-first ">
+                <?php echo $member->email ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->created_at ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->prc_number ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->prc_registration_date ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->prc_expiration_date ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->field_practice ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->type_practice ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->birthdate ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->gender ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->contact_number ?>
+              </td>
+              <td class="hidden-first ">
+                <?php echo $member->type_practice ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->fb_account_name ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->address ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->clinic_name ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->clinic_street ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->clinic_district ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->clinic_city ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->clinic_contact_no ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->emergency_person_name ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->emergency_address ?>
+              </td>
+              <td class="hidden-first">
+                <?php echo $member->emergency_contact_number ?>
+              </td>
             </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-secondary-200 relative">
-            <?php foreach ($data['accounts'] as $member) : ?>
-              <tr class="hover:bg-secondary-100">
-                <td class="px-6 py-4 w-6 whitespace-wrap text-sm <?php if ($member->id == $_SESSION['user_id']) : ?> text-primary-600 font-semibold <?php endif ?>">
-                  <a href="#" class="hover:underline hover:text-primary-600 hover:bg-primary-50">
-                    <?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>
-                  </a>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                  <?php echo $member->email ?>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                  <?php echo $member->role ?>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap <?php if ($member->is_active) : ?> text-success-600 <?php elseif (!$member->is_active && !$member->email_verified) : ?>  text-danger-600 <?php else : ?> text-secondary-400 <?php endif ?>">
-                  <?php if ($member->is_active) : ?>
-                    <?php echo 'Active' ?>
-                  <?php elseif (!$member->is_active && !$member->email_verified) : ?>
-                    <?php echo 'Unverified' ?>
-                  <?php else : ?>
-                    <?php echo 'Inactive' ?>
-                  <?php endif; ?>
-                </td>
-                <td class="more" x-data="{ dropdownOpen: false }">
-                  <button @click="dropdownOpen = !dropdownOpen" class="relative whitespace-nowrap text-base font-medium text-secondary-500 hover:text-secondary-900">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
-
-                    <div x-show="dropdownOpen" class="absolute right-0 text-left mt-2 py-2 w-48 bg-white rounded-md shadow-2xl z-20 overflow-y-auto">
-                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                        Set to inactive
-                      </a>
-                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                        Set as officer
-                      </a>
-                    </div>
-                  </button>
-
-                  <!-- backdrop -->
-                  <div x-show="dropdownOpen" @click="dropdownOpen = false" class="fixed inset-0 h-full w-full z-10"></div>
-                </td>
-
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->created_at ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->prc_number ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->prc_registration_date ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->prc_expiration_date ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->field_practice ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->type_practice ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->birthdate ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->gender ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->contact_number ?>
-                </td>
-                <td class="hidden-first px-6 py-4 text-sm text-secondary-900 whitespace-nowrap">
-                  <?php echo $member->type_practice ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->fb_account_name ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->address ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_name ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_street ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_district ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_city ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_contact_no ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->emergency_person_name ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->emergency_address ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->emergency_contact_number ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-
-            <?php foreach ($data['accounts'] as $member) : ?>
-              <tr class="hover:bg-secondary-100">
-                <td class="px-6 py-4 w-6 whitespace-wrap text-sm <?php if ($member->id == $_SESSION['user_id']) : ?> text-primary-600 font-semibold <?php endif ?>">
-                  <a href="#" class="hover:underline hover:text-primary-600 hover:bg-primary-50">
-                    <?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>
-                  </a>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                  <?php echo $member->email ?>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                  <?php echo $member->role ?>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap <?php if ($member->is_active) : ?> text-success-600 <?php elseif (!$member->is_active && !$member->email_verified) : ?>  text-danger-600 <?php else : ?> text-secondary-400 <?php endif ?>">
-                  <?php if ($member->is_active) : ?>
-                    <?php echo 'Active' ?>
-                  <?php elseif (!$member->is_active && !$member->email_verified) : ?>
-                    <?php echo 'Unverified' ?>
-                  <?php else : ?>
-                    <?php echo 'Inactive' ?>
-                  <?php endif; ?>
-                </td>
-                <td class="more" x-data="{ dropdownOpen: false }">
-                  <button @click="dropdownOpen = !dropdownOpen" class="relative whitespace-nowrap text-base font-medium text-secondary-500 hover:text-secondary-900">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
-
-                    <div x-show="dropdownOpen" class="absolute right-0 text-left mt-2 py-2 w-48 bg-white rounded-md shadow-2xl z-20 overflow-y-auto">
-                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                        Set to inactive
-                      </a>
-                      <a href="#" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                        Set as officer
-                      </a>
-                    </div>
-                  </button>
-
-                  <!-- backdrop -->
-                  <div x-show="dropdownOpen" @click="dropdownOpen = false" class="fixed inset-0 h-full w-full z-10"></div>
-                </td>
-
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->created_at ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->prc_number ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->prc_registration_date ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->prc_expiration_date ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->field_practice ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->type_practice ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->birthdate ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->gender ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->contact_number ?>
-                </td>
-                <td class="hidden-first px-6 py-4 text-sm text-secondary-900 whitespace-nowrap">
-                  <?php echo $member->type_practice ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->fb_account_name ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->address ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_name ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_street ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_district ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_city ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->clinic_contact_no ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->emergency_person_name ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->emergency_address ?>
-                </td>
-                <td class="hidden-first hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  <?php echo $member->emergency_contact_number ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
 <script>
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
+      init() {
+        this.$watch('setStatusModalOpen', value => {
+          if (value === false) {
+            this.enableRemarks = false
+            this.setStatus.updateRemarks = false
+            this.setStatus.remarks = ''
+            this.setStatus.user_id = ''
+          }
+        })
+
+      },
+      openModalOnClick(event) {
+        const accountId = event.target.dataset.userid
+        const accountName = event.target.dataset.username
+        const accountRemarks = event.target.dataset.remarks
+
+        this.setStatusOperation = event.target.textContent.toLowerCase().trim()
+        this.setStatusModalSubmit.text = 'Confirm'
+        this.setStatus.user_id = accountId
+        this.setStatusModalOpen = true
+
+        if (this.setStatusOperation == 'set as inactive' || this.setStatusOperation == 'update remarks') {
+          this.enableRemarks = true
+          this.setStatus.remarks = accountRemarks
+        }
+        if (this.setStatusOperation == 'set as inactive') {
+          this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} deactivation`
+          this.setStatusModalSubmit.class = ['bg-danger-500', 'hover:bg-danger-700']
+        }
+        if (this.setStatusOperation == 'set as active') {
+          this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} activation`
+          this.setStatusModalSubmit.class = ['bg-success-500', 'hover:bg-success-700']
+        }
+        if (this.setStatusOperation == 'update remarks') {
+          this.setStatus.updateRemarks = true
+          this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} update`
+          this.setStatusModalSubmit.class = ['bg-primary-500', 'hover:bg-primary-700']
+        }
+
+        this.setStatusOperation = this.setStatusOperation.charAt(0).toUpperCase() + this.setStatusOperation.slice(1);
+        this.setStatusModalSubject = accountName
+      },
+      setStatusOperation: '',
+      setStatusModalOpen: false,
+      setStatusModalTitle: '',
+      setStatusModalSubmit: {
+        class: [],
+        text: ''
+      },
+      setStatusModalSubject: '',
+      enableRemarks: false,
+      setStatus: {
+        initiator: '<?php echo $_SESSION['user_name'] ?>',
+        remarks: '',
+        user_id: '',
+        updateRemarks: false
+      },
+      statusChangeForm: function() {
+        let actionText = this.$el.textContent
+        this.$el.textContent = 'Please wait...'
+
+        this.sendStatusChange().then(data => data.json())
+          .then(res => {
+            this.$el.textContent = actionText
+            this.$el.disabled = false
+
+            if (res.status == 'ok') {
+              window.location.reload()
+            }
+          })
+      },
+      sendStatusChange: async function() {
+        return await fetch('<?php echo URLROOT . "/admins/userStatusChange" ?>', {
+          method: "POST",
+          body: JSON.stringify({
+            setStatus: this.setStatus
+          }),
+          headers: {
+            "Content-type": "application/json"
+          }
+        })
+      },
+
+      setRole: {
+        user_id: ''
+      },
+      confirmSendAssignRole: function($user_id) {
+        this.setRole.user_id = $user_id
+
+        this.sendAssignRole().then(data => data.json())
+          .then(res => {
+            console.log(res)
+            if (res.status == 'ok') {
+              window.location.reload()
+            }
+          })
+      },
+      sendAssignRole: async function() {
+        return await fetch('<?php echo URLROOT . "/admins/reassignAdminRole" ?>', {
+          method: "POST",
+          body: JSON.stringify({
+            user_id: this.setRole.user_id
+          }),
+          headers: {
+            "Content-type": "application/json"
+          }
+        })
+      },
+
       roleTab: '',
       practiceType: '',
       status: '',
@@ -410,6 +460,9 @@
         const api = this.api();
         api.columns('.hidden-first').visible(false)
       },
+      order: [
+        [0, 'desc']
+      ],
       dom: 'Bfrtip',
       buttons: [{
           text: 'exports',
