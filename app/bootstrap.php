@@ -7,7 +7,7 @@ require_once '../vendor/autoload.php';
 
 // Configs
 require_once 'config/config.php';
-require_once 'config/api.php';
+require_once 'config/sensitive.php';
 
 // Helpers
 require_once 'helpers/string_helper.php';
