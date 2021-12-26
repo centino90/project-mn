@@ -66,7 +66,7 @@
                                 <!-- Profile image -->
                                 <a href="javascript:void(0)" class="py-2" @click="$refs.profile_input.click()">
                                     <div style="width: 50px;height:50px">
-                                        <img class="w-full h-full" src="<?php echo URLROOT ?>/public/img/profiles/default-profile.png" alt="profile img">
+                                        <img class="w-full h-full" src="<?php echo URLROOT ?>/img/profiles/default-profile.png" alt="profile img">
                                     </div>
                                     <span class="text-sm text-primary-500 hover:underline">Choose a profile</span>
                                     <input type="file" @change="submitProfile" x-ref="profile_input" class="form-input hidden" name="profile_image">
@@ -247,6 +247,7 @@
             submitProfile(event) {
                 const updateRequest = new FormData();
                 const file = event.target.files[0];
+                updateRequest.append('user_id', <?php echo $_SESSION['user_id'] ?>)
                 updateRequest.append('profile_img', file)
 
                 const errorMsg = document.querySelector('#profile_img_err')

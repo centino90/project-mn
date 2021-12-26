@@ -117,7 +117,7 @@
                             </div>
                           </div>
                           <div class="w-full items-center flex">
-                            <div class="mx-2 -mt-1"><span x-text="option.first_name + ' ' + option.last_name"></span>
+                            <div class="mx-2 -mt-1"><span x-text="option.first_name.toUpperCase() + ' ' + option.last_name.toUpperCase()"></span>
                               <div class="text-xs truncate w-full normal-case font-normal -mt-1 text-secondary-500" x-text="option.email + ' / ' + option.prc_number"></div>
                             </div>
                           </div>
@@ -370,14 +370,6 @@
     Alpine.data('app', () => ({
       init() {
         const app = this
-        // select component 2
-        fetch("<?php echo URLROOT . '/profiles/fetchUserProfile' ?>")
-          .then(response => response.json())
-          .then(data => {
-            if (data.status == 'ok') {
-              this.options = data
-            }
-          });
 
         // jquery datatable
         const dataTable = $('#myTable').DataTable({
@@ -459,6 +451,17 @@
 
           initComplete: function() {
             this.api().columns('.hidden-first').visible(false)
+
+            // search user profile component
+            fetch("<?php echo URLROOT . '/profiles/fetchUserProfile' ?>", {
+                method: 'POST'
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.status == 'ok') {
+                  app.options = data
+                }
+              });
           },
           dom: 'Bfrtip',
           buttons: [{

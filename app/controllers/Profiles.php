@@ -497,7 +497,7 @@ class Profiles extends Controller
             if (!isset($decoded["profile_img"]['name'])) {
                 throw new Error('You must submit an image to proceed.');
             }
-            
+
             $filesizeInMb = round(filesize($decoded["profile_img"]['tmp_name']) / 1024 / 1024, 1);
             if ($filesizeInMb > 2) {
                 throw new Error('File size limit is only 2 MB. Try again');
@@ -545,107 +545,36 @@ class Profiles extends Controller
             header("Content-Type: application/json; charset=UTF-8");
             exit($reply);
         }
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
-            $data = [
-                'current_route' => __FUNCTION__,
-                'user_id' => $_SESSION['user_id'] ?? '',
-
-                'emergency_person_name' => trim($_POST['emergency_person_name']),
-                'emergency_address' => trim($_POST['emergency_address']),
-                'emergency_contact_number' => trim($_POST['emergency_contact_number']),
-
-                'emergency_person_name_err' => '',
-                'emergency_address_err' => '',
-                'emergency_contact_number_err' => ''
-            ];
-
-            // Validate emergency info
-            if (empty($data['emergency_person_name'])) {
-                $data['emergency_person_name_err'] = 'Please enter their name';
-            }
-            if (empty($data['emergency_address'])) {
-                $data['emergency_address_err'] = 'Please enter their address';
-            }
-            if (empty($data['emergency_contact_number'])) {
-                $data['emergency_contact_number_err'] = 'Please enter their contact number';
-            }
-
-            // Check if errors are empty
-            if (
-                empty($data['emergency_person_name_err']) && empty($data['emergency_address_err'])
-                && empty($data['emergency_contact_number_err'])
-            ) {
-
-                if ($this->model('User')->updateEmergencyInfo($data)) {
-                    flash('update_success', 'Your emergency information was updated');
-                    redirect('profiles/emergencyInfo');
-                } else {
-                    die('Something went wrong');
-                }
-            } else {
-                // Load view with errors
-                $this->view('profiles/emergencyInfo', $data);
-            }
-        } else {
-            $user = $this->model('User')->getUserById($_SESSION['user_id']);
-
-            $data = [
-                'current_route' => __FUNCTION__,
-
-                'emergency_person_name' => $user->emergency_person_name ?? '',
-                'emergency_address' =>  $user->emergency_address ?? '',
-                'emergency_contact_number' =>  $user->emergency_contact_number ?? '',
-
-                'emergency_person_name_err' => '',
-                'emergency_address_err' => '',
-                'emergency_contact_number_err' => ''
-            ];
-
-            $this->view('profiles/emergencyInfo', $data);
-        }
     }
 
     public function fetchUserProfile()
     {
-        exit(
-            json_encode([
-                'status' => 'ok',
-                'message' => 'Request successful',
-                'data' => $this->userModel->getAll(['email_verified', 'is_active'], [true, true], false)
-            ])
-        );
-        // exit(json_encode([
-        //     'status' => 'ok',
-        //     'message' => 'Request successful',
-        //     'data' => [
-        //         [
-        //             'id' => '202',
-        //             'prc_number' => '40641',
-        //             'name' => [
-        //                 'last' => 'De Guzman',
-        //                 'first' => 'Albert'
-        //             ],
-        //             'email' => 'adgaerg2003@yahoo.com',
-        //             'picture' => [
-        //                 'thumbnail' => URLROOT . '/public/img/profiles/ansit.jpg'
-        //             ]
-        //         ],
-        //         [
-        //             'id' => '101',
-        //             'prc_number' => '20202103021',
-        //             'name' => [
-        //                 'last' => 'Bandana',
-        //                 'first' => 'John'
-        //             ],
-        //             'email' => 'john@gmail.com',
-        //             'picture' => [
-        //                 'thumbnail' => URLROOT . '/public/img/profiles/ansit.jpg'
-        //             ]
-        //         ],
-        //     ]
-        // ]));
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Error('Your request method must be in \'POST\'');
+            }
+
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+            $decoded['message'] = 'Profile image was successfully added!';
+            $decoded['status'] = 'ok';
+            $decoded['errors'] = [];
+
+            $decoded['data'] = $this->userModel->getAll(['email_verified', 'is_active'], [true, true], false);
+
+            $reply = json_encode($decoded);
+
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
+        } catch (\Throwable $th) {
+            header("Content-Type: application/json; charset=UTF-8");
+            $decoded['status'] = 'fail';
+            $decoded['message'] = $th->getMessage();
+            $reply = json_encode($decoded);
+
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
+        }
     }
 
     public function __destruct()
