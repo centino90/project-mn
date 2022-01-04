@@ -1,9 +1,8 @@
 <?php
-class User extends Model
+class Profile extends Model
 {
   public $db;
-  public $table = 'users';
-  public $table2 = 'accounts';
+  public $table = 'profiles';
   public $primaryKey = 'id';
   public $joinedPrimarykey = '';
 
@@ -13,17 +12,67 @@ class User extends Model
     $this->joinedPrimarykey =  $this->table . '.' . $this->primaryKey;
   }
 
-
-  public function deletePermanent(array $filterCols, array $filterVals)
+  public function getProfileUser(array $selectedCols = ['*'], array $filterCols = [1], array $filterVals = [1]): array
   {
+    $selected = join(',', $selectedCols);
     $filters = $this->filters($filterCols, $filterVals);
 
-    $sql = 'DELETE FROM ' . $this->table2 . ' WHERE ' . $filters;
+    $sql = 'SELECT ' . $selected . ' FROM ' . $this->table . ' LEFT JOIN accounts on accounts.profile_id = profiles.id WHERE profiles.first_name IS NOT NULL AND profiles.last_name IS NOT NULL AND ' . $filters;
     $this->db->query($sql);
 
     for ($i = 0; $i < sizeof($filterCols); $i++) {
-      $this->db->bind(':' . $filterCols[$i], $filterVals[$i]);
+      $this->db->bind(':' . $this->placeholder($filterCols[$i]), $filterVals[$i]);
     }
+
+    return $this->db->resultSet();
+  }
+
+  public function findProfileUser(array $selectedCols = ['*'], array $filterCols = [1], array $filterVals = [1])
+  {
+    $selected = join(',', $selectedCols);
+    $filters = $this->filters($filterCols, $filterVals);
+
+    $sql = 'SELECT ' . $selected . ' FROM ' . $this->table . ' LEFT JOIN accounts on accounts.profile_id = profiles.id WHERE profiles.first_name IS NOT NULL AND profiles.last_name IS NOT NULL AND ' . $filters;
+    $this->db->query($sql);
+
+    for ($i = 0; $i < sizeof($filterCols); $i++) {
+      $this->db->bind(':' . $this->placeholder($filterCols[$i]), $filterVals[$i]);
+    }
+
+    return $this->db->single();
+  }
+
+  public function store($data)
+  {
+    $this->db->query(
+      'INSERT INTO ' . $this->table . '
+        (first_name, middle_name, last_name, birthdate, address,contact_number, gender, fb_account_name, prc_number, prc_registration_date,prc_expiration_date, field_practice, type_practice, clinic_name, clinic_street,clinic_district, clinic_city, clinic_contact, emergency_person_name, emergency_address, emergency_contact_number) 
+      VALUES
+        (:first_name,:middle_name,:last_name,:birthdate,:address,:contact_number,:gender,:fb_account_name,:prc_number,:prc_registration_date,:prc_expiration_date,:field_practice,:type_practice,:clinic_name,:clinic_street,:clinic_district,:clinic_city,:clinic_contact,:emergency_person_name,:emergency_address,:emergency_contact_number)
+      '
+    );
+
+    $this->db->bind(':first_name', trim($data['0'] ?? null));
+    $this->db->bind(':middle_name', trim($data['1'] ?? null));
+    $this->db->bind(':last_name', trim($data['2'] ?? null));
+    $this->db->bind(':birthdate', trim($data['3'] ?? null));
+    $this->db->bind(':address', trim($data['4'] ?? null));
+    $this->db->bind(':contact_number', trim($data['5'] ?? null));
+    $this->db->bind(':gender', trim($data['6'] ?? null));
+    $this->db->bind(':fb_account_name', trim($data['7'] ?? null));
+    $this->db->bind(':prc_number', trim($data['8'] ?? null));
+    $this->db->bind(':prc_registration_date', trim($data['9'] ?? null));
+    $this->db->bind(':prc_expiration_date', trim($data['10'] ?? null));
+    $this->db->bind(':field_practice', trim($data['11'] ?? null));
+    $this->db->bind(':type_practice', trim($data['12'] ?? null));
+    $this->db->bind(':clinic_name', trim($data['13'] ?? null));
+    $this->db->bind(':clinic_street', trim($data['14'] ?? null));
+    $this->db->bind(':clinic_district', trim($data['15'] ?? null));
+    $this->db->bind(':clinic_city', trim($data['16'] ?? null));
+    $this->db->bind(':clinic_contact', trim($data['17'] ?? null));
+    $this->db->bind(':emergency_person_name', trim($data['18'] ?? null));
+    $this->db->bind(':emergency_address', trim($data['19'] ?? null));
+    $this->db->bind(':emergency_contact_number', trim($data['20'] ?? null));
 
     if ($this->db->execute()) {
       return true;
@@ -32,53 +81,50 @@ class User extends Model
     }
   }
 
-  public function delete(array $filterCols, array $filterVals)
+  public function insertMultiple($vals)
   {
-    $filters = $this->filters($filterCols, $filterVals);
+    $insert_values = array();
+    foreach ($vals as $d) {
+      $question_marks[] = '(' . $this->placeholders('?', sizeof($d)) .
+        ')';
+      $insert_values = array_merge(
+        $insert_values,
+        array_map(
+          fn ($v) => empty($v) ? '' : $v,
+          array_values($d)
+        )
+      );
 
-    $sql = 'UPDATE ' . $this->table2 . ' SET deleted_at = NOW() WHERE ' . $filters;
-    $this->db->query($sql);
-
-    for ($i = 0; $i < sizeof($filterCols); $i++) {
-      $this->db->bind(':' . $filterCols[$i], $filterVals[$i]);
+      // dd($insert_values);
     }
 
-    if ($this->db->execute()) {
-      return true;
-    } else {
-      return false;
-    }
+    $cols = 'first_name, middle_name, last_name, birthdate, address,contact_number, gender, fb_account_name, prc_number, prc_registration_date,prc_expiration_date, field_practice, type_practice, clinic_name, clinic_street,clinic_district, clinic_city, clinic_contact, emergency_person_name, emergency_address, emergency_contact_number';
+
+
+    $this->db->query("INSERT INTO profiles (" . $cols .
+      ") VALUES " .
+      implode(',', $question_marks));
+
+    $this->db->execute($insert_values);
   }
 
-  public function resetPasswordAndReturnUnencryptedVersion($id)
+  private function placeholders($text, $count = 0, $separator = ",")
   {
-    $permitted_chars = uniqid();
-    $offset = strlen($permitted_chars) - 5;
-    $newPassword = substr(str_shuffle($permitted_chars), 0, $offset);
-    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-
-    $sql = 'UPDATE ' . $this->table2 . ' 
-            SET 
-              password = :password 
-              WHERE id = :id
-              ';
-    $this->db->query($sql);
-
-    $this->db->bind(':password', $hashedPassword);
-    $this->db->bind(':id', $id);
-
-    if ($this->db->execute()) {
-      return $newPassword;
-    } else {
-      return false;
+    $result = array();
+    if ($count > 0) {
+      for ($x = 0; $x < $count; $x++) {
+        $result[] = $text;
+      }
     }
+
+    return implode($separator, $result);
   }
 
   public function getDatatable2($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
   {
     $selected = join(',', $columns);
     $sql = 'SELECT ' . $selected . ' FROM ' .
-      $this->table2 . ' WHERE 1 ' .
+      $this->table . ' WHERE 1 ' .
       $filters . ' ORDER BY ' .
       $orderColumn . ' ' .
       $orderType . ' LIMIT ' .
@@ -91,18 +137,19 @@ class User extends Model
   }
   function countAll2()
   {
-    $sql = 'SELECT count(*) as count FROM ' . $this->table2;
+    $sql = 'SELECT count(*) as count FROM ' . $this->table;
     $this->db->query($sql);
 
     return $this->db->single();
   }
   function countAllWithFilters2($filters)
   {
-    $sql = 'SELECT count(*) as count FROM ' . $this->table2 . ' WHERE 1 ' . $filters;
+    $sql = 'SELECT count(*) as count FROM ' . $this->table . ' WHERE 1 ' . $filters;
     $this->db->query($sql);
 
     return $this->db->single();
   }
+
 
   public function getDatatable($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
   {
@@ -170,6 +217,109 @@ class User extends Model
   {
     return $this->db->selectAll($this->table, $columns, $values, $hasAdmin);
   }
+  public function get(array $selectedCols = [], array $filterCols = [], array $filterVals = []): array
+  {
+    $selected = join(',', $selectedCols);
+    $filters = $this->concatFilters($filterCols, $filterVals);
+
+    $sql = 'SELECT ' . $selected . ' FROM ' . $this->table . ' WHERE ' . $filters;
+    $this->db->query($sql);
+
+    for ($i = 0; $i < sizeof($filterCols); $i++) {
+      $this->db->bind(':' . $filterCols[$i], $filterVals[$i]);
+    }
+
+    return $this->db->resultSet();
+  }
+  public function find(array $selectedCols = [], array $filterCols = [], array $filterVals = [])
+  {
+    $selected = join(',', $selectedCols);
+    $filters = $this->concatFilters($filterCols, $filterVals);
+
+    $sql = 'SELECT ' . $selected . ' FROM ' . $this->table . ' WHERE ' . $filters;
+    $this->db->query($sql);
+
+    for ($i = 0; $i < sizeof($filterCols); $i++) {
+      $this->db->bind(':' . $filterCols[$i], $filterVals[$i]);
+    }
+
+    return $this->db->single();
+  }
+
+  public function hasRow(array $filterCols, array $filterVals): bool
+  {
+    $filters = $this->filters($filterCols, $filterVals);
+
+    $sql = 'SELECT * FROM ' . $this->table . ' WHERE ' . $filters;
+    $this->db->query($sql);
+
+    for ($i = 0; $i < sizeof($filterCols); $i++) {
+      $this->db->bind(':' . $filterCols[$i], $filterVals[$i]);
+    }
+
+    if ($this->db->rowCount() > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public function store2($cols, $vals)
+  {
+    if (sizeof($cols) !== sizeof($vals)) {
+      throw new Error('Error: columns and values must have the same length');
+    }
+
+    $placeholders = [];
+    for ($i = 0; $i < sizeof($cols); $i++) {
+      $placeholders[] = ':' . $cols[$i];
+    }
+
+    $this->db()->query(
+      'INSERT INTO profiles
+        (
+          ' . join(',', $cols) . '
+        ) 
+      VALUES
+        (
+          ' . join(',', $placeholders) . '
+        )
+      '
+    );
+
+    for ($i = 0; $i < sizeof($cols); $i++) {
+      $this->db->bind(':' . $cols[$i], $vals[$i]);
+    }
+
+    if ($this->db()->execute()) {
+      $this->db()->query('SELECT * FROM profiles WHERE id = @@identity');
+
+      return $this->db()->single();
+    } else {
+      return false;
+    }
+  }
+
+  private function concatFilters($filterCols, $filterVals)
+  {
+    if (sizeof($filterCols) !== sizeof($filterVals)) {
+      throw new Error('Error: columns and values must have the same length');
+    }
+
+    $i = 0;
+    $filters = '';
+    if (!empty($filterCols) && !empty($filterVals)) {
+      foreach ($filterCols as $column) {
+        if (++$i === count($filterCols)) {
+          $filters .= $column . ' = :' . $column;
+          break;
+        }
+        $filters .= $column . ' = :' . $column . ' AND ';
+      }
+    }
+
+    return $filters;
+  }
 
   // Regsiter user
   public function register($data)
@@ -205,16 +355,8 @@ class User extends Model
   {
     $randomVkey = uniqid();
 
-    // $this->db->query(
-    //   'UPDATE users 
-    //    SET '
-    //     . $vkeyType . ' = :vkey
-    //      WHERE ' . $idType . ' = :user_id 
-    //   '
-    // );
-
     $this->db->query(
-      'UPDATE ' . $this->table2 . ' 
+      'UPDATE users 
        SET '
         . $vkeyType . ' = :vkey
          WHERE ' . $idType . ' = :user_id 
@@ -245,6 +387,22 @@ class User extends Model
     );
 
     $this->db->bind(':user_id', $userId);
+
+    if ($this->db->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public function deleteUser($idType, $id, $isEmailVerified = false, $isActive = false)
+  {
+    $this->db->query(
+      'DELETE FROM users WHERE ' . $idType . ' = :id AND email_verified = :email_verified'
+    );
+
+    $this->db->bind(':id', $id);
+    $this->db->bind(':email_verified', $isEmailVerified);
 
     if ($this->db->execute()) {
       return true;
@@ -314,27 +472,13 @@ class User extends Model
     return $this->db->update($this->table, $columns, $values, $idType, $id);
   }
 
-  public function update3($columns, $values, $idType, $id)
-  {
-    return $this->db->update($this->table2, $columns, $values, $idType, $id);
-  }
-
-  public function update4($columns, $values, $idType, $id)
-  {
-    return $this->db->update2($this->table2, $columns, $values, $idType, $id);
-  }
-
   public function verifyEmail($data)
   {
-    // $this->db->query(
-    //   'UPDATE users 
-    //      SET
-    //       email_verified = :email_verified
-    //        WHERE id = :user_id AND email_vkey = :email_vkey
-    //     '
-    // );
     $this->db->query(
-      'UPDATE ' . $this->table2 . ' SET email_verified = :email_verified WHERE id = :user_id AND email_vkey = :email_vkey
+      'UPDATE users 
+         SET
+          email_verified = :email_verified
+           WHERE id = :user_id AND email_vkey = :email_vkey
         '
     );
 
@@ -348,7 +492,6 @@ class User extends Model
       return false;
     }
   }
-
   public function changeEmail($data)
   {
     $this->db->query(
@@ -628,107 +771,6 @@ class User extends Model
   }
 
 
-  public function find(array $selectedCols = [], array $filterCols = [], array $filterVals = [])
-  {
-    $selected = join(',', $selectedCols);
-    $filters = $this->filters($filterCols, $filterVals);
-
-    $sql = 'SELECT ' . $selected . ' FROM ' . $this->table2 . ' WHERE ' . $filters;
-    $this->db->query($sql);
-
-    for ($i = 0; $i < sizeof($filterCols); $i++) {
-      $this->db->bind(':' . $filterCols[$i], $filterVals[$i]);
-    }
-
-    return $this->db->single();
-  }
-
-  public function findUserProfile(array $selectedCols = [], array $filterCols = [], array $filterVals = [])
-  {
-    $selected = join(',', $selectedCols);
-    $filters = $this->filters($filterCols, $filterVals);
-
-    $sql = 'SELECT ' . $selected . ' FROM ' . $this->table2 . ' LEFT JOIN profiles on profiles.id = accounts.profile_id WHERE ' . $filters;
-
-    $this->db->query($sql);
-
-    for ($i = 0; $i < sizeof($filterCols); $i++) {
-      $this->db->bind(':' . $this->placeholder($filterCols[$i]), $filterVals[$i]);
-    }
-
-    return $this->db->single();
-  }
-
-  public function getUserProfile(array $selectedCols = [], array $filterCols = [], array $filterVals = []): array
-  {
-    $selected = join(',', $selectedCols);
-    $filters = $this->filters($filterCols, $filterVals);
-
-    $sql = 'SELECT ' . $selected . ' FROM ' . $this->table2 . ' LEFT JOIN profiles on profiles.id = accounts.profile_id WHERE ' . $filters;
-    $this->db->query($sql);
-
-    for ($i = 0; $i < sizeof($filterCols); $i++) {
-      $this->db->bind(':' . $this->placeholder($filterCols[$i]), $filterVals[$i]);
-    }
-
-    return $this->db->resultSet();
-  }
-
-  public function hasRow(array $filterCols, array $filterVals)
-  {
-    $filters = $this->filters($filterCols, $filterVals);
-
-    $sql = 'SELECT * FROM ' . $this->table . ' WHERE ' . $filters;
-    $this->db->query($sql);
-
-    for ($i = 0; $i < sizeof($filterCols); $i++) {
-      $this->db->bind(':' . $filterCols[$i], $filterVals[$i]);
-    }
-
-    if ($this->db->rowCount() > 0) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  public function store2($cols, $vals)
-  {
-    if (sizeof($cols) !== sizeof($vals)) {
-      throw new Error('Error: columns and values must have the same length');
-    }
-
-    $placeholders = [];
-    for ($i = 0; $i < sizeof($cols); $i++) {
-      $placeholders[] = ':' . $cols[$i];
-    }
-
-    $this->db()->query(
-      'INSERT INTO ' . $this->table2 . '
-        (
-          ' . join(',', $cols) . '
-        ) 
-      VALUES
-        (
-          ' . join(',', $placeholders) . '
-        )
-      '
-    );
-
-    for ($i = 0; $i < sizeof($cols); $i++) {
-      $this->db->bind(':' . $cols[$i], $vals[$i]);
-    }
-
-    if ($this->db()->execute()) {
-      $this->db()->query('SELECT * FROM profiles WHERE id = @@identity');
-
-      return $this->db()->single();
-    } else {
-      return false;
-    }
-  }
-
-
   // Find user by email
   public function findUserByEmail($email)
   {
@@ -891,6 +933,31 @@ class User extends Model
 
     if ($this->db->execute()) {
       return true;
+    } else {
+      return false;
+    }
+  }
+
+  function resetPasswordAndReturnUnencryptedVersion($id, $emailVkey)
+  {
+    $permitted_chars = uniqid();
+    $offset = strlen($permitted_chars) - 5;
+    $newPassword = substr(str_shuffle($permitted_chars), 0, $offset);
+    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+    $sql = 'UPDATE users 
+            SET 
+              password = :password 
+              WHERE id = :id AND email_vkey = :email_vkey
+              ';
+    $this->db->query($sql);
+
+    $this->db->bind(':password', $hashedPassword);
+    $this->db->bind(':id', $id);
+    $this->db->bind(':email_vkey', $emailVkey);
+
+    if ($this->db->execute()) {
+      return $newPassword;
     } else {
       return false;
     }

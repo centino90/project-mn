@@ -4,13 +4,9 @@
     <div>
       <h2 class="mt-6 text-center text-3xl font-extrabold text-secondary-900">
         Create your PDA-DCC login credentials
-      </h2>      
+      </h2>
     </div>
     <form class="mt-8" action="<?php echo URLROOT; ?>/users/registerEmailPassword" method="post" @submit="$refs.submit.disabled = true; $refs.submit.value = 'Please wait...'">
-      <!-- <div class="text-black text-center">
-        <?php flash('register_success'); ?>
-      </div> -->
-
       <div class="flex flex-col gap-y-5">
         <input type="hidden" name="user_id">
 
@@ -64,7 +60,7 @@
         </div>
 
         <div class="flex flex-col gap-3 my-4">
-          <?php if (passwordRegistered()) : ?>
+          <?php if ($this->session->isPasswordRegistered()) : ?>
             <div class="flex-1">
               <a href="<?php echo URLROOT . '/users/registerPrcInfo'; ?>" class="form-btn gap-3 bg-secondary-500 text-white w-full py-2 px-4 mx-0">
                 Register license info

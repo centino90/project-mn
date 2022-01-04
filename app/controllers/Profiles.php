@@ -8,12 +8,23 @@ class Profiles extends Controller
 {
     public function __construct()
     {
-        redirectIfNotAuthUser();
-        redirectNotFullyRegisteredUser();
-        redirectInactiveUserOrRegenerateTimer();
-
         $this->userModel = $this->model('User');
         $this->duesModel = $this->model('Dues');
+        $this->profileModel = $this->model('Profile');
+        $this->sessionManager = new SessionManager;
+        $this->image = new Image;
+
+        parent::__construct();
+
+        $this->session->start();
+
+        if (!$this->isLoggedin() || !$this->isEmailVerified()) {
+            $this->url->redirectToLoginpage();
+        }
+
+        if ($this->isLoggedIn() && !$this->isCompleteInfo() && $this->isPasswordRegistered()) {
+            $this->url->redirect('users/registerPrcInfo');
+        }
     }
 
     public function index()
@@ -22,13 +33,11 @@ class Profiles extends Controller
             'current_route' => __FUNCTION__,
         ];
 
-        // $this->view('users/index', $data);
-        unset($_SESSION['login_success']);
-        redirect('profiles/userInfo');
+        $this->url->redirect('profiles/userInfo');
     }
     public function paymentHistory()
     {
-        $paymentHistory = $this->duesModel->getAllDuesByUserId('user_id', $_SESSION['user_id']);
+        $paymentHistory = $this->duesModel->getAllDuesByUserId('user_id', $this->session->get('user')->id);
 
         $data = [
             'current_route' => __FUNCTION__,
@@ -40,96 +49,206 @@ class Profiles extends Controller
     }
     public function userInfo()
     {
-        $user = $this->userModel->getUserById($_SESSION['user_id']);
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+        $user = $this->session->auth(false);
 
-            $data = [
-                'current_route' => __FUNCTION__,
-                'user_id' => $_SESSION['user_id'] ?? '',
+        $data = [
+            'current_route' => __FUNCTION__,
 
-                'has_facebook_auth' => !empty($user->fb_user_id) ? true : false,
-                'has_google_auth' => !empty($user->google_user_id) ? true : false,
-                'has_password' => !empty($user->password) ? true : false,
-                'has_email' => !empty($user->email) ? true : false,
+            'has_facebook_auth' => !empty($user->fb_user_id) ? true : false,
+            'has_google_auth' => !empty($user->google_user_id) ? true : false,
+            'has_password' => !empty($user->password) ? true : false,
+            'has_email' => !empty($user->email) ? true : false,
 
 
-                'profile_image_path' => $user->profile_img_path ?? '',
-                'email' => $user->email ?? '',
-                'old_password' => trim($_POST['old_password']),
-                'password' => trim($_POST['password']),
-                'confirm_password' => trim($_POST['confirm_password']),
+            'profile_image_path' => $user->profile_img_path,
+            'email' => $user->email,
+            'user' => $user
+        ];
 
-                'old_password_err' => '',
-                'password_err' => '',
-                'confirm_password_err' => ''
-            ];
+        $this->view('profiles/userInfo', $data);
+    }
 
-            $verifiedUser = $this->userModel->getVerifiedUserByEmail($_SESSION['user_email']);
+    public function changePassword()
+    {
+        try {
+            $user = $this->session->auth(false);
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Error('Your request method must be in \'POST\'');
+            }
+
+            $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+            if ($contentType !== "application/json") {
+                throw new Error('Your content type must be in \'application/json\'');
+            }
+
+            $content = trim(file_get_contents("php://input"));
+            $decoded = json_decode($content, true);
+
+            $decoded['message'] = 'Password was successfully updated!';
+            $decoded['status'] = 'ok';
+            $decoded['errors'] = [];
+
+            // check inputs
+            $verifiedUser = $this->userModel->find(
+                ['*', 'accounts.id AS id'],
+                ['email', 'email_verified'],
+                [$this->session->auth()->email, true]
+            );
             $hashed_password = $verifiedUser->password;
-            if (empty($data['old_password'])) {
-                $data['old_password_err'] = 'Please enter password';
+            if (empty($decoded['profile']['old_password'])) {
+                $decoded['errors']['old_password_err'] = 'Please enter old password';
             } else {
-                if (!password_verify($data['old_password'], $hashed_password)) {
-                    $data['old_password_err'] = 'Old Password incorrect';
+                if (!password_verify($decoded['profile']['old_password'], $hashed_password)) {
+                    $decoded['errors']['old_password_err'] = 'Old Password incorrect';
                 }
             }
 
-            if (empty($data['password'])) {
-                $data['password_err'] = 'Please enter password';
-            } elseif (strlen($data['password']) < 6) {
-                $data['password_err'] = 'Password must be at least 6 characters';
+            if (empty($decoded['profile']['password'])) {
+                $decoded['errors']['password_err'] = 'Please enter new password';
+            } elseif (strlen($decoded['profile']['password']) < 6) {
+                $decoded['errors']['password_err'] = 'Password must be at least 6 characters';
             }
-            if (empty($data['confirm_password'])) {
-                $data['confirm_password_err'] = 'Please confirm password';
+            if (empty($decoded['profile']['confirm_password'])) {
+                $decoded['errors']['confirm_password_err'] = 'Please confirm password';
             } else {
-                if ($data['password'] != $data['confirm_password']) {
-                    $data['confirm_password_err'] = 'Passwords do not match';
+                if ($decoded['profile']['password'] != $decoded['profile']['confirm_password']) {
+                    $decoded['errors']['confirm_password_err'] = 'Passwords do not match';
                 }
             }
 
-            // Check if all errors are empty
-            if (
-                empty($data['old_password_err']) &&
-                empty($data['password_err']) &&
-                empty($data['confirm_password_err'])
-            ) {
-                $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-
-                if (!$this->userModel->update($data)) {
-                    die('Something went wrong');
-                }
-
-                // flash('update_status', 'Your password is succesfully updated!');
-                redirect('profiles/userInfo');
-            } else {
-                // Load view with errors
-                $this->view('profiles/userInfo', $data);
+            if (sizeof($decoded['errors']) > 0) {
+                throw new Error('You have some input errors. Please check your inputs');
             }
-        } else {
-            $data = [
-                'current_route' => __FUNCTION__,
 
-                'has_facebook_auth' => !empty($user->fb_user_id) ? true : false,
-                'has_google_auth' => !empty($user->google_user_id) ? true : false,
-                'has_password' => !empty($user->password) ? true : false,
-                'has_email' => !empty($user->email) ? true : false,
+            $decoded['profile']['hashed_password'] = password_hash($decoded['profile']['password'], PASSWORD_DEFAULT);
+            if (!$this->userModel->update3(
+                [
+                    'password'
+                ],
+                [
+                    $decoded['profile']['hashed_password'],
+                ],
+                'id',
+                $this->session->auth()->id
+            )) {
+                throw new Error('Something went wrong with the updating of the password. Try again');
+            }
 
+            $reply = json_encode($decoded);
 
-                'profile_image_path' => $user->profile_img_path,
-                'email' => $user->email,
-                'old_password' => '',
-                'password' => '',
-                'confirm_password' => '',
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
+        } catch (\Throwable $th) {
+            header("Content-Type: application/json; charset=UTF-8");
+            $decoded['status'] = 'fail';
+            $decoded['message'] = $th->getMessage();
+            $reply = json_encode($decoded);
 
-                'old_password_err' => '',
-                'password_err' => '',
-                'confirm_password_err' => ''
-            ];
-
-            $this->view('profiles/userInfo', $data);
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
         }
     }
+    public function profileImage()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Error('Your request method must be in \'POST\'');
+            }
+
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+            if (strpos($contentType, 'multipart/form-data') === false) {
+                throw new Error('Your content type must be in \'multipart/form-data\'');
+            }
+
+            $decoded = $_POST;
+
+            $decoded['profile_img'] = $_FILES['profile_img'];
+            $decoded['message'] = 'Profile image was successfully added!';
+            $decoded['status'] = 'ok';
+            $decoded['errors'] = [];
+
+            if (!isset($decoded["profile_img"]['name'])) {
+                throw new Error('You must submit an image to proceed.');
+            }
+            if (!isset($decoded["user_id"]) || empty($decoded['user_id'])) {
+                throw new Error('You must submit a user_id.');
+            }
+
+            $filesizeInMb = round(filesize($decoded["profile_img"]['tmp_name']) / 1024 / 1024, 1);
+            if ($filesizeInMb > 2) {
+                throw new Error('File size limit is only 2 MB. Try again');
+            }
+
+            $allowFileExtensions = [
+                'png',
+                'jpg',
+                'webp',
+                'gif'
+            ];
+            $file_array = explode(".", $decoded["profile_img"]["name"]);
+            $file_extension = end($file_array);
+
+            if (!in_array($file_extension, $allowFileExtensions)) {
+                throw new Error('The file format of the file you submitted is not valid. You must follow these following formats (.png, .jpg, .gif, and .webp)');
+            }
+
+            $user = $this->userModel->findUserProfile(
+                ['*', 'accounts.id AS id'],
+                ['accounts.id'],
+                [$decoded['user_id']]
+            );
+
+            $decoded['filename'] = $user->first_name . '-' . time() . '.' . 'webp';
+
+            // full-sized img
+            $fullsized = $this->image
+                ->start($decoded["profile_img"]['tmp_name'], $decoded['filename'])
+                ->repurpose(500, 500)
+                ->save(Image::IMAGE_ROOT, 15);
+
+            $thumb = $this->image
+                ->start($decoded["profile_img"]['tmp_name'], $decoded['filename'])
+                ->repurpose(50, 50)
+                ->save(Image::IMAGE_THUMBNAIL_ROOT, 25);
+
+            // check if user already has profile img
+            if (!empty($user->profile_img_path)) {
+                $decoded['message'] = 'Profile image was successfully updated!';
+                unlink($user->profile_img_path);
+            }
+            if (!empty($user->thumbnail_img_path)) {
+                $decoded['message'] = 'Profile image was successfully updated!';
+                unlink($user->thumbnail_img_path);
+            }
+
+            $decoded['profile_img_path'] = Image::IMAGE_DIRECTORY . $fullsized;
+            // update image
+            $this->userModel->update3(
+                ['profile_img_path', 'thumbnail_img_path'],
+                [Image::IMAGE_DIRECTORY . $fullsized, Image::IMAGE_THUMBNAIL_DIRECTORY . $thumb],
+                'id',
+                $user->id
+            );
+
+            $reply = json_encode($decoded);
+
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
+        } catch (\Throwable $th) {
+            header("Content-Type: application/json; charset=UTF-8");
+            $decoded['status'] = 'fail';
+            $decoded['message'] = $th->getMessage();
+            $reply = json_encode($decoded);
+
+            header("Content-Type: application/json; charset=UTF-8");
+            exit($reply);
+        }
+    }
+
     public function licenseInfo()
     {
         $fieldOfPracticeOptions = [
@@ -149,13 +268,14 @@ class Profiles extends Controller
             'None Practicing'
         ];
 
+        $user = $this->session->auth(false);
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-            $user = $this->userModel->getUserById($_SESSION['user_id']);
 
             $data = [
                 'current_route' => __FUNCTION__,
-                'user_id' => $_SESSION['user_id'] ?? '',
+                'user_id' => $this->session->get('user')->id ?? '',
                 'field_practice_options' => $fieldOfPracticeOptions,
                 'type_practice_options' => $typeOfPracticeOptions,
 
@@ -192,8 +312,7 @@ class Profiles extends Controller
             // Check if errors are empty
             if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
                 if ($this->userModel->updatePrcInfo($data)) {
-                    flash('update_success', 'Your license profile was updated');
-                    redirect('profiles/licenseInfo');
+                    $this->url->redirect('profiles/licenseInfo');
                 } else {
                     die('Something went wrong');
                 }
@@ -202,8 +321,6 @@ class Profiles extends Controller
                 $this->view('profiles/licenseInfo', $data);
             }
         } else {
-            $user = $this->userModel->getUserById($_SESSION['user_id']);
-
             $data = [
                 'current_route' => __FUNCTION__,
                 'field_practice_options' => $fieldOfPracticeOptions,
@@ -232,13 +349,14 @@ class Profiles extends Controller
             'Female'
         ];
 
+        $user = $this->session->auth(false);
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-            $user = $this->userModel->getUserById($_SESSION['user_id']);
 
             $data = [
                 'current_route' => __FUNCTION__,
-                'user_id' => $_SESSION['user_id'] ?? '',
+                'user_id' => $this->session->get('user')->id ?? '',
                 'gender_options' => $genderOptions,
 
                 'first_name' => trim($_POST['first_name']),
@@ -295,7 +413,7 @@ class Profiles extends Controller
 
                 if ($this->userModel->updatePersonalInfo($data)) {
                     flash('update_success', 'Your personal profile was updated');
-                    redirect('profiles/personalInfo');
+                    $this->url->redirect('profiles/personalInfo');
                 } else {
                     die('Something went wrong');
                 }
@@ -304,8 +422,6 @@ class Profiles extends Controller
                 $this->view('profiles/personalInfo', $data);
             }
         } else {
-            $user = $this->userModel->getUserById($_SESSION['user_id']);
-
             $data = [
                 'current_route' => __FUNCTION__,
                 'gender_options' => $genderOptions,
@@ -334,12 +450,14 @@ class Profiles extends Controller
     }
     public function clinicInfo()
     {
+        $user = $this->session->auth(false);
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
             $data = [
                 'current_route' => __FUNCTION__,
-                'user_id' => $_SESSION['user_id'] ?? '',
+                'user_id' => $user->id ?? '',
 
                 'clinic_name' => trim($_POST['clinic_name']),
                 'clinic_street' => trim($_POST['clinic_street']),
@@ -379,8 +497,7 @@ class Profiles extends Controller
             ) {
 
                 if ($this->model('Clinic')->updateOrInsert($data)) {
-                    flash('update_success', 'Your clinic information was updated');
-                    redirect('profiles/clinicInfo');
+                    $this->url->redirect('profiles/clinicInfo');
                 } else {
                     die('Something went wrong');
                 }
@@ -389,16 +506,14 @@ class Profiles extends Controller
                 $this->view('profiles/clinicInfo', $data);
             }
         } else {
-            $clinic = $this->model('Clinic')->getClinicById($_SESSION['user_id']);
-
             $data = [
                 'current_route' => __FUNCTION__,
 
-                'clinic_name' => $clinic->name ?? '',
-                'clinic_street' =>  $clinic->street ?? '',
-                'clinic_district' =>  $clinic->district ?? '',
-                'clinic_city' =>  $clinic->city ?? '',
-                'clinic_contact_number' =>  $clinic->contact_number ?? '',
+                'clinic_name' => $user->clinic_name ?? '',
+                'clinic_street' =>  $user->clinic_street ?? '',
+                'clinic_district' =>  $user->clinic_district ?? '',
+                'clinic_city' =>  $user->clinic_city ?? '',
+                'clinic_contact_number' =>  $user->clinic_contact ?? '',
 
                 'clinic_name_err' => '',
                 'clinic_street_err' => '',
@@ -412,12 +527,14 @@ class Profiles extends Controller
     }
     public function emergencyInfo()
     {
+        $user = $this->session->auth(false);
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
             $data = [
                 'current_route' => __FUNCTION__,
-                'user_id' => $_SESSION['user_id'] ?? '',
+                'user_id' => $user->id ?? '',
 
                 'emergency_person_name' => trim($_POST['emergency_person_name']),
                 'emergency_address' => trim($_POST['emergency_address']),
@@ -446,8 +563,7 @@ class Profiles extends Controller
             ) {
 
                 if ($this->model('User')->updateEmergencyInfo($data)) {
-                    flash('update_success', 'Your emergency information was updated');
-                    redirect('profiles/emergencyInfo');
+                    $this->url->redirect('profiles/emergencyInfo');
                 } else {
                     die('Something went wrong');
                 }
@@ -456,8 +572,6 @@ class Profiles extends Controller
                 $this->view('profiles/emergencyInfo', $data);
             }
         } else {
-            $user = $this->model('User')->getUserById($_SESSION['user_id']);
-
             $data = [
                 'current_route' => __FUNCTION__,
 
@@ -473,79 +587,7 @@ class Profiles extends Controller
             $this->view('profiles/emergencyInfo', $data);
         }
     }
-    public function profileImage()
-    {
-        try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Error('Your request method must be in \'POST\'');
-            }
 
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-            $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
-
-            if (strpos($contentType, 'multipart/form-data') === false) {
-                throw new Error('Your content type must be in \'multipart/form-data\'');
-            }
-
-            $decoded = $_POST;
-
-            $decoded['profile_img'] = $_FILES['profile_img'];
-            $decoded['message'] = 'Profile image was successfully added!';
-            $decoded['status'] = 'ok';
-            $decoded['errors'] = [];
-
-            if (!isset($decoded["profile_img"]['name'])) {
-                throw new Error('You must submit an image to proceed.');
-            }
-
-            $filesizeInMb = round(filesize($decoded["profile_img"]['tmp_name']) / 1024 / 1024, 1);
-            if ($filesizeInMb > 2) {
-                throw new Error('File size limit is only 2 MB. Try again');
-            }
-
-            $allowFileExtensions = [
-                'png',
-                'jpg',
-                'svg'
-            ];
-            $file_array = explode(".", $decoded["profile_img"]["name"]);
-            $file_extension = end($file_array);
-
-            if (!in_array($file_extension, $allowFileExtensions)) {
-                throw new Error('The file format of the file you submitted is not valid. You must follow these following formats (.png, .jpg and .svg)');
-            }
-
-            $decoded['filename'] = time() . '.' . $file_extension;
-            $decoded['profile_img_path'] = 'img/profiles/' . $decoded['filename'];
-
-            move_uploaded_file($decoded['profile_img']['tmp_name'], $decoded['profile_img_path']);
-
-            $user = $this->userModel->getUserById($decoded['user_id']);
-            // check if user already has profile img
-            if (!empty($user->profile_img_path)) {
-                $decoded['message'] = 'Profile image was successfully updated!';
-                unlink($user->profile_img_path);
-            }
-
-            // update image
-            if (!$this->userModel->updateProfileImage($decoded)) {
-                throw new Error('Profile image was not successfully added');
-            }
-
-            $reply = json_encode($decoded);
-
-            header("Content-Type: application/json; charset=UTF-8");
-            exit($reply);
-        } catch (\Throwable $th) {
-            header("Content-Type: application/json; charset=UTF-8");
-            $decoded['status'] = 'fail';
-            $decoded['message'] = $th->getMessage();
-            $reply = json_encode($decoded);
-
-            header("Content-Type: application/json; charset=UTF-8");
-            exit($reply);
-        }
-    }
 
     public function fetchUserProfile()
     {
@@ -556,11 +598,13 @@ class Profiles extends Controller
 
             $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
-            $decoded['message'] = 'Profile image was successfully added!';
+            $decoded['message'] = 'User profile was successfully fetched!';
             $decoded['status'] = 'ok';
             $decoded['errors'] = [];
 
-            $decoded['data'] = $this->userModel->getAll(['email_verified', 'is_active'], [true, true], false);
+            $decoded['data'] = $this->profileModel->getProfileUser(
+                ['*', 'profiles.id AS id']
+              );
 
             $reply = json_encode($decoded);
 
@@ -575,11 +619,5 @@ class Profiles extends Controller
             header("Content-Type: application/json; charset=UTF-8");
             exit($reply);
         }
-    }
-
-    public function __destruct()
-    {
-        unset($_SESSION['fb_account_taken']);
-        unset($_SESSION['google_account_taken']);
     }
 }

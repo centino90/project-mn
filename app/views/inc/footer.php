@@ -32,31 +32,61 @@
       </div>
     </div>
   </footer>
-
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js" integrity="sha512-u9akINsQsAkG9xjc1cnGF4zw5TFDwkxuc9vUp5dltDWYCSmyd0meygbvgXrlc/z7/o4a19Fb5V0OUE58J7dcyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
   <script src="<?php echo URLROOT; ?>/js/main.bundle.js"></script>
   <script src="<?php echo URLROOT; ?>/js/vendor.bundle.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // inactivityTime();
+      const user = '<?php echo $this->session->has(SessionManager::SESSION_USER) ?>' // to check if there is a user in session or not
+      const SESSION_EXPIRATION = <?php echo SESSION_EXPIRATION ?>
 
-      // function inactivityTime() {
-      //   var time;
-      //   window.onload = resetTimer;
-      //   // DOM Events
-      //   document.onclick = resetTimer;
-      //   document.onscroll = resetTimer;
+      if (user || user !== '') {
+        let timer = setInterval(incrementTimer, 1000);
+        let idleTime = 0
+        const processChange = debounce(() => restartServerSessionTimer());
 
-      //   function logout() {
-      //     alert("You are now logged out.")
-      //   }
+        window.addEventListener("mousemove", processChange);
+        window.addEventListener("scroll", processChange);
+        window.addEventListener("keyup", processChange);
 
-      //   function resetTimer() {
-      //     clearTimeout(time);
-      //     time = setTimeout(logout, 300000) // 5minutes
-      //     // 1000 milliseconds = 1 second
-      //   }
-      // };
+        function debounce(func, timeout = 1000) {
+          let timer2;
+          return (...args) => {
+            clearTimeout(timer2);
+            timer2 = setTimeout(() => {
+              func.apply(this, args);
+            }, timeout);
+          };
+        }
+
+        function incrementTimer() {
+          if (idleTime == SESSION_EXPIRATION) {
+            alert('Your session has timedout.')
+            clearInterval(timer)
+
+            window.location.href = '<?php echo URLROOT ?>/users/login'
+          }
+
+          idleTime++
+        }
+
+        function restartServerSessionTimer() {
+          const formdata = new FormData()
+          formdata.append('current_timestamp', Math.round((new Date()).getTime() / 1000))
+
+          fetch('<?php echo URLROOT ?>/users/restartSessionTimer', {
+              method: 'post',
+              body: formdata
+            }).then(res => res.json())
+            .then(data => {
+              if (data.status == 'ok') {
+                idleTime = Math.round((new Date()).getTime() / 1000) - data.data.session_login_timestamp
+                clearInterval(timer)
+                timer = setInterval(incrementTimer, 1000)
+              }
+            })
+        }
+      }
     })
   </script>
 

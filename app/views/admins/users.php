@@ -22,7 +22,7 @@
         </li>
         <li class="flex items-center">
           <span aria-current="page">
-            Accounts
+            Users
           </span>
         </li>
       </ol>
@@ -31,7 +31,7 @@
 
   <header class="flex flex-col gap-10 mb-10">
     <div class="w-64 flex-shrink-0">
-      <span class="text-2xl font-bold">Accounts</span>
+      <span class="text-2xl font-bold">Users</span>
     </div>
   </header>
 
@@ -102,7 +102,7 @@
     </div>
 
     <div class="table-container">
-      <table id="myTable" style="width: 100%" x-cloak>
+      <table id="myTable" style="width: 100%">
         <thead class="border-t border-b">
           <tr>
             <th>SIGNED UP AT</th>
@@ -110,28 +110,6 @@
             <th>role</th>
             <th>Account status</th>
             <th>Last Log in</th>
-            <th>Payment status</th>
-            <th class="hidden-first">status_remarks</th>
-            <th class="hidden-first">email</th>
-            <th class="hidden-first">prc_number</th>
-            <th class="hidden-first">prc_registration_date</th>
-            <th class="hidden-first">prc_expiration_date</th>
-            <th class="hidden-first">field_practice</th>
-            <th class="hidden-first">type_practice</th>
-            <th class="hidden-first">birthdate</th>
-            <th class="hidden-first">gender</th>
-            <th class="hidden-first">contact_number</th>
-            <th class="hidden-first">fb_account_name</th>
-            <th class="hidden-first">address</th>
-            <th class="hidden-first">clinic_name</th>
-            <th class="hidden-first">clinic_street</th>
-            <th class="hidden-first">clinic_district</th>
-            <th class="hidden-first">clinic_city</th>
-            <th class="hidden-first">clinic_contact_number</th>
-            <th class="hidden-first">emergency_person_name</th>
-            <th class="hidden-first">emergency_address</th>
-            <th class="hidden-first">emergency_contact_number</th>
-
           </tr>
         </thead>
       </table>
@@ -297,16 +275,13 @@
     }
 
     const dataTable = $('#myTable').DataTable({
-      'order': [
-        [0, 'desc']
-      ],
       'bLengthChange': false,
       'processing': true,
       'serverSide': true,
       'searchDelay': 350,
       'serverMethod': 'post',
       'ajax': {
-        'url': 'accountsDatatable',
+        'url': 'usersDatatable',
         'data': function(data) {
           // Append to data
           // data.role = app.role;
@@ -314,10 +289,10 @@
         }
       },
       'columns': [{
-          data: 'created_at'
+          data: 'created_at',
         },
         {
-          data: 'first_name'
+          data: 'email'
         },
         {
           data: 'role',
@@ -332,105 +307,7 @@
         },
         {
           data: 'logged_at'
-        },
-        {
-          data: 'payment_status',
-          sortable: false,
-          visible: false,
-          render: function(d, t, r, m) {
-            return r.payment_status
-            // if (r.payment_statuses[0] == '') return r.payment_statuses
-
-            // let str = ''
-            // r.payment_statuses.forEach(function(item, index) {
-            //   let theme = ['incomplete_payment', 'recovered'].includes(item) ? 'bg-danger-100' :
-            //     ('dormant' == item) ? 'bg-secondary-100' : 'bg-blue-100'
-            //   str += `<span class="rounded-full px-4 py-1 mx-1 ${theme}">${r.payment_statuses[index]}</span>`
-            // })
-
-            // return str
-          }
-        },
-        {
-          data: 'status_remarks',
-          visible: false
-        },
-        {
-          data: 'email',
-          visible: false
-        },
-        {
-          data: 'prc_number',
-          visible: false
-        },
-        {
-          data: 'prc_registration_date',
-          visible: false
-        },
-        {
-          data: 'prc_expiration_date',
-          visible: false
-        },
-        {
-          data: 'field_practice',
-          visible: false
-        },
-        {
-          data: 'type_practice',
-          visible: false
-        },
-        {
-          data: 'birthdate',
-          visible: false
-        },
-        {
-          data: 'gender',
-          visible: false
-        },
-        {
-          data: 'contact_number',
-          visible: false
-        },
-        {
-          data: 'fb_account_name',
-          visible: false
-        },
-        {
-          data: 'address',
-          visible: false
-        },
-        {
-          data: 'clinic_name',
-          visible: false
-        },
-        {
-          data: 'clinic_street',
-          visible: false
-        },
-        {
-          data: 'clinic_district',
-          visible: false
-        },
-        {
-          data: 'clinic_city',
-          visible: false
-        },
-        {
-          data: 'clinic_contact_number',
-          visible: false
-        },
-        {
-          data: 'emergency_person_name',
-          visible: false
-        },
-        {
-          data: 'emergency_address',
-          visible: false
-        },
-        {
-          data: 'emergency_contact_number',
-          visible: false
-        },
+        }
       ],
       initComplete: function() {
         const api = this.api();

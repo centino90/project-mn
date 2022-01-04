@@ -160,12 +160,11 @@ function tryAndLoginWithFacebook($get, $usersController)
 				$_SESSION['fb_user_info'] = $fbUserInfo['fb_response'];
 
 				$userInfoWithId = $userModel->getRowWithValue('users', 'fb_user_id', $fbUserInfo['fb_response']['id']);
-				$loggedInUser = $userModel->getRowWithValue('users', 'id', $_SESSION['user_id'] ?? '');
-
 
 				if ($userInfoWithId) {
 					//check if the registration is done inside or outside
-					if (isLoggedIn()) {
+					if ($usersController->isLoggedIn()) {
+						$loggedInUser = $userModel->getRowWithValue('users', 'id', $usersController->session->get('user')->id);
 						if ($userInfoWithId->id != $loggedInUser->id) {
 							$status = 'fail';
 							$reason = 'accountTaken';
@@ -196,7 +195,9 @@ function tryAndLoginWithFacebook($get, $usersController)
 						}
 					}
 				} else {
-					if (isLoggedIn()) {
+					if ($usersController->isLoggedIn()) {
+						$loggedInUser = $userModel->getRowWithValue('users', 'id', $usersController->session->get('user')->id);
+						
 						$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $loggedInUser->id);
 						$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $loggedInUser->id);
 

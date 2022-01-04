@@ -87,12 +87,12 @@ function tryAndLoginWithGoogle($get, $usersController)
 				// save user info to session
 				$_SESSION['google_user_info'] = $googleUserInfo;
 
-				$userInfoWithId = $userModel->getRowWithValue('users', 'google_user_id', $googleUserInfo->id);
-				$loggedInUser = $userModel->getRowWithValue('users', 'id', $_SESSION['user_id'] ?? '');
+				$userInfoWithId = $userModel->getRowWithValue('users', 'google_user_id', $googleUserInfo->id);				
 
 				if ($userInfoWithId) {
 					//check if the registration is done inside or outside
-					if (isLoggedIn()) {
+					if ($usersController->isLoggedIn()) {
+						$loggedInUser = $userModel->getRowWithValue('users', 'id', $usersController->session->get('user')->id);
 
 						if ($userInfoWithId->id != $loggedInUser->id) {
 							$status = 'fail';
@@ -124,7 +124,9 @@ function tryAndLoginWithGoogle($get, $usersController)
 						}
 					}
 				} else {
-					if (isLoggedIn()) {
+					if ($usersController->isLoggedIn()) {
+						$loggedInUser = $userModel->getRowWithValue('users', 'id', $usersController->session->get('user')->id);
+
 						$userModel->updateRowById('google_access_token', $_SESSION['google_access_token'], $loggedInUser->id);
 						$userModel->updateRowById('google_user_id', $googleUserInfo->id, $loggedInUser->id);
 

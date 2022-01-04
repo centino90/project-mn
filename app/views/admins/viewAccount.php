@@ -42,720 +42,753 @@
 
   <header class="flex flex-col gap-10 mb-10">
     <div class="flex-shrink-0">
-      <span class="text-2xl font-bold">View account (<?php echo arrangeFullname($data['user']->first_name, $data['user']->middle_name, $data['user']->last_name) ?>)</span>
+      <span class="text-2xl font-bold">View account (<?php echo arrangeFullname($data['user']->first_name ?? '', $data['user']->middle_name ?? '', $data['user']->last_name ?? '') ?>)</span>
     </div>
   </header>
 
   <div>
-    <div class="w-full">
-      <div class="mt-5">
-        <ul class="list-reset flex flex-wrap border-b">
-          <li @click="currentTab = 1" class="-mb-px mr-1">
-            <a :class="currentTab == 1 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Profile</a>
-          </li>
-          <li @click="currentTab = 2" class="-mb-px mr-1">
-            <a :class="currentTab == 2 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Personal</a>
-          </li>
-          <li @click="currentTab = 3" class="-mb-px mr-1">
-            <a :class="currentTab == 3 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">License</a>
-          </li>
-          <li @click="currentTab = 4" class="-mb-px mr-1">
-            <a :class="currentTab == 4 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Clinic</a>
-          </li>
-          <li @click="currentTab = 5" class="-mb-px mr-1">
-            <a :class="currentTab == 5 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Emergency</a>
-          </li>
-          <li @click="currentTab = 6" class="-mb-px mr-1">
-            <a :class="currentTab == 6 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Payments</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <!--  profile info -->
-    <div x-transition x-show="currentTab == 1" class="w-full bg-opacity-50">
-      <div class="shadow sm:rounded-md sm:overflow-hidden">
-        <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-          <div class="w-full">
-            <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Change details
-            </button>
-
-            <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Disable editing
-            </button>
-          </div>
-
-          <div class="flex flex-col gap-y-8">
-            <!-- profile img -->
-            <div x-bind="formGroup">
-              <label class="form-label">Profile image</label>
-              <div x-bind="formGroup.inputContainer">
-                <div class="py-2">
-                  <?php if (empty($data['user']->profile_img_path)) : ?>
-                    <!-- Profile image -->
-                    <a href="javascript:void(0)" @click="onEditMode ? $refs.profile_input.click() : $event.target.preventDefault">
-                      <div class="rounded-full border" style="width: 50px;height:50px">
-                        <img class="w-full h-full profile-img" src="<?php echo URLROOT ?>/public/img/profiles/default-profile.png" alt="profile img">
-                      </div>
-                      <span x-show="onEditMode" class="text-sm text-primary-500 hover:underline">Choose a profile</span>
-                      <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
-                    </a>
-                  <?php else : ?>
-                    <a id="view_img_link" href="<?php echo URLROOT . '/' . $data['user']->profile_img_path ?>" target="_blank" class="py-2">
-                      <div class="rounded-full border overflow-hidden hover:opacity-50" style="width: 50px;height:50px">
-                        <img class="w-full h-full profile-img" src="<?php echo URLROOT . '/' . $data['user']->profile_img_path ?>" alt="profile img">
-                      </div>
-                    </a>
-
-                    <a x-show="onEditMode" href="javascript:void(0)" class="py-2" @click="$refs.profile_input.click()">
-                      <span class="text-sm text-primary-500 hover:underline">Update profile</span>
-                      <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
-                    </a>
-                  <?php endif; ?>
-                  <span x-show="onEditMode" class="hidden text-danger-600 text-sm" id="profile_img_err">
-                  </span>
-                </div>
-              </div>
+    <?php if (!empty($data['profile_err'])) : ?>
+      <div x-transition class="w-full bg-opacity-50">
+        <div class="shadow sm:rounded-md sm:overflow-hidden h-52 lg:h-96 flex flex-wrap justify-center items-center">
+          <div class="flex flex-col">
+            <div class="mb-3 ml-auto">
+              <a href="<?php echo URLROOT ?>/admins/profiles" class="text-blue-500 hover:text-blue-400 hover:underline">See profiles</a>
             </div>
-
-            <!-- Email -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Email
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="email" x-bind="formGroup.formInput" x-model="profile.email" x-ref="email_input" class="lowercase" placeholder="Enter their email" name="email" autocomplete="off">
-                <span x-bind="formGroup.formInputError" class="hidden" id="email_err">
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Form submit -->
-        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-          <div class="form-group">
-            <label class="form-label"></label>
-            <div class="input-container">
-              <button x-show="onEditMode" x-ref="submit" @click="submitProfileEmail" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                Save
-              </button>
+            <div class="rounded-lg w-96 py-8 px-4 bg-danger-100 flex justify-center gap-3 text-danger-900 font-semibold">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <?php echo $data['profile_err'] ?>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!--  personal info -->
-    <div x-transition x-show="currentTab == 2" class="w-full bg-opacity-50">
-      <div class="shadow sm:rounded-md sm:overflow-hidden">
-        <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-          <div class="w-full">
-            <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Change details
-            </button>
-
-            <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Disable editing
-            </button>
-          </div>
-
-          <div class="flex flex-col gap-y-8">
-            <!-- First name -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                First name
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="personal.first_name" x-bind="formGroup.formInput" name="first_name">
-                <span x-bind="formGroup.formInputError" id="first_name_err">
-                </span>
-              </div>
-            </div>
-
-            <!-- Middle name -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Middle name
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="personal.middle_name" x-bind="formGroup.formInput" name="middle_name">
-                <span x-bind="formGroup.formInputError" id="middle_name_err">
-                </span>
-              </div>
-            </div>
-
-            <!-- Last name -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Last name
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="personal.last_name" x-bind="formGroup.formInput" name="last_name">
-                <span x-bind="formGroup.formInputError" id="last_name_err">
-              </div>
-            </div>
-
-            <!-- Date of birth -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Date of Birth
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="date" x-model="personal.birthdate" x-bind="formGroup.formInput" name="birthdate">
-                <span x-bind="formGroup.formInputError" id="birthdate_err">
-              </div>
-            </div>
-
-            <!-- Gender -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Gender
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <select x-bind="formGroup.formInput" name="gender" x-model="personal.gender">
-                  <option value="">Select</option>
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                </select>
-                <span x-bind="formGroup.formInputError" id="gender_err">
-              </div>
-            </div>
-
-            <!-- Contact no -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Contact number
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="personal.contact_number" x-bind="formGroup.formInput" name="contact_number">
-                <span x-bind="formGroup.formInputError" id="contact_number_err">
-              </div>
-            </div>
-
-            <!-- Facebook account name -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Facebook account name
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="personal.fb_account_name" x-bind="formGroup.formInput" name="fb_account_name">
-                <span x-bind="formGroup.formInputError" id="fb_account_name_err">
-              </div>
-            </div>
-
-            <!-- Home address -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Home address
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="personal.address" x-bind="formGroup.formInput" name="address">
-                <span x-bind="formGroup.formInputError" id="address_err">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Form submit -->
-        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-          <div class="form-group">
-            <label class="form-label"></label>
-            <div class="input-container">
-              <button x-show="onEditMode" @click="submitPersonal" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                Save
-              </button>
-            </div>
-          </div>
+    <?php else : ?>
+      <div class="w-full">
+        <div class="mt-5">
+          <ul class="list-reset flex flex-wrap border-b">
+            <li @click="currentTab = 1" class="-mb-px mr-1">
+              <a :class="currentTab == 1 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Profile</a>
+            </li>
+            <li @click="currentTab = 2" class="-mb-px mr-1">
+              <a :class="currentTab == 2 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Personal</a>
+            </li>
+            <li @click="currentTab = 3" class="-mb-px mr-1">
+              <a :class="currentTab == 3 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">License</a>
+            </li>
+            <li @click="currentTab = 4" class="-mb-px mr-1">
+              <a :class="currentTab == 4 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Clinic</a>
+            </li>
+            <li @click="currentTab = 5" class="-mb-px mr-1">
+              <a :class="currentTab == 5 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Emergency</a>
+            </li>
+            <li @click="currentTab = 6" class="-mb-px mr-1">
+              <a :class="currentTab == 6 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Payments</a>
+            </li>
+          </ul>
         </div>
       </div>
-    </div>
 
-    <!--  license info -->
-    <div x-transition x-show="currentTab == 3" class="w-full bg-opacity-50">
-      <div class="shadow sm:rounded-md sm:overflow-hidden">
-        <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-          <div class="w-full">
-            <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Change details
-            </button>
-
-            <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Disable editing
-            </button>
-          </div>
-
-          <div class="flex flex-col gap-y-8">
-            <!-- License no -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                PRC license no
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="number" x-model="license.prc_number" x-bind="formGroup.formInput" name="prc_number">
-                <span x-bind="formGroup.formInputError" id="prc_number_err">
-              </div>
-            </div>
-
-            <!-- Registration date -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Registration date <small class="font-medium">(MM/DD/YY)</small>
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <div class="flex flex-1 items-center">
-                  <input :type="!onEditMode ? 'text' : 'date'" x-model="license.prc_registration_date" :value="!onEditMode ? `<?php echo $data['user']->prc_registration_date ?> (${dayjs('<?php echo $data['user']->prc_registration_date ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['user']->prc_registration_date ?>'" x-bind="formGroup.formInput" :max="dayjs().format('YYYY-MM-DD')" name="prc_registration_date">
-                </div>
-                <span x-bind="formGroup.formInputError" id="prc_registration_date_err">
-              </div>
-            </div>
-
-            <!-- Expiration date -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Expiration date <small class="font-medium">(MM/DD/YY)</small>
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <div class="flex flex-1 items-center">
-                  <input :type="!onEditMode ? 'text' : 'date'" x-model="license.prc_expiration_date" :value="!onEditMode ? `<?php echo $data['user']->prc_expiration_date ?> (${dayjs('<?php echo $data['user']->prc_expiration_date ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['user']->prc_expiration_date ?>'" x-bind="formGroup.formInput" :min="dayjs().add(1, 'day').format('YYYY-MM-DD')" name="prc_expiration_date">
-                  <span x-show="!onEditMode" :class="checkIfRegistrationIsExpired() ? 'bg-danger-100 text-danger-800' : 'bg-warning-100 text-warning-800'" class="whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span x-text="generateExpirationStatus()">
-                    </span>
-                  </span>
-                </div>
-                <span x-bind="formGroup.formInputError" id="prc_expiration_date_err">
-              </div>
-            </div>
-
-            <!-- Field of practice -->
-            <div x-bind="formGroup" x-data="{specified: false}">
-              <label x-bind="formGroup.formLabel">
-                Field of practice
-                <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && !specified">Specify</a>
-                <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Select</a>
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="license.field_practice" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice">
-                <select x-model="license.field_practice" x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="field_practice">
-                  <option value="">Select</option>
-                  <option value="General Practice">General Practice</option>
-                  <option value="Endodontics">Endodontics</option>
-                  <option value="Prosthodontics">Prosthodontics</option>
-                  <option value="Orthodontics">Orthodontics</option>
-                  <option value="Oral and maxillofacial surgery">Oral and maxillofacial surgery</option>
-                  <option value="Pedodontics">Pedodontics</option>
-                  <option value="Periodontics">Periodontics</option>
-                </select>
-                <span x-bind="formGroup.formInputError" id="field_practice_err">
-              </div>
-            </div>
-
-            <!-- Type of practice -->
-            <div x-bind="formGroup" x-data="{specified: false}">
-              <label x-bind="formGroup.formLabel">
-                Type of practice
-                <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && !specified">Specify</a>
-                <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Select</a>
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="license.type_practice" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="type_practice" placeholder="Specify your type of practice">
-                <select x-model="license.type_practice" x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="type_practice">
-                  <option value="">Select</option>
-                  <option value="Government Dentist">Government Dentist</option>
-                  <option value="Clinic Owner">Clinic Owner</option>
-                  <option value="Dental Associate">Dental Associate</option>
-                  <option value="School Dentist">School Dentist</option>
-                  <option value="None Practicing">None Practicing</option>
-                </select>
-                <span x-bind="formGroup.formInputError" id="type_practice_err">
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-          <!-- Form submit -->
-          <div class="form-group">
-            <label class="form-label"></label>
-            <div class="input-container">
-              <button @click="submitLicense" x-show="onEditMode" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Clinic info -->
-    <div x-transition x-show="currentTab == 4" class="w-full bg-opacity-50">
-      <div class="shadow sm:rounded-md sm:overflow-hidden">
-        <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-          <div class="w-full">
-            <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Change details
-            </button>
-
-            <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Disable editing
-            </button>
-          </div>
-
-          <div class="flex flex-col gap-y-8">
-            <!-- Name -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Name
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="clinic.clinic_name" x-bind="formGroup.formInput" name="clinic_name">
-                <span x-bind="formGroup.formInputError" id="clinic_name_err">
-              </div>
-            </div>
-
-            <!-- Street -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Street
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="clinic.clinic_street" x-bind="formGroup.formInput" name="clinic_street">
-                <span x-bind="formGroup.formInputError" id="clinic_street_err">
-              </div>
-            </div>
-
-            <!-- District -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                District
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="clinic.clinic_district" x-bind="formGroup.formInput" name="clinic_district">
-                <span x-bind="formGroup.formInputError" id="clinic_district_err">
-              </div>
-            </div>
-
-            <!-- City -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                City
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="clinic.clinic_city" x-bind="formGroup.formInput" name="clinic_city">
-                <span x-bind="formGroup.formInputError" id="clinic_city_err">
-              </div>
-            </div>
-
-            <!-- Contact number -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Contact number
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="number" x-model="clinic.clinic_contact_number" x-bind="formGroup.formInput" name="clinic_contact_number">
-                <span x-bind="formGroup.formInputError" id="clinic_contact_number_err">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-          <!-- Form submit -->
-          <div class="form-group">
-            <label class="form-label"></label>
-            <div class="input-container">
-              <button @click="submitClinic" x-show="onEditMode" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Emergency info -->
-    <div x-transition x-show="currentTab == 5" class="w-full bg-opacity-50">
-      <div class="shadow sm:rounded-md sm:overflow-hidden">
-        <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-          <div class="w-full">
-            <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Change details
-            </button>
-
-            <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Disable editing
-            </button>
-          </div>
-
-          <div class="flex flex-col gap-y-8">
-            <!--  Person's name -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Person's name
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="emergency.emergency_person_name" x-bind="formGroup.formInput" name="emergency_person_name">
-                <span x-bind="formGroup.formInputError" id="emergency_person_name_err">
-              </div>
-            </div>
-
-            <!-- Address -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Address
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="text" x-model="emergency.emergency_address" x-bind="formGroup.formInput" name="emergency_address">
-                <span x-bind="formGroup.formInputError" id="emergency_address_err">
-              </div>
-            </div>
-
-            <!-- Contact number -->
-            <div x-bind="formGroup">
-              <label x-bind="formGroup.formLabel">
-                Contact number
-              </label>
-              <div x-bind="formGroup.inputContainer">
-                <input type="number" x-model="emergency.emergency_contact_number" x-bind="formGroup.formInput" name="emergency_contact_number">
-                <span x-bind="formGroup.formInputError" id="emergency_contact_number_err">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-          <!-- Form submit -->
-          <div class="form-group">
-            <label class="form-label"></label>
-            <div class="input-container">
-              <button @click="submitEmergency" x-show="onEditMode" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- payments -->
-    <div x-transition x-show="currentTab == 6" class="w-full bg-opacity-50">
-      <div class="gap-y-8 px-4">
-        <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
-          <nav class="">
-            <div class="flex gap-3">
-              <div class="w-full lg:w-auto">
-                <label for="" class="form-label">Year</label>
-                <select @change="year = $event.target.value; filterColumnByYear($event.target.value)" name="year" x-model="year" id="year" class="form-input">
-                  <option value="">Select year</option>
-                  <template x-for="(year, index) in years.slice(1, -1)" :key="index">
-                    <option :value="year" x-text="year"></option>
-                  </template>
-                </select>
-              </div>
-
-              <div class="w-full lg:w-auto">
-                <label for="" class="form-label">Type</label>
-                <select class="form-input" @change="type = $event.target.value; filterColumnByType($event.target.value)" name="type" id="type">
-                  <option value="">Select type</option>
-                  <option value="PDA">PDA</option>
-                  <option value="DCC">DCC</option>
-                </select>
-              </div>
-            </div>
-          </nav>
-        </div>
-
-        <div class="table-container">
-          <table id="myTable" style="width: 100%">
-            <thead class="border-t border-b">
-              <tr>
-                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  Year
-                </th>
-                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  DCC
-                </th>
-                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  Receipt #
-                </th>
-                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  PDA
-                </th>
-                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  Receipt #
-                </th>
-                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold text-secondary-500 uppercase tracking-wider">
-                  Remarks
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-secondary-200 relative">
-              <?php foreach ($data['paymentHistory'] as $payment) : ?>
-                <tr class="hover:bg-secondary-100">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm  text-secondary-500">
-                    <?php echo $payment->year ?>
-                  </td>
-                  <td class="px-6 py-4 text-sm whitespace-nowrap">
-                    <?php if (!empty($payment->dcc)) : ?>
-                      <?php echo $payment->dcc ?>
-                    <?php endif ?>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-secondary-500 whitespace-nowrap">
-                    <?php echo $payment->dcc_or ?>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <?php if (!empty($payment->pda)) : ?>
-                      <?php echo $payment->pda ?>
-                    <?php endif ?>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                    <?php echo $payment->pda_or ?>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
-                    <?php echo $payment->remarks ?>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <tfoot>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-              </th>
-              <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-              </th>
-            </tfoot>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="hidden" id="print_header">
-          <div class="flex justify-between">
-            <div style="width: 100px">
-              <img width="100%" src="<?php echo URLROOT ?>/public/img/PDA-DCC.jpg" />
-            </div>
-            <div class="w-full">
-              <h1 class="text-4xl text-center text-primary-500">DAVAO CITY DENTAL CHAPTER</h1>
-              <div class="flex justify-between gap-3 mt-3 text-md">
-                <div class="w-1/2">
-                  <div class="mx-auto w-60">
-                    <div>SECRETARIAT:</div>
-                    DAVAO CITY DENTAL CHAPTER BLDG.
-                    MAHOGANY ST., PALM VILLAGE
-                    DACUDAO AVE. DAVAO CITY
-                  </div>
-                </div>
-
-                <div class="w-1/2">
-                  <div class="mx-auto w-60">
-                    CONSTITUENT CHAPTER
-                    OF THE
-                    PHILIPPINE DENTAL
-                    ASSOCIATION
-                  </div>
-                </div>
-              </div>
-
-              <div class="w-full border-b mt-2"></div>
-            </div>
-
-            <div style="width: 100px">
-              <img width="100%" src="<?php echo URLROOT ?>/public/img/PDA-DCC.jpg" />
-            </div>
-          </div>
-
-          <div class="mt-4 flex justify-between">
-            <div style="width: 100px;"></div>
-            <div class="w-full flex gap-3">
-              <div class="w-3/4 border-b text-xl">
-                NAME:
-                <?php echo arrangeFullname($data['user']->first_name, $data['user']->middle_name, $data['user']->last_name) ?>
-              </div>
-              <div class="w-1/4">
-                <div class="w-full border-b">
-                  PRC #: <?php echo $data['user']->prc_number ?>
-                </div>
-                <div class="w-full border-b">
-                  PDA #: N\A
-                </div>
-              </div>
-            </div>
-            <div style="width: 100px;"></div>
-          </div>
-
-          <div class="mt-4 flex justify-between">
-            <div style="width: 100px;"></div>
-            <div class="w-full flex gap-3">
-              <div class="whitespace-nowrap">Clinic address:</div>
+      <!--  profile info -->
+      <div x-transition x-show="currentTab == 1" class="w-full bg-opacity-50">
+        <?php if ($data['user']->email_verified) : ?>
+          <div class="shadow sm:rounded-md sm:overflow-hidden">
+            <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
               <div class="w-full">
-                <div class="w-full border-b mt-4"> <?php echo $data['user']->clinic_street . ' ' . $data['user']->clinic_district . ' ' . $data['user']->clinic_city ?></div>
-                <div class="w-full border-b mt-6"></div>
+                <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Change details
+                </button>
+
+                <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Disable editing
+                </button>
+              </div>
+
+              <div class="flex flex-col gap-y-8">
+                <!-- profile img -->
+                <div x-bind="formGroup">
+                  <label class="form-label">Profile image</label>
+                  <div x-bind="formGroup.inputContainer">
+                    <div class="py-2">
+                      <?php if (empty($data['user']->profile_img_path)) : ?>
+                        <!-- Profile image -->
+                        <a href="javascript:void(0)" @click="onEditMode ? $refs.profile_input.click() : $event.target.preventDefault">
+                          <div class="rounded-full border" style="width: 50px;height:50px">
+                            <img class="w-full h-full profile-img" src="<?php echo URLROOT ?>/img/profiles/default-profile.png" alt="profile img">
+                          </div>
+                          <span x-show="onEditMode" class="text-sm text-primary-500 hover:underline">Choose a profile</span>
+                          <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
+                        </a>
+                      <?php else : ?>
+                        <a id="view_img_link" href="<?php echo URLROOT . '/' . $data['user']->profile_img_path ?>" target="_blank" class="py-2">
+                          <div class="rounded-full border overflow-hidden hover:opacity-50" style="width: 50px;height:50px">
+                            <img class="w-full h-full profile-img" src="<?php echo URLROOT . '/' . $data['user']->thumbnail_img_path ?>" alt="profile img">
+                          </div>
+                        </a>
+
+                        <a x-show="onEditMode" href="javascript:void(0)" class="py-2" @click="$refs.profile_input.click()">
+                          <span class="text-sm text-primary-500 hover:underline">Update profile</span>
+                          <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
+                        </a>
+                      <?php endif; ?>
+                      <span x-show="onEditMode" class="hidden text-danger-600 text-sm" id="profile_img_err">
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Email -->
+                <div x-bind="formGroup">
+                  <label x-bind="formGroup.formLabel">
+                    Email
+                  </label>
+                  <div x-bind="formGroup.inputContainer">
+                    <input type="email" x-bind="formGroup.formInput" x-model="profile.email" x-ref="email_input" class="lowercase" placeholder="Enter their email" name="email" autocomplete="off">
+                    <span x-bind="formGroup.formInputError" class="hidden" id="email_err">
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div style="width: 100px;"></div>
+
+            <!-- Form submit -->
+            <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+              <div class="form-group">
+                <label class="form-label"></label>
+                <div class="input-container">
+                  <button x-show="onEditMode" x-ref="submit" @click="submitProfileEmail" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        <?php else : ?>
+          <div class="shadow sm:rounded-md sm:overflow-hidden h-52 lg:h-96 flex flex-wrap justify-center items-center">
+            <div class="flex flex-col">
+              <div class="mb-3 ml-auto">
+                <a href="<?php echo URLROOT ?>/admins/accounts" class="text-blue-500 hover:text-blue-400 hover:underline">See accounts</a>
+              </div>
+              <div class="rounded-lg w-96 py-8 px-4 bg-warning-100 flex justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                This profile is not linked to any user account
+              </div>
+            </div>
+          </div>
+        <?php endif ?>
+      </div>
+
+      <!--  personal info -->
+      <div x-transition x-show="currentTab == 2" class="w-full bg-opacity-50">
+        <div class="shadow sm:rounded-md sm:overflow-hidden">
+          <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+            <div class="w-full">
+              <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Change details
+              </button>
+
+              <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Disable editing
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-y-8">
+              <!-- First name -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  First name
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="personal.first_name" x-bind="formGroup.formInput" name="first_name">
+                  <span x-bind="formGroup.formInputError" id="first_name_err">
+                  </span>
+                </div>
+              </div>
+
+              <!-- Middle name -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Middle name
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="personal.middle_name" x-bind="formGroup.formInput" name="middle_name">
+                  <span x-bind="formGroup.formInputError" id="middle_name_err">
+                  </span>
+                </div>
+              </div>
+
+              <!-- Last name -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Last name
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="personal.last_name" x-bind="formGroup.formInput" name="last_name">
+                  <span x-bind="formGroup.formInputError" id="last_name_err">
+                </div>
+              </div>
+
+              <!-- Date of birth -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Date of Birth
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="date" x-model="personal.birthdate" x-bind="formGroup.formInput" name="birthdate">
+                  <span x-bind="formGroup.formInputError" id="birthdate_err">
+                </div>
+              </div>
+
+              <!-- Gender -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Gender
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <select x-bind="formGroup.formInput" name="gender" x-model="personal.gender">
+                    <option value="">Select</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                  </select>
+                  <span x-bind="formGroup.formInputError" id="gender_err">
+                </div>
+              </div>
+
+              <!-- Contact no -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Contact number
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="personal.contact_number" x-bind="formGroup.formInput" name="contact_number">
+                  <span x-bind="formGroup.formInputError" id="contact_number_err">
+                </div>
+              </div>
+
+              <!-- Facebook account name -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Facebook account name
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="personal.fb_account_name" x-bind="formGroup.formInput" name="fb_account_name">
+                  <span x-bind="formGroup.formInputError" id="fb_account_name_err">
+                </div>
+              </div>
+
+              <!-- Home address -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Home address
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="personal.address" x-bind="formGroup.formInput" name="address">
+                  <span x-bind="formGroup.formInputError" id="address_err">
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="mt-4 flex justify-between mb-5">
-            <div style="width: 100px;"></div>
-            <div class="w-full flex justify-between flex-wrap">
-              <div class="whitespace-nowrap w-1/2 pr-2">CONTACT #: <?php echo $data['user']->contact_number ?>
-              </div>
-              <div class="whitespace-nowrap w-1/2 pl-2">Birthday: <?php echo $data['user']->birthdate ?>
-              </div>
-              <div class="whitespace-nowrap w-1/2 pr-2 mt-2">EMAIL ADD: <?php echo $data['user']->email ?>
-              </div>
-              <div class="whitespace-nowrap w-1/2 pl-2 mt-2">PRC Registration Date: <?php echo $data['user']->prc_registration_date ?>
-              </div>
-              <div class="whitespace-nowrap w-1/2 pr-2 mt-2">Date of Induction: N\A
-              </div>
-              <div class="whitespace-nowrap w-1/2 pl-2 mt-2">Expiry Date: <?php echo $data['user']->prc_expiration_date ?>
+          <!-- Form submit -->
+          <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <div class="form-group">
+              <label class="form-label"></label>
+              <div class="input-container">
+                <button x-show="onEditMode" @click="submitPersonal" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                  Save
+                </button>
               </div>
             </div>
-            <div style="width: 100px;"></div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!--  license info -->
+      <div x-transition x-show="currentTab == 3" class="w-full bg-opacity-50">
+        <div class="shadow sm:rounded-md sm:overflow-hidden">
+          <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+            <div class="w-full">
+              <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Change details
+              </button>
+
+              <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Disable editing
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-y-8">
+              <!-- License no -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  PRC license no
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="number" x-model="license.prc_number" x-bind="formGroup.formInput" name="prc_number">
+                  <span x-bind="formGroup.formInputError" id="prc_number_err">
+                </div>
+              </div>
+
+              <!-- Registration date -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Registration date <small class="font-medium">(MM/DD/YY)</small>
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <div class="flex flex-1 items-center">
+                    <input :type="!onEditMode ? 'text' : 'date'" x-model="license.prc_registration_date" :value="!onEditMode ? `<?php echo $data['user']->prc_registration_date ?> (${dayjs('<?php echo $data['user']->prc_registration_date ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['user']->prc_registration_date ?>'" x-bind="formGroup.formInput" :max="dayjs().format('YYYY-MM-DD')" name="prc_registration_date">
+                  </div>
+                  <span x-bind="formGroup.formInputError" id="prc_registration_date_err">
+                </div>
+              </div>
+
+              <!-- Expiration date -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Expiration date <small class="font-medium">(MM/DD/YY)</small>
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <div class="flex flex-1 items-center">
+                    <input :type="!onEditMode ? 'text' : 'date'" x-model="license.prc_expiration_date" :value="!onEditMode ? `<?php echo $data['user']->prc_expiration_date ?> (${dayjs('<?php echo $data['user']->prc_expiration_date ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['user']->prc_expiration_date ?>'" x-bind="formGroup.formInput" :min="dayjs().add(1, 'day').format('YYYY-MM-DD')" name="prc_expiration_date">
+                    <span x-show="!onEditMode" :class="checkIfRegistrationIsExpired() ? 'bg-danger-100 text-danger-800' : 'bg-warning-100 text-warning-800'" class="whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span x-text="generateExpirationStatus()">
+                      </span>
+                    </span>
+                  </div>
+                  <span x-bind="formGroup.formInputError" id="prc_expiration_date_err">
+                </div>
+              </div>
+
+              <!-- Field of practice -->
+              <div x-bind="formGroup" x-data="{specified: false}">
+                <label x-bind="formGroup.formLabel">
+                  Field of practice
+                  <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && !specified">Specify</a>
+                  <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Select</a>
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="license.field_practice" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice">
+                  <select x-model="license.field_practice" x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="field_practice">
+                    <option value="">Select</option>
+                    <option value="General Practice">General Practice</option>
+                    <option value="Endodontics">Endodontics</option>
+                    <option value="Prosthodontics">Prosthodontics</option>
+                    <option value="Orthodontics">Orthodontics</option>
+                    <option value="Oral and maxillofacial surgery">Oral and maxillofacial surgery</option>
+                    <option value="Pedodontics">Pedodontics</option>
+                    <option value="Periodontics">Periodontics</option>
+                  </select>
+                  <span x-bind="formGroup.formInputError" id="field_practice_err">
+                </div>
+              </div>
+
+              <!-- Type of practice -->
+              <div x-bind="formGroup" x-data="{specified: false}">
+                <label x-bind="formGroup.formLabel">
+                  Type of practice
+                  <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && !specified">Specify</a>
+                  <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Select</a>
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="license.type_practice" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="type_practice" placeholder="Specify your type of practice">
+                  <select x-model="license.type_practice" x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="type_practice">
+                    <option value="">Select</option>
+                    <option value="Government Dentist">Government Dentist</option>
+                    <option value="Clinic Owner">Clinic Owner</option>
+                    <option value="Dental Associate">Dental Associate</option>
+                    <option value="School Dentist">School Dentist</option>
+                    <option value="None Practicing">None Practicing</option>
+                  </select>
+                  <span x-bind="formGroup.formInputError" id="type_practice_err">
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <!-- Form submit -->
+            <div class="form-group">
+              <label class="form-label"></label>
+              <div class="input-container">
+                <button @click="submitLicense" x-show="onEditMode" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clinic info -->
+      <div x-transition x-show="currentTab == 4" class="w-full bg-opacity-50">
+        <div class="shadow sm:rounded-md sm:overflow-hidden">
+          <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+            <div class="w-full">
+              <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Change details
+              </button>
+
+              <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Disable editing
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-y-8">
+              <!-- Name -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Name
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="clinic.clinic_name" x-bind="formGroup.formInput" name="clinic_name">
+                  <span x-bind="formGroup.formInputError" id="clinic_name_err">
+                </div>
+              </div>
+
+              <!-- Street -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Street
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="clinic.clinic_street" x-bind="formGroup.formInput" name="clinic_street">
+                  <span x-bind="formGroup.formInputError" id="clinic_street_err">
+                </div>
+              </div>
+
+              <!-- District -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  District
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="clinic.clinic_district" x-bind="formGroup.formInput" name="clinic_district">
+                  <span x-bind="formGroup.formInputError" id="clinic_district_err">
+                </div>
+              </div>
+
+              <!-- City -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  City
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="clinic.clinic_city" x-bind="formGroup.formInput" name="clinic_city">
+                  <span x-bind="formGroup.formInputError" id="clinic_city_err">
+                </div>
+              </div>
+
+              <!-- Contact number -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Contact number
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="number" x-model="clinic.clinic_contact_number" x-bind="formGroup.formInput" name="clinic_contact_number">
+                  <span x-bind="formGroup.formInputError" id="clinic_contact_number_err">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <!-- Form submit -->
+            <div class="form-group">
+              <label class="form-label"></label>
+              <div class="input-container">
+                <button @click="submitClinic" x-show="onEditMode" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency info -->
+      <div x-transition x-show="currentTab == 5" class="w-full bg-opacity-50">
+        <div class="shadow sm:rounded-md sm:overflow-hidden">
+          <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+            <div class="w-full">
+              <button @click="onEditMode = !onEditMode" x-show="!onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Change details
+              </button>
+
+              <button @click="onEditMode = !onEditMode" x-show="onEditMode" type="button" class="ml-auto flex text-primary-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Disable editing
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-y-8">
+              <!--  Person's name -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Person's name
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="emergency.emergency_person_name" x-bind="formGroup.formInput" name="emergency_person_name">
+                  <span x-bind="formGroup.formInputError" id="emergency_person_name_err">
+                </div>
+              </div>
+
+              <!-- Address -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Address
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="text" x-model="emergency.emergency_address" x-bind="formGroup.formInput" name="emergency_address">
+                  <span x-bind="formGroup.formInputError" id="emergency_address_err">
+                </div>
+              </div>
+
+              <!-- Contact number -->
+              <div x-bind="formGroup">
+                <label x-bind="formGroup.formLabel">
+                  Contact number
+                </label>
+                <div x-bind="formGroup.inputContainer">
+                  <input type="number" x-model="emergency.emergency_contact_number" x-bind="formGroup.formInput" name="emergency_contact_number">
+                  <span x-bind="formGroup.formInputError" id="emergency_contact_number_err">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <!-- Form submit -->
+            <div class="form-group">
+              <label class="form-label"></label>
+              <div class="input-container">
+                <button @click="submitEmergency" x-show="onEditMode" type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- payments -->
+      <div x-transition x-show="currentTab == 6" class="w-full bg-opacity-50">
+        <div class="gap-y-8 px-4">
+          <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
+            <nav class="">
+              <div class="flex gap-3">
+                <div class="w-full lg:w-auto">
+                  <label for="" class="form-label">Year</label>
+                  <select @change="year = $event.target.value; filterColumnByYear($event.target.value)" name="year" x-model="year" id="year" class="form-input">
+                    <option value="">Select year</option>
+                    <template x-for="(year, index) in years.slice(1, -1)" :key="index">
+                      <option :value="year" x-text="year"></option>
+                    </template>
+                  </select>
+                </div>
+
+                <div class="w-full lg:w-auto">
+                  <label for="" class="form-label">Type</label>
+                  <select class="form-input" @change="type = $event.target.value; filterColumnByType($event.target.value)" name="type" id="type">
+                    <option value="">Select type</option>
+                    <option value="PDA">PDA</option>
+                    <option value="DCC">DCC</option>
+                  </select>
+                </div>
+              </div>
+            </nav>
+          </div>
+
+          <div class="table-container">
+            <table id="myTable" style="width: 100%">
+              <thead class="border-t border-b">
+                <tr>
+                  <th scope="col">
+                    Year
+                  </th>
+                  <th scope="col">
+                    DCC
+                  </th>
+                  <th scope="col">
+                    Receipt #
+                  </th>
+                  <th scope="col">
+                    PDA
+                  </th>
+                  <th scope="col">
+                    Receipt #
+                  </th>
+                  <th scope="col">
+                    Remarks
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-secondary-200 relative">
+                <?php foreach ($data['paymentHistory'] as $payment) : ?>
+                  <tr class="hover:bg-secondary-100">
+                    <td class="text-secondary-500">
+                      <?php echo $payment->year ?>
+                    </td>
+                    <td>
+                      <?php if (!empty($payment->dcc)) : ?>
+                        <?php echo $payment->dcc ?>
+                      <?php endif ?>
+                    </td>
+                    <td class="text-secondary-500">
+                      <?php echo $payment->dcc_or ?>
+                    </td>
+                    <td>
+                      <?php if (!empty($payment->pda)) : ?>
+                        <?php echo $payment->pda ?>
+                      <?php endif ?>
+                    </td>
+                    <td class="ptext-secondary-500">
+                      <?php echo $payment->pda_or ?>
+                    </td>
+                    <td class="text-secondary-500">
+                      <?php echo $payment->remarks ?>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <tfoot>
+                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
+                </th>
+                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
+                </th>
+                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold  uppercase tracking-wider">
+                </th>
+                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                </th>
+                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                </th>
+                <th scope="col" class="hover:bg-secondary-50 px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                </th>
+              </tfoot>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="hidden" id="print_header">
+            <div class="flex justify-center gap-5">
+              <div style="width: 100px">
+                <img width="100%" src="<?php echo URLROOT ?>/public/img/PDA-DCC.jpg" />
+              </div>
+              <div>
+                <h1 class="text-4xl text-center text-primary-500">DAVAO CITY DENTAL CHAPTER</h1>
+                <div class="flex justify-between gap-3 mt-3 text-md">
+                  <div class="w-1/2">
+                    <div class="mx-auto w-60">
+                      <div>SECRETARIAT:</div>
+                      DAVAO CITY DENTAL CHAPTER BLDG.
+                      MAHOGANY ST., PALM VILLAGE
+                      DACUDAO AVE. DAVAO CITY
+                    </div>
+                  </div>
+
+                  <div class="w-1/2">
+                    <div class="mx-auto w-60">
+                      CONSTITUENT CHAPTER
+                      OF THE
+                      PHILIPPINE DENTAL
+                      ASSOCIATION
+                    </div>
+                  </div>
+                </div>
+
+                <div class="w-full border-b border-black mt-2"></div>
+              </div>
+
+              <div style="width: 100px">
+                <img width="100%" src="<?php echo URLROOT ?>/public/img/PDA-DCC.jpg" />
+              </div>
+            </div>
+
+            <div class="mt-4 flex justify-between">
+              <div style="width: 100px;"></div>
+              <div class="w-full flex gap-3">
+                <div class="w-3/4 border-b border-black text-xl">
+                  NAME:
+                  <?php echo arrangeFullname($data['user']->first_name, $data['user']->middle_name, $data['user']->last_name) ?>
+                </div>
+                <div class="w-1/4">
+                  <div class="w-full border-b border-black">
+                    PRC #: <?php echo $data['user']->prc_number ?>
+                  </div>
+                  <div class="w-full border-b border-black">
+                    PDA #: N\A
+                  </div>
+                </div>
+              </div>
+              <div style="width: 100px;"></div>
+            </div>
+
+            <div class="mt-4 flex justify-between">
+              <div style="width: 100px;"></div>
+              <div class="w-full flex gap-3">
+                <div class="whitespace-nowrap">Clinic address:</div>
+                <div class="w-full">
+                  <div class="w-full border-b border-black mt-4"> <?php echo $data['user']->clinic_street . ' ' . $data['user']->clinic_district . ' ' . $data['user']->clinic_city ?></div>
+                </div>
+              </div>
+              <div style="width: 100px;"></div>
+            </div>
+
+            <div class="mt-4 flex justify-between mb-5">
+              <div style="width: 100px;"></div>
+              <div class="w-full flex justify-between flex-wrap">
+                <div class="whitespace-nowrap w-1/2 pr-2">CONTACT #: <?php echo $data['user']->contact_number ?>
+                </div>
+                <div class="whitespace-nowrap w-1/2 pl-2">Birthday: <?php echo $data['user']->birthdate ?>
+                </div>
+                <div class="whitespace-nowrap w-1/2 pr-2 mt-2">EMAIL ADD: <?php echo $data['user']->email ?>
+                </div>
+                <div class="whitespace-nowrap w-1/2 pl-2 mt-2">PRC Registration Date: <?php echo $data['user']->prc_registration_date ?>
+                </div>
+                <div class="whitespace-nowrap w-1/2 pr-2 mt-2">Date of Induction: N\A
+                </div>
+                <div class="whitespace-nowrap w-1/2 pl-2 mt-2">Expiry Date: <?php echo $data['user']->prc_expiration_date ?>
+                </div>
+              </div>
+              <div style="width: 100px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <?php endif ?>
   </div>
 </div>
 
@@ -765,6 +798,10 @@
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
       init() {
+        this.$watch('currentTab', value => {
+          this.onEditMode = false
+        })
+
         // initilize datatable
         $('#myTable').DataTable({
           initComplete: function() {
@@ -790,18 +827,12 @@
                 .css('font-size', 'inherit');
 
               $(win.document.body).find('table th, table td')
-                .addClass('border py-2')
+                .addClass('border border-black py-2')
                 .css('text-align', 'center')
                 .css('max-width', '200px');
             }
           }, ]
         });
-        // if (this.checkServerValidationError()) {
-        //   this.onEditMode = true
-        // } else {
-        //   this.onEditMode = false
-        // }
-
         this.writeToFooterColumn(0, 'Payment Summary', 'text')
         this.writeToFooterColumn(1, this.calculateTotalAmount(1), 'currency')
         this.writeToFooterColumn(3, this.calculateTotalAmount(3), 'currency')
@@ -819,7 +850,6 @@
         return rowData.reduce((acc, cur) => {
           let amount = 0
           let colString = cur[colIndex]
-          console.log(cur)
           if (typeof(colString) == 'string') {
             colString = colString.split(',')
             amount = colString.reduce((acc, cur) => {
@@ -944,7 +974,7 @@
               document.querySelectorAll('.profile-img').forEach(el => {
                 el.src = URL.createObjectURL(file)
               })
-              document.querySelector('#view_img_link').href = '<?php echo URLROOT ?>' + `/public/${res.profile_img_path}`
+              document.querySelector('#view_img_link').href = '<?php echo URLROOT ?>' + `/${res.thumbnail_img_path}`
 
               errorMsg.classList.add('hidden')
             } else {
@@ -1094,7 +1124,7 @@
         clinic_street: '<?php echo $data['user']->clinic_street ?>',
         clinic_district: '<?php echo $data['user']->clinic_district ?>',
         clinic_city: '<?php echo $data['user']->clinic_city ?>',
-        clinic_contact_number: '<?php echo $data['user']->clinic_contact_number ?>',
+        clinic_contact_number: '<?php echo $data['user']->clinic_contact ?>',
         user_id: '<?php echo $data['user']->id ?>'
       },
       submitClinic(event) {

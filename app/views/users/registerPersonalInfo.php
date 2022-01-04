@@ -207,21 +207,6 @@
             </div>
           </div>
 
-          <!-- Email -->
-          <div x-data="formGroup()" class="form-group">
-            <label x-bind="formLabel">
-              Email <span class="text-danger-500">*</span>
-            </label>
-            <div x-bind="inputContainer">
-              <input type="email" value="<?php echo $data['email'] ?>" x-bind="formInput" name="email">
-              <?php if (!empty($data['email_err'])) : ?>
-                <div x-bind="formInputError">
-                  <?php echo $data['email_err']; ?> !
-                </div>
-              <?php endif; ?>
-            </div>
-          </div>
-
           <!-- Home address -->
           <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">

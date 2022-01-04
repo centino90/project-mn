@@ -32,7 +32,7 @@
             </nav>
         </div>
 
-        <form action="<?php echo URLROOT; ?>/profiles/userInfo" method="POST" x-data="{hasPassword: <?php echo $data['has_password'] ?>}" @submit.prevent="if (confirm('Change password?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
+        <form x-ref="change_password_form" x-data="{hasPassword: <?php echo $data['has_password'] ?>}" @submit.prevent>
             <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
                 <div class="w-64 flex-shrink-0">
                     <span class="text-2xl font-bold">User profile</span>
@@ -62,26 +62,26 @@
                     <label class="form-label">Profile image</label>
                     <div x-bind="formGroup.inputContainer">
                         <div>
+                            <!-- Profile image -->
                             <?php if (empty($data['profile_image_path'])) : ?>
-                                <!-- Profile image -->
                                 <a href="javascript:void(0)" class="py-2" @click="$refs.profile_input.click()">
-                                    <div style="width: 50px;height:50px">
-                                        <img class="w-full h-full" src="<?php echo URLROOT ?>/img/profiles/default-profile.png" alt="profile img">
+                                    <div style="width: 50px;height:50px" class="border-2 rounded-full">
+                                        <img x-ref="profile_imgs" class="w-full h-full" src="<?php echo URLROOT ?>/img/profiles/default-profile.png" alt="profile img">
                                     </div>
                                     <span class="text-sm text-primary-500 hover:underline">Choose a profile</span>
-                                    <input type="file" @change="submitProfile" x-ref="profile_input" class="form-input hidden" name="profile_image">
+                                    <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
                                 </a>
                             <?php else : ?>
                                 <div class="py-2">
-                                    <a href="<?php echo URLROOT . '/' . $data['profile_image_path'] ?>" target="_blank" class="py-2">
-                                        <div class="rounded-full overflow-hidden hover:opacity-50" style="width: 50px;height:50px">
-                                            <img class="w-full h-full" src="<?php echo URLROOT . '/' . $data['profile_image_path'] ?>" alt="profile img">
+                                    <a x-ref="view_img_link" href="<?php echo URLROOT . '/' . $data['profile_image_path'] ?>" target="_blank" class="py-2">
+                                        <div class="rounded-full overflow-hidden hover:opacity-50 border-2" style="width: 50px;height:50px">
+                                            <img x-ref="profile_imgs" class="w-full h-full" src="<?php echo URLROOT . '/' . $data['user']->thumbnail_img_path ?>" alt="profile img">
                                         </div>
                                     </a>
 
                                     <a href="javascript:void(0)" class="py-2" @click="$refs.profile_input.click()">
                                         <span class="text-sm text-primary-500 hover:underline">Update profile</span>
-                                        <input type="file" @change="submitProfile" x-ref="profile_input" class="form-input hidden" name="profile_image">
+                                        <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
                                     </a>
                                 </div>
                             <?php endif; ?>
@@ -106,13 +106,11 @@
                                     <a href="<?php echo getFacebookLoginUrl(); ?>" @click.prevent="if (confirm('Change facebook auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-blue-100 text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full hover:underline">Change Facebook</a>
                                 <?php else : ?>
                                     <a href="<?php echo getFacebookLoginUrl(); ?>" class="hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Activate Facebook</a>
-                                    <span class="text-danger-600"><?php echo $_SESSION['fb_account_taken'] ?? '' ?></span>
                                 <?php endif ?>
                                 <?php if ($data['has_google_auth']) : ?>
                                     <a href="<?php echo getGoogleLoginUrl(); ?>" @click.prevent="if (confirm('Change google auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-danger-100 text-danger-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full hover:underline">Change Google</a>
                                 <?php else : ?>
                                     <a href="<?php echo getGoogleLoginUrl(); ?>" class="hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Activate Google</a>
-                                    <span class="text-danger-600"><?php echo $_SESSION['google_account_taken'] ?? '' ?></span>
                                 <?php endif ?>
                             </div>
                         </span>
@@ -138,12 +136,9 @@
                         Old Password
                     </label>
                     <div x-bind="formGroup.inputContainer">
-                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode && hasPassword ? '******' : ''" name="old_password" autocomplete="new-password">
-                        <?php if (!empty($data['old_password_err'])) : ?>
-                            <div x-bind="formGroup.formInputError">
-                                <?php echo $data['old_password_err']; ?> !
-                            </div>
-                        <?php endif; ?>
+                        <input x-model="profile.old_password" type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode && hasPassword ? '******' : ''" name="old_password" autocomplete="new-password">
+                        <span x-bind="formGroup.formInputError" x-ref="old_password_err">
+                        </span>
                     </div>
                 </div>
 
@@ -153,12 +148,9 @@
                         New password
                     </label>
                     <div x-bind="formGroup.inputContainer">
-                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode && hasPassword ? '******' : ''" name="password" autocomplete="new-password">
-                        <?php if (!empty($data['password_err'])) : ?>
-                            <div x-bind="formGroup.formInputError">
-                                <?php echo $data['password_err']; ?> !
-                            </div>
-                        <?php endif; ?>
+                        <input x-model="profile.password" type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode && hasPassword ? '******' : ''" name="password" autocomplete="new-password">
+                        <span x-bind="formGroup.formInputError" x-ref="password_err">
+                        </span>
                     </div>
                 </div>
 
@@ -168,12 +160,9 @@
                         Confirm new password
                     </label>
                     <div x-bind="formGroup.inputContainer">
-                        <input type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode ? '******' : ''" name="confirm_password" autocomplete="new-password">
-                        <?php if (!empty($data['confirm_password_err'])) : ?>
-                            <div x-bind="formGroup.formInputError">
-                                <?php echo $data['confirm_password_err']; ?> !
-                            </div>
-                        <?php endif; ?>
+                        <input x-model="profile.confirm_password" type="password" x-bind="formGroup.formInput" :placeholder="!onEditMode ? '******' : ''" name="confirm_password" autocomplete="new-password">
+                        <span x-bind="formGroup.formInputError" x-ref="confirm_password_err">
+                        </span>
                     </div>
                 </div>
 
@@ -181,7 +170,7 @@
                 <div x-bind="formGroup" x-show="onEditMode">
                     <label x-bind="formGroup.formLabel"></label>
                     <div x-bind="formGroup.inputContainer">
-                        <input type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+                        <input @click="submitChangePassword()" type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
                         </input>
                     </div>
                 </div>
@@ -193,13 +182,7 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('app', () => ({
-            init() {
-                if (this.checkServerValidationError()) {
-                    this.onEditMode = true
-                } else {
-                    this.onEditMode = false
-                }
-            },
+            init() {},
             onEditMode: false,
             serverData: <?php echo json_encode($data); ?>,
             formGroup: {
@@ -244,10 +227,15 @@
                 },
             },
 
-            submitProfile(event) {
+            profile: {
+                old_password: '',
+                password: '',
+                confirm_password: '',
+            },
+            submitProfileImg(event) {
                 const updateRequest = new FormData();
                 const file = event.target.files[0];
-                updateRequest.append('user_id', <?php echo $_SESSION['user_id'] ?>)
+                updateRequest.append('user_id', <?php echo $this->session->auth()->id ?>)
                 updateRequest.append('profile_img', file)
 
                 const errorMsg = document.querySelector('#profile_img_err')
@@ -265,24 +253,84 @@
 
                 f.then(data => data.json()
                     .then(res => {
+                        console.log(res)
                         if (res.status == 'ok') {
-                            window.location.reload()
-                        } else {                            
+                            this.$refs.profile_imgs.src = URL.createObjectURL(file)
+                            this.$refs.view_img_link.href = '<?php echo URLROOT ?>' + `/public/${res.profile_img_path}`
+                            errorMsg.classList.add('hidden')
+                        } else {
                             errorMsg.classList.remove('hidden')
                             errorMsg.textContent = res.message
                         }
                     }))
             },
-            checkServerValidationError: function() {
-                if (
-                    this.serverData.old_password_err !== '' ||
-                    this.serverData.password_err !== '' ||
-                    this.serverData.confirm_password_err !== ''
-                ) {
-                    return true
-                }
-                return false
-            }
+            submitChangePassword(event) {
+                const old_password_err = this.$refs.old_password_err
+                const password_err = this.$refs.password_err
+                const confirm_password_err = this.$refs.confirm_password_err
+
+                const f = fetch('<?php echo URLROOT . "/profiles/changePassword" ?>', {
+                    method: "POST",
+                    body: JSON.stringify({
+                        profile: this.profile
+                    }),
+                    headers: {
+                        "Content-type": "application/json"
+                    }
+                })
+
+                f.then(data => data.json()
+                    .then(res => {
+                        if (res.status == 'ok') {
+                            old_password_err.classList.add('hidden')
+                            password_err.classList.add('hidden')
+                            confirm_password_err.classList.add('hidden')
+
+                            this.onEditMode = false
+                            this.profile = {
+                                old_password: '',
+                                password: '',
+                                confirm_password: ''
+                            }
+                            this.$refs.change_password_form.reset()
+                        } else {
+                            old_password_err.classList.remove('hidden')
+                            password_err.classList.remove('hidden')
+                            confirm_password_err.classList.remove('hidden')
+
+                            old_password_err.textContent = res.errors.old_password_err
+                            password_err.textContent = res.errors.password_err
+                            confirm_password_err.textContent = res.errors.confirm_password_err
+                        }
+                    }))
+            },
+            submitProfileEmail(event) {
+                event.target.textContent = 'Please wait...'
+
+                const f = fetch('<?php echo URLROOT . "/admins/updateProfile" ?>', {
+                    method: "POST",
+                    body: JSON.stringify({
+                        profile: this.profile
+                    }),
+                    headers: {
+                        "Content-type": "application/json"
+                    }
+                })
+
+                f.then(data => data.json()
+                    .then(res => {
+                        if (res.status == 'ok') {
+                            this.onEditMode = false
+
+                            document.querySelector('#email_err').classList.add('hidden')
+                        } else {
+                            document.querySelector('#email_err').classList.remove('hidden')
+
+                            document.querySelector('#email_err').textContent = res.errors.email_err
+                        }
+                    }))
+                event.target.textContent = 'Save'
+            },
         }))
     })
 </script>

@@ -166,21 +166,6 @@
           </div>
         </div>
 
-        <!-- Email -->
-        <div x-bind="formGroup">
-          <label x-bind="formGroup.formLabel">
-            Email 
-          </label>
-          <div x-bind="formGroup.inputContainer">
-            <input type="email" value="<?php echo $data['email'] ?>" x-bind="formGroup.formInput" name="email">
-            <?php if (!empty($data['email_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['email_err']; ?> !
-              </div>
-            <?php endif; ?>
-          </div>
-        </div>
-
         <!-- Home address -->
         <div x-bind="formGroup">
           <label x-bind="formGroup.formLabel">
@@ -271,7 +256,6 @@
           this.serverData.last_name_err !== '' ||
           this.serverData.gender_err !== '' ||
           this.serverData.fb_account_name_err !== '' ||
-          this.serverData.email_err !== '' ||
           this.serverData.contact_number_err !== '' ||
           this.serverData.birthdate_err !== '' ||
           this.serverData.address_err !== ''

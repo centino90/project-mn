@@ -11,21 +11,37 @@ class Admins extends Controller
 {
   public function __construct()
   {
-    redirectIfNotAuthUser();
-    redirectNotFullyRegisteredUser();
-    redirectIfNotAdmin();
-    redirectInactiveUserOrRegenerateTimer();
-
     $this->userModel = $this->model('User');
     $this->clinicModel = $this->model('Clinic');
     $this->duesModel = $this->model('Dues');
     $this->activityModel = $this->model('Activity');
+    $this->profileModel = $this->model('Profile');
+
+    parent::__construct();
+
+    $this->session->start();
+
+    if (!$this->isLoggedin() || !$this->isEmailVerified()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($this->isLoggedIn() && !$this->isCompleteInfo() && $this->isPasswordRegistered()) {
+      $this->url->redirect('users/registerPrcInfo');
+    }
+
+    if ($this->role->isMember($this->session->get(SessionManager::SESSION_USER)->role)) {
+      $this->url->redirect('profiles/userInfo');
+    }
+
+    $this->currentUserFullname = arrangeFullname(
+      $this->session->get(SessionManager::SESSION_USER)->first_name,
+      $this->session->get(SessionManager::SESSION_USER)->middle_name,
+      $this->session->get(SessionManager::SESSION_USER)->last_name
+    );
   }
 
   public function index()
   {
-    // die('yes');
-    // Get payment history
     $data = [
       'current_route' => __FUNCTION__,
 
@@ -33,9 +49,816 @@ class Admins extends Controller
     ];
 
     $this->view('admins/paymentHistory', $data);
-    unset($_SESSION['login_success']);
-    // redirect('admins/paymentHistory');
   }
+
+  public function duesForm()
+  {
+    $data = [
+      'current_route' => __FUNCTION__,
+    ];
+
+    $this->view('admins/duesForm', $data);
+  }
+
+  public function addDues()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+      if ($contentType !== "application/json") {
+        throw new Error('Your content type must be in \'application/json\'');
+      }
+
+      $content = trim(file_get_contents("php://input"));
+
+      $decoded = json_decode($content, true);
+
+      $decoded['message'] = 'New dues was successfully added!';
+      $decoded['status'] = 'ok';
+      $decoded['errors'] = [];
+
+      // check inputs
+      if (empty($decoded['duesForm']['prc_number'])) {
+        $decoded['errors']['prc_number_err'] = 'Prc number must not be empty';
+      }
+
+      if (empty($decoded['duesForm']['type'])) {
+        $decoded['errors']['type_err'] = 'Please select a payment type';
+      }
+
+      if (empty($decoded['duesForm']['amount'])) {
+        $decoded['errors']['amount_err'] = 'Please enter an amount';
+      } else if (!is_numeric($decoded['duesForm']['amount'])) {
+        $decoded['errors']['amount_err'] = 'Please enter a valid amount';
+      }
+
+      if (empty($decoded['duesForm']['channel'])) {
+        $decoded['errors']['channel_err'] = 'Please enter a payment channel';
+      }
+
+      if (empty($decoded['duesForm']['or_number'])) {
+        $decoded['errors']['or_number_err'] = 'Please enter the OR number';
+      }
+
+      if (empty($decoded['duesForm']['date_posted']['month'])) {
+        $decoded['errors']['date_posted_err'] = 'Month must not be empty';
+      }
+      if ($decoded['duesForm']['date_posted']['month'] > 12 || $decoded['duesForm']['date_posted']['month'] < 1) {
+        $decoded['errors']['date_posted_err'] = 'Please enter a valid month';
+      }
+      if (empty($decoded['duesForm']['date_posted']['year'])) {
+        $decoded['errors']['date_posted_err'] = 'year must not be empty';
+      }
+
+      if (sizeof($decoded['errors']) > 0) {
+        throw new Error('You have some input errors. Please check your inputs');
+      }
+
+      // concat month, year plus imaginary day to create a valid date for mysql
+      $decoded['duesForm']['date_posted'] = $decoded['duesForm']['date_posted']['year'] . '-' . $decoded['duesForm']['date_posted']['month'] . '-01';
+
+      // uppercase strings
+      $decoded['duesForm']['type'] = strtoupper($decoded['duesForm']['type']);
+
+      if ($this->profileModel->hasRow(['prc_number'], [$decoded['duesForm']['prc_number']]) === false) {
+        $decoded['errors']['prc_number_err'] = 'The prc number: ' . $decoded['duesForm']['prc_number'] . ' does not have a linked profile. Try again.';
+        throw new Error('prc number is non-existing');
+      }
+
+      $profile =  $this->profileModel->find(
+        ['*'],
+        ['prc_number'],
+        [$decoded['duesForm']['prc_number']]
+      );
+      $decoded['duesForm']['profile_id'] = $profile->id;
+
+      // check if payment insert is unsuccessful or prc number does not exist
+      $last_record = $this->duesModel->store($decoded['duesForm']);
+      if (!$last_record) {
+        throw new Error('Something went wrong with the storing of dues. Try again');
+      }
+
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
+        $this->activityModel->store(
+          [
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' registered an amount of ' . $last_record->amount . ' as dues payment to ' . $last_record->type . ' (' . date('Y', strtotime($last_record->date_posted)) . ') with an OR No. of ' . $last_record->or_number . ' and row no. of ' . $last_record->id,
+            'type' => 'add_dues',
+          ]
+        );
+      }
+
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    } catch (\Throwable $th) {
+      header("Content-Type: application/json; charset=UTF-8");
+      $decoded['status'] = 'fail';
+      $decoded['message'] = $th->getMessage();
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    }
+  }
+
+  public function importDues()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+      $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+      if (strpos($contentType, 'multipart/form-data') === false) {
+        throw new Error('Your content type must be in \'multipart/form-data\'');
+      }
+
+      $content = trim(file_get_contents("php://input"));
+      $decoded = json_decode($content, true);
+
+      $decoded['message'] = 'New profile(s) were successfully added!';
+      $decoded['status'] = 'ok';
+      $decoded['errors'] = [];
+
+      if (!isset($_FILES["dues_file"]['name'])) {
+        throw new Error('You must import a file to proceed.');
+      }
+
+      $allowFileExtensions = [
+        'xls',
+        'xlsx',
+        'csv'
+      ];
+      $file_array = explode(".", $_FILES["dues_file"]["name"]);
+      $file_extension = end($file_array);
+
+      if (!in_array($file_extension, $allowFileExtensions)) {
+        throw new Error('The file format of the file you imported is not valid. You must follow these following formats (.csv, .xls and .xlsx)');
+      }
+
+      $file_name = 'PDA-DCC-dues-' . time() . '.' . $file_extension;
+      move_uploaded_file($_FILES['dues_file']['tmp_name'], $file_name);
+      $file_type = \PhpOffice\PhpSpreadsheet\IOFactory::identify($file_name);
+      $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($file_type);
+
+      $spreadsheet = $reader->load($file_name);
+
+      unlink($file_name);
+
+      $data = $spreadsheet->getActiveSheet()->toArray();
+
+      if (sizeof($data) == 1) {
+        throw new Error('You imported 0 rows. You need to populate the necessary cells or rows. Try again');
+      }
+
+      $index = 0;
+      foreach ($data as $row) {
+        $row['prc_number'] = trim($row[0]);
+        $row['amount'] = trim($row[1]);
+        $row['paid_to'] = trim($row[2]);
+        $row['channel'] = trim($row[3]);
+        $row['or_number'] = trim($row[4]);
+        $row['date_posted'] = trim($row[5]);
+        $row['remarks'] = trim($row[6]);
+
+        if ($index > 0) {
+          // ignore row if all cells are empty
+          if (
+            empty($row['prc_number'])
+            && empty($row['amount'])
+            && empty($row['paid_to'])
+            && empty($row['channel'])
+            && empty($row['or_number'])
+            && empty($row['date_posted'])
+            && empty($row['remarks'])
+          ) {
+            continue;
+          }
+
+          if (empty($row['prc_number'])) {
+            throw new Error('\'row ' . $index . '\' on column \'PRC No.\' should not be empty. Try again');
+          } else if (empty($row['amount'])) {
+            throw new Error('\'row ' . $index . '\' on column \'AMOUNT\' should not be empty. Try again');
+          } else if (empty($row['paid_to'])) {
+            throw new Error('\'row ' . $index . '\' on column \'PAID TO (PDA/DCC)\' should not be empty. Try again');
+          } else if (empty($row['channel'])) {
+            throw new Error('\'row ' . $index . '\' on column \'PAYMENT CHANNEL\' should not be empty. Try again');
+          } else if (empty($row['or_number'])) {
+            throw new Error('\'row ' . $index . '\' on column \'OR NO.\' should not be empty. Try again');
+          } else if (empty($row['date_posted'])) {
+            throw new Error('\'row ' . $index . '\' on column \'DATE POSTED \' should not be empty. Try again');
+          }
+
+          // check if the input type is not valid
+          if (!in_array(strtolower($row['paid_to']), ['pda', 'dcc'])) {
+            throw new Error($row['paid_to'] . ' is not a valid cell value for column \'type\'. It should either be (pda and dcc or PDA and DCC). Try again');
+          }
+
+          if (!is_numeric($row['amount'])) {
+            throw new Error($row['amount'] . ' is not a valid numeric value for the cell \'amount\'. It should be numeric to be considered as money. Try again');
+          }
+
+          if (!strtotime($row['date_posted']) || strlen($row['date_posted']) <= 1) {
+            throw new Error($row['date_posted'] . ' is not a valid date value for the cell \'DATE POSTED\'. It should be a date formatted in (MM/DD/YYYY). Try again');
+          }
+
+          $day = date('d', strtotime($row['date_posted']));
+          $month = date('m', strtotime($row['date_posted']));
+          $year = date('Y', strtotime($row['date_posted']));
+          if (!checkdate($month, $day, $year)) {
+            throw new Error($row['date_posted'] . ' is not a valid date value for the cell \'DATE POSTED\'. It should have a correct Month, Day, and Year values. Try again');
+          }
+        }
+
+        $index++;
+      }
+
+      $insertedRows = array();
+      $insertedRowInfos = array();
+      $index2 = 0;
+      foreach ($data as $row) {
+        if ($index2 > 0) {
+          // ignore row if all cells are empty
+          if (
+            empty(trim($row[0]))
+            && empty(trim($row[1]))
+            && empty(trim($row[2]))
+            && empty(trim($row[3]))
+            && empty(trim($row[4]))
+            && empty(trim($row[5]))
+            && empty(trim($row[6]))
+          ) {
+            continue;
+          }
+
+          $row[2] = strtoupper(trim($row[2]));
+          $row[5] = date('Y-m-d', strtotime(trim($row[5]))); // change format so that mysql accepts date
+          $row['profile_id'] = null;
+          $row['profile_name'] = null;
+
+          if (!$this->profileModel->hasRow(['prc_number'], [trim($row[0])])) {
+            throw new Error('The PRC No.: ' . trim($row[0]) . ' on row ' . $index2 . ' does not have a linked profile. Try again.');
+          }
+
+          $profile =  $this->profileModel->find(
+            ['*'],
+            ['prc_number'],
+            [trim($row[0])]
+          );
+
+          $row['profile_id'] = $profile->id;
+          $row['profile_name'] = arrangeFullname($profile->first_name, $profile->middle_name, $profile->last_name);
+
+          $last_row = $this->duesModel->store2($row);
+
+          $last_row->profile_id = !empty($last_row->profile_id) ? 'Linked (' . $row["profile_name"] . ')' : 'No links';
+          $insertedRows[] = $last_row; // returns the last row
+          $insertedRowInfos[] = $last_row->type . ' - ' . date('Y', strtotime($last_row->date_posted)) . ' (#' . $last_row->or_number . ')';
+        }
+        $index2++;
+      }
+
+
+
+      $decoded['insertedRows'] = $insertedRows;
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
+        $this->activityModel->store(
+          [
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' imported ' . count($insertedRows) . ' payments [' . join(', ', $insertedRowInfos) . ']',
+            'type' => 'add_dues',
+          ]
+        );
+      }
+
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    } catch (\Throwable $th) {
+      header("Content-Type: application/json; charset=UTF-8");
+      $decoded['status'] = 'fail';
+      $decoded['message'] = $th->getMessage();
+      $reply = json_encode($decoded);
+
+      exit($reply);
+    }
+  }
+
+  public function dues()
+  {
+    $data = [
+      'current_route' => __FUNCTION__,
+      'dates' => generateYearsBetween(),
+    ];
+
+    $this->view('admins/dues', $data);
+  }
+
+  public function duesDatatable()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $draw = $_POST['draw'];
+      $row = $_POST['start'];
+      $rowperpage = $_POST['length'];
+      $columnIndex = $_POST['order'][0]['column'];
+      $columnName = $_POST['columns'][$columnIndex]['data'];
+      $columnSortOrder = $_POST['order'][0]['dir'];
+      $searchValue = $_POST['search']['value'];
+
+      // custom filters
+      $startMonth = $_POST['startMonth'];
+      $endMonth = $_POST['endMonth'];
+      $startYear = $_POST['startYear'];
+      $endYear = $_POST['endYear'];
+
+      // $memberType = $_POST['memberType'];
+      // $paymentType = $_POST['paymentType'];
+
+      // initialize search filter
+      $searchQuery = " ";
+      if ($startMonth != '' && $endMonth != '' && $startYear != '' &&  $endYear != '') {
+        $searchQuery .= " and (date_posted BETWEEN CONCAT('" . $startYear . "','-','" . $startMonth . "','-01') AND CONCAT('" . $endYear . "','-','" . $endMonth . "','-01')) ";
+      }
+
+      // if ($paymentType != '') {
+      //   $searchQuery .= " and (dues.type like '%" . $paymentType . "%') ";
+      // }
+
+      // if ($memberType != '') {
+      //   if (trim($memberType, ' ') == 'active') {
+      //     $memberType = 1;
+      //   } elseif (trim($memberType, ' ') == 'inactive') {
+      //     $memberType = 0;
+      //   }
+
+
+      //   $searchQuery .= " and (users.is_active = " . $memberType . " ) ";
+      // }
+
+      if ($searchValue != '') {
+        $searchQuery .= " and (date_added like '%" . $searchValue . "%' OR 
+          type like '%" . $searchValue . "%' OR 
+          first_name like '%" . $searchValue . "%' OR 
+          last_name like '%" . $searchValue . "%' OR 
+          channel like '%" . $searchValue . "%' OR 
+          or_number like '%" . $searchValue . "%' ) ";
+      }
+
+      // initilize columns to be selected
+      $selectables = [];
+      foreach ($_POST['columns'] as $column) {
+        // $selectables[] = $column['data'];
+        $selectables[] = 'profiles.*';
+        $selectables[] = 'dues22.*';
+      }
+
+      // Row count without filtering
+      $totalRecords = $this->duesModel->countAll2()->count;
+
+      // Row count with filtering
+      $totalRecordwithFilter = $this->duesModel->countAllWithFilters2($searchQuery)->count;
+
+      // Fetch records
+      $empRecords = $this->duesModel->getDatatable2($selectables, $searchQuery, $columnName, $columnSortOrder, $row, $rowperpage);
+      $data = array();
+
+      foreach ($empRecords as $row) {
+        $data[] = array(
+          "date_posted" => date('Y-M', strtotime($row->date_posted)),
+          "first_name" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name) ?? '',
+          "amount" => $row->amount,
+          "payment_status" => $row->payment_status,
+          "type" => $row->type,
+          "channel" => $row->channel,
+          "or_number" => $row->or_number,
+          'user_id' => $row->profile_id
+        );
+      }
+
+      $response = array(
+        "draw" => intval($draw),
+        "iTotalRecords" => $totalRecords,
+        "iTotalDisplayRecords" => $totalRecordwithFilter,
+        "aaData" => $data
+      );
+      $response['status'] = 'ok';
+      $response['message'] = 'records were successfully fetched';
+      header("Content-Type: application/json; charset=UTF-8");
+
+      exit(json_encode($response));
+    } catch (\Throwable $th) {
+      $response['status'] = 'fail';
+      $response['message'] = $th->getMessage();
+
+      header("Content-Type: application/json; charset=UTF-8");
+
+      exit(json_encode($response));
+    }
+  }
+
+  public function users()
+  {
+    $data = [
+      'current_route' => __FUNCTION__,
+      'dates' => generateYearsBetween(),
+    ];
+
+    $this->view('admins/users', $data);
+  }
+  public function usersDatatable()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $draw = $_POST['draw'];
+      $row = $_POST['start'];
+      $rowperpage = $_POST['length'];
+      $columnIndex = $_POST['order'][0]['column'];
+      $columnName = $_POST['columns'][$columnIndex]['data'];
+      $columnSortOrder = $_POST['order'][0]['dir'];
+      $searchValue = $_POST['search']['value'];
+
+      // custom filters
+      // $memberType = $_POST['memberType'];
+      // $role = $_POST['role'];
+
+      // initialize search filter
+      $searchQuery = "";
+      if ($searchValue != '') {
+        $searchQuery .= " and ( account_status = '" . $searchValue . "') ";
+      }
+
+      // initilize columns to be selected
+      $selectables = [];
+      $selectables[] = 'accounts.*';
+
+      // Row count without filtering
+      $totalRecords = $this->userModel->countAll2()->count;
+
+      // Row count with filtering
+      $totalRecordwithFilter = $this->userModel->countAllWithFilters2($searchQuery)->count;
+
+      // Fetch records
+      $empRecords = $this->userModel->getDatatable2($selectables, $searchQuery, $columnName, $columnSortOrder, $row, $rowperpage);
+      $data = array();
+
+      // $row->is_active ? 'active' : 'inactive'
+      foreach ($empRecords as $row) {
+        $data[] = array(
+          "created_at" => $row->created_at,
+          "email" => $row->email,
+          "role" => $row->role,
+          "account_status" => $row->account_status,
+          "logged_at" => $row->logged_at,
+        );
+      }
+
+      $response = array(
+        "draw" => intval($draw),
+        "iTotalRecords" => $totalRecords,
+        "iTotalDisplayRecords" => $totalRecordwithFilter,
+        "aaData" => $data
+      );
+      $response['status'] = 'ok';
+      $response['message'] = 'records were successfully fetched';
+      header("Content-Type: application/json; charset=UTF-8");
+
+      exit(json_encode($response));
+    } catch (\Throwable $th) {
+      $response['status'] = 'fail';
+      $response['message'] = $th->getMessage();
+
+      header("Content-Type: application/json; charset=UTF-8");
+
+      exit(json_encode($response));
+    }
+  }
+
+  public function profiles()
+  {
+    $data = [
+      'current_route' => __FUNCTION__,
+      'dates' => generateYearsBetween(),
+    ];
+
+    $this->view('admins/profiles', $data);
+  }
+
+  public function profilesDatatable()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $draw = $_POST['draw'];
+      $row = $_POST['start'];
+      $rowperpage = $_POST['length'];
+      $columnIndex = $_POST['order'][0]['column'];
+      $columnName = $_POST['columns'][$columnIndex]['data'];
+      $columnSortOrder = $_POST['order'][0]['dir'];
+
+      $searchValue = $_POST['search']['value'];
+      $paymentStatus = $_POST['status'];
+
+      // initialize search filter
+      $searchQuery = "";
+      if ($searchValue != '') {
+        $searchQuery .= " and ( CONCAT(first_name, ' ', SUBSTR(middle_name, 1, 1), ' ', last_name) LIKE '%" . $searchValue . "%' OR
+          CONCAT(last_name, ' ', first_name, ' ', middle_name) LIKE '%" . $searchValue . "%' OR
+          prc_number LIKE '%" . $searchValue . "%') ";
+      }
+
+      if ($paymentStatus != '') {
+        $searchQuery .= " and (payment_status like '%" . $paymentStatus . "%') ";
+      }
+
+      // initilize columns to be selected
+      $selectables = [];
+      $selectables[] = '*';
+
+      // Row count without filtering
+      $totalRecords = $this->profileModel->countAll2()->count;
+
+      // Row count with filtering
+      $totalRecordwithFilter = $this->profileModel->countAllWithFilters2($searchQuery)->count;
+
+      // Fetch records
+      $empRecords = $this->profileModel->getDatatable2($selectables, $searchQuery, $columnName, $columnSortOrder, $row, $rowperpage);
+      $data = array();
+
+      // $row->is_active ? 'active' : 'inactive'
+      foreach ($empRecords as $row) {
+        $data[] = array(
+          "prc_number" => $row->prc_number,
+          "last_name" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name),
+          "payment_status" => $row->payment_status,
+          "status_remarks" => $row->status_remarks,
+
+          "birthdate" => $row->birthdate,
+          "address" => $row->address,
+          "contact_number" => $row->contact_number,
+          "gender" => $row->gender,
+          "fb_account_name" => $row->fb_account_name,
+          "prc_registration_date" => $row->prc_registration_date,
+          "prc_expiration_date" => $row->prc_expiration_date,
+          "field_practice" => $row->field_practice,
+          "type_practice" => $row->type_practice,
+          "clinic_name" => $row->clinic_name,
+          "clinic_street" => $row->clinic_street,
+          "clinic_district" => $row->clinic_district,
+          "clinic_city" => $row->clinic_city,
+          "clinic_contact" => $row->clinic_contact,
+          "emergency_person_name" => $row->emergency_person_name,
+          "emergency_address" => $row->emergency_address,
+          "emergency_contact_number" => $row->emergency_contact_number,
+
+          "profile_id" => $row->id,
+        );
+      }
+
+      $response = array(
+        "draw" => intval($draw),
+        "iTotalRecords" => $totalRecords,
+        "iTotalDisplayRecords" => $totalRecordwithFilter,
+        "aaData" => $data
+      );
+      $response['status'] = 'ok';
+      $response['message'] = 'records were successfully fetched';
+      header("Content-Type: application/json; charset=UTF-8");
+
+      exit(json_encode($response));
+    } catch (\Throwable $th) {
+      $response['status'] = 'fail';
+      $response['message'] = $th->getMessage();
+
+      header("Content-Type: application/json; charset=UTF-8");
+
+      exit(json_encode($response));
+    }
+  }
+
+  public function profileForm()
+  {
+    $data = [
+      'current_route' => __FUNCTION__
+    ];
+
+    $this->view('admins/profileForm', $data);
+  }
+
+  public function importProfile()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+      $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+      if (strpos($contentType, 'multipart/form-data') === false) {
+        throw new Error('Your content type must be in \'multipart/form-data\'');
+      }
+
+      $content = trim(file_get_contents("php://input"));
+      $decoded = json_decode($content, true);
+
+      $decoded['message'] = 'New profile(s) were successfully added!';
+      $decoded['status'] = 'ok';
+      $decoded['errors'] = [];
+
+      if (!isset($_FILES["profile_file"]['name'])) {
+        throw new Error('You must import a file to proceed.');
+      }
+
+      $allowFileExtensions = [
+        'xls',
+        'xlsx',
+        'csv'
+      ];
+      $file_array = explode(".", $_FILES["profile_file"]["name"]);
+      $file_extension = end($file_array);
+
+      if (!in_array($file_extension, $allowFileExtensions)) {
+        throw new Error('The file format of the file you imported is not valid. You must follow these following formats (.csv, .xls and .xlsx)');
+      }
+
+      $file_name = 'PDA-DCC-dues-' . time() . '.' . $file_extension;
+      move_uploaded_file($_FILES['profile_file']['tmp_name'], $file_name);
+      $file_type = \PhpOffice\PhpSpreadsheet\IOFactory::identify($file_name);
+      $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($file_type);
+
+      $spreadsheet = $reader->load($file_name);
+
+      unlink($file_name);
+
+      $data = $spreadsheet->getActiveSheet()->toArray();
+
+      if (sizeof($data) == 1) {
+        throw new Error('You imported 0 rows. You need to populate the necessary cells or rows. Try again');
+      }
+
+      $index = 0;
+      $prcNumbers = array();
+      foreach ($data as $row) {
+        $row['first_name'] = trim($row[0] ?? null);
+        $row['last_name'] = trim($row[2] ?? null);
+        $row['prc_number'] = trim($row[8] ?? null);
+        $row['birthdate'] = trim($row[3] ?? null);
+
+        if (
+          empty($row['first_name'])
+          && empty($row['last_name'])
+          && empty($row['prc_number'])
+          && empty($row['birthdate'])
+        ) {
+          continue;
+        }
+
+        if ($index > 0) {
+          $rowNo = $index + 1;
+          // check for the correct column values
+          if (empty($row['first_name'])) {
+            exit(var_dump($row['first_name']));
+            throw new Error('Column \'FIRSTNAME\' on \'row ' . $rowNo . '\' should not be empty. Try again');
+          } else if (empty($row['last_name'])) {
+            throw new Error('Column \'LASTNAME\' on \'row ' . $rowNo . '\'  should not be empty. Try again');
+          } else if (empty($row['prc_number'])) {
+            throw new Error('Column \'PRC NO.\' on \'row ' . $rowNo . '\' should not be empty. Try again');
+          }
+
+          if (!empty($row['birthdate'])) {
+            if (!strtotime($row['birthdate']) || strlen($row['birthdate']) <= 1) {
+              throw new Error($row['birthdate'] . 'on row \' ' . $rowNo . '\' is not a valid date value for the cell \'BIRTHDATE\'. It should be a date formatted in (MM/DD/YYYY). Try again');
+            }
+
+            $day = date('d', strtotime($row['birthdate']));
+            $month = date('m', strtotime($row['birthdate']));
+            $year = date('Y', strtotime($row['birthdate']));
+            if (!checkdate($month, $day, $year)) {
+              throw new Error($row['birthdate'] . 'on row \' ' . $rowNo . '\' is not a valid date value for the cell \'BIRTHDATE\'. It should have a correct Month, Day, and Year values. Try again');
+            }
+          }
+
+          array_push($prcNumbers, ['prc_number' => $row['prc_number'], 'rowNo' => $rowNo]);
+        }
+        $index++;
+      }
+
+      $returnedDupes = $this->returnDuplicate($prcNumbers);
+      if ($returnedDupes) {
+        throw new Error('The PRC No. \'' . $returnedDupes['prc_number'] . '\' is a duplicate. Try again. The anomaly was detected on row ' . $returnedDupes['rowNo'] . ' column PRC NO.');
+      };
+
+      $index2 = 0;
+      $inserts = [];
+      foreach ($data as $row) {
+        if ($index2 > 0) {
+          $row['0'] = trim($row[0] ?? null);
+          $row['2'] = trim($row[2] ?? null);
+          $row['8'] = trim($row[8] ?? null);
+          $row['3'] = trim($row[3] ?? null);
+
+          if (
+            empty($row['0'])
+            && empty($row['2'])
+            && empty($row['8'])
+            && empty($row['3'])
+          ) {
+            continue;
+          }
+
+          if (isset($row[3]) && !empty(trim($row[3]))) {
+            $row[3] = date('Y-m-d', strtotime(trim($row[3] ?? null))); // change format so that mysql accepts date
+          }
+
+          $this->profileModel->store($row);
+
+          // array_push($inserts, $row);
+        }
+        $index2++;
+      }
+
+      // $this->profileModel->insertMultiple(
+      //   array_values($inserts)
+      // );
+
+
+
+      $spreadsheetRowCount = sizeof($data);
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
+        $this->activityModel->store(
+          [
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' imported ' . $spreadsheetRowCount . ' profiles.',
+            'type' => 'add_profile',
+          ]
+        );
+      }
+
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    } catch (\Throwable $th) {
+      header("Content-Type: application/json; charset=UTF-8");
+      $decoded['status'] = 'fail';
+      $decoded['message'] = $th->getCode() == '23000' ? 'The prc # \'' . $row[8] . '\' already has existing records in the database. Try again with a non-existing prc number. The anomaly was detected on Row ' . $index2 . ' PRC NO. column.' : $th->getMessage();
+      $reply = json_encode($decoded);
+
+
+      exit($reply);
+    }
+  }
+  private function returnDuplicate($array): ?array
+  {
+    $prc_numbers = array();
+    foreach ($array as $val) {
+      array_push($prc_numbers, $val['prc_number']);
+    }
+
+    $unique = array_unique($prc_numbers);
+    $duplicates = array_diff_assoc($prc_numbers, $unique);
+
+    if (empty($duplicates)) {
+      return null;
+    }
+
+    $firstDuplicateKey = array_key_first($duplicates);
+    $firstDuplicateKey = $firstDuplicateKey + 1;
+
+    foreach ($array as $val) {
+      if ($duplicates[$firstDuplicateKey - 1] == $val['prc_number'] && $val['rowNo'] != $firstDuplicateKey - 1) {
+        return ['prc_number' => $duplicates[$firstDuplicateKey - 1], 'rowNo' =>  $val['rowNo'] . ' and ' . ++$firstDuplicateKey];
+      }
+    }
+  }
+
   public function accounts()
   {
     $accounts = $this->userModel->getAllUserClinic();
@@ -48,125 +871,114 @@ class Admins extends Controller
 
     $this->view('admins/accounts', $data);
   }
-  // public function accountsDatatable()
-  // {
-  //   try {
-  //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-  //       throw new Error('Your request method must be in \'POST\'');
-  //     }
+  public function accountsDatatable()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
 
-  //     $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
-  //     $draw = $_POST['draw'];
-  //     $row = $_POST['start'];
-  //     $rowperpage = $_POST['length'];
-  //     $columnIndex = $_POST['order'][0]['column'];
-  //     $columnName = $_POST['columns'][$columnIndex]['data'];
-  //     $columnSortOrder = $_POST['order'][0]['dir'];
-  //     $searchValue = $_POST['search']['value'];
+      $draw = $_POST['draw'];
+      $row = $_POST['start'];
+      $rowperpage = $_POST['length'];
+      $columnIndex = $_POST['order'][0]['column'];
+      $columnName = $_POST['columns'][$columnIndex]['data'];
+      $columnSortOrder = $_POST['order'][0]['dir'];
+      $searchValue = $_POST['search']['value'];
 
-  //     // custom filters
-  //     // $memberType = $_POST['memberType'];
-  //     // $role = $_POST['role'];
+      // custom filters
+      // $memberType = $_POST['memberType'];
+      // $role = $_POST['role'];
 
-  //     // initialize search filter
-  //     $searchQuery = " ";
-  //     // if ($role != '') {
-  //     //   $searchQuery .= " and (dues.type like '%" . $role . "%') ";
-  //     // }
+      // initialize search filter
+      $searchQuery = " and (role != 'superadmin')";
+      if ($searchValue != '') {
+        $searchQuery .= " and ( account_status = '" . $searchValue . "' OR  
+          payment_status = '" . $searchValue . "' OR      
+          first_name like '%" . $searchValue . "%' OR           
+          last_name like '%" . $searchValue . "%' ) ";
+      }
 
-  //     // if ($memberType != '') {
-  //     //   if (trim($memberType, ' ') == 'active') {
-  //     //     $memberType = 1;
-  //     //   } elseif (trim($memberType, ' ') == 'inactive') {
-  //     //     $memberType = 0;
-  //     //   }
+      // initilize columns to be selected
+      $selectables = [];
+      foreach ($_POST['columns'] as $column) {
+        $selectables[] = 'users.*';
+        $selectables[] = 'clinics.name AS clinic_name';
+        $selectables[] = 'clinics.street AS clinic_street';
+        $selectables[] = 'clinics.district AS clinic_district';
+        $selectables[] = 'clinics.city AS clinic_city';
+        $selectables[] = 'clinics.contact_number AS clinic_contact_number';
+        $selectables[] = 'clinics.*';
+      }
 
+      // Row count without filtering
+      $totalRecords = $this->userModel->countAll()->count;
 
-  //     //   $searchQuery .= " and (users.is_active = " . $memberType . " ) ";
-  //     // }
+      // Row count with filtering
+      $totalRecordwithFilter = $this->userModel->countAllWithFilters($searchQuery)->count;
 
-  //     if ($searchValue != '') {
-  //       $searchQuery .= " and (date_created like '%" . $searchValue . "%' OR 
-  //         type like '%" . $searchValue . "%' OR 
-  //         first_name like '%" . $searchValue . "%' OR 
-  //         last_name like '%" . $searchValue . "%' OR 
-  //         channel like '%" . $searchValue . "%' OR 
-  //         or_number like '%" . $searchValue . "%' ) ";
-  //     }
+      // Fetch records
+      $empRecords = $this->userModel->getDatatable($selectables, $searchQuery, $columnName, $columnSortOrder, $row, $rowperpage);
+      $data = array();
 
-  //     // initilize columns to be selected
-  //     $selectables = [];
-  //     foreach ($_POST['columns'] as $column) {
-  //       // $selectables[] = $column['data'];
-  //       $selectables[] = 'users.*';
-  //       $selectables[] = 'clinics.*';
-  //     }
+      // $row->is_active ? 'active' : 'inactive'
+      foreach ($empRecords as $row) {
+        $data[] = array(
+          "created_at" => $row->created_at,
+          "first_name" => $row->email,
+          "role" => $row->role,
+          "account_status" => $row->account_status,
+          "logged_at" => $row->logged_at,
+          "payment_status" => $row->payment_status,
+          "status_remarks" => $row->status_remarks,
+          "email" => $row->email,
+          "prc_number" => $row->prc_number,
+          "prc_registration_date" => $row->prc_registration_date,
+          "prc_expiration_date" => $row->prc_expiration_date,
+          "field_practice" => $row->field_practice,
+          "type_practice" => $row->type_practice,
+          "birthdate" => $row->birthdate,
+          "gender" => $row->gender,
+          "contact_number" => $row->contact_number,
+          "fb_account_name" => $row->fb_account_name,
+          "address" => $row->address,
+          "clinic_name" => $row->clinic_name,
+          "clinic_street" => $row->clinic_street,
+          "clinic_district" => $row->clinic_district,
+          "clinic_city" => $row->clinic_city,
+          "clinic_contact_number" => $row->clinic_contact_number,
+          "emergency_person_name" => $row->emergency_person_name,
+          "emergency_address" => $row->emergency_address,
+          "emergency_contact_number" => $row->emergency_contact_number
+        );
+      }
 
-  //     // Row count without filtering
-  //     $totalRecords = $this->userModel->countAll()->count;
+      $response = array(
+        "draw" => intval($draw),
+        "iTotalRecords" => $totalRecords,
+        "iTotalDisplayRecords" => $totalRecordwithFilter,
+        "aaData" => $data
+      );
+      $response['status'] = 'ok';
+      $response['message'] = 'records were successfully fetched';
+      header("Content-Type: application/json; charset=UTF-8");
 
-  //     // Row count with filtering
-  //     $totalRecordwithFilter = $this->userModel->countAllWithFilters($searchQuery)->count;
+      exit(json_encode($response));
+    } catch (\Throwable $th) {
+      $response['status'] = 'fail';
+      $response['message'] = $th->getMessage();
 
-  //     // Fetch records
-  //     $empRecords = $this->userModel->getDatatable($selectables, $searchQuery, $columnName, $columnSortOrder, $row, $rowperpage);
-  //     $data = array();
+      header("Content-Type: application/json; charset=UTF-8");
 
-  //     foreach ($empRecords as $row) {
-  //       $data[] = array(
-  //         "timestamp" => $row->date_created,
-  //         "name" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name),
-  //         "role" => $row->amount,
-  //         "memberType" => $row->is_active ? 'active' : 'inactive',
-  //         "statusRemarks" => $row->is_active ? 'active' : 'inactive',
-  //         "more" => '...',
-  //         "email" => $row->channel,
-  //         "prcNumber" => $row->or_number,
-  //         "prcRegistrationDAte" => $row->user_id,
-  //         "prcExpirationDate" => $row->channel,
-  //         "practiceField" => $row->or_number,
-  //         "practiceType" => $row->user_id,
-  //         "birthdate" => $row->or_number,
-  //         "gender" => $row->user_id,
-  //         "contact" => $row->channel,
-  //         "facebookAccount" => $row->or_number,
-  //         "address" => $row->user_id,
-  //         "clinicName" => $row->user_id,
-  //         "clinicStreet" => $row->channel,
-  //         "clinicDistrict" => $row->or_number,
-  //         "clinicMunicipality" => $row->user_id,
-  //         "clinicContact" => $row->or_number,
-  //         "emergencyPerson" => $row->user_id,
-  //         "emergencyPersonAddress" => $row->channel,
-  //         "emergencyPersonContact" => $row->or_number
-  //       );
-  //     }
-
-  //     $response = array(
-  //       "draw" => intval($draw),
-  //       "iTotalRecords" => $totalRecords,
-  //       "iTotalDisplayRecords" => $totalRecordwithFilter,
-  //       "aaData" => $data
-  //     );
-  //     $response['status'] = 'ok';
-  //     $response['message'] = 'records were successfully fetched';
-  //     header("Content-Type: application/json; charset=UTF-8");
-
-  //     exit(json_encode($response));
-  //   } catch (\Throwable $th) {
-  //     $response['status'] = 'fail';
-  //     $response['message'] = $th->getMessage();
-
-  //     header("Content-Type: application/json; charset=UTF-8");
-
-  //     exit(json_encode($response));
-  //   }
-  // }
+      exit(json_encode($response));
+    }
+  }
 
   public function memberList()
   {
-    $accounts = $this->userModel->getAllUserClinic();
+    $accounts = $this->duesModel->getListOfMembersWithGroupedPayments();
 
     $data = [
       'current_route' => __FUNCTION__,
@@ -177,198 +989,21 @@ class Admins extends Controller
     $this->view('admins/memberList', $data);
   }
 
-  public function createAccount()
-  {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
-      $data = [
-        'current_route' => 'accounts',
-
-        'role' => trim($_POST['role']),
-        'email' => trim($_POST['email']),
-
-        'role_err' => '',
-        'email_err' => '',
-      ];
-
-      // Validate prc info
-      if (empty($data['role'])) {
-        $data['role_err'] = 'Please select a role';
-      }
-
-      // Validate login credentials
-      if (empty($data['email'])) {
-        $data['email_err'] = 'Please enter your email';
-      } else {
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-          $data['email_err'] = 'Please enter your email';
-        }
-
-        if ($this->userModel->findUserByEmail($data['email'])) {
-          $data['email_err'] = 'Email is already taken';
-        }
-      }
-
-      // Check if errors are empty
-      if (empty($data['role_err']) && empty($data['email_err'])) {
-        $autoPassword = uniqid();
-        $data['password'] = password_hash($autoPassword, PASSWORD_DEFAULT);
-        if (!$this->userModel->register($data)) {
-          $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
-        }
-
-        // initialize data to pass as params for email sending
-        $this->handleUserRegistrationViaAdmin(
-          [
-            'email_confirmation_type' => 'ACCOUNT_REGISTRATION',
-            'id_type' => 'email',
-            'id' => $data['email'],
-            'receiver_email' => $data['email'],
-            'vkey' => $this->userModel->regenerateVkey('account_registration_vkey', 'email', $data['email']),
-            'password' => $autoPassword
-          ]
-        );
-      } else {
-        // Load view with errors
-        $this->view('admins/createAccount', $data);
-      }
-    } else {
-      $data = [
-        'current_route' => 'accounts',
-        'role' => '',
-        'email' => '',
-
-        'role_err' => '',
-        'email_err' => '',
-      ];
-
-      $this->view('admins/createAccount', $data);
-    }
-  }
-  public function handleUserRegistrationViaAdmin($data = null)
-  {
-    if (!isset($data)) {
-      $data = $_SESSION['email_confirmation_info'];
-      $emailVkey = $this->userModel->regenerateEmailVkey($data['id_type'], $data['id']);
-
-      $data['vkey'] = $emailVkey;
-    }
-    unset($_SESSION['email_confirmation_info']);
-
-    $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
-    if ($unverifiedUser) {
-      $mail = new PHPMailer(true);
-
-      try {
-        //Server settings                
-        $mail->isSMTP();
-        $mail->Host       = MAIL_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = MAIL_USERNAME;
-        $mail->Password   = MAIL_PASSWORD;
-        $mail->Port       = MAIL_PORT;
-        $mail->SMTPSecure = 'tls';
-
-        //Recipients
-        $mail->setFrom(MAIL_FROM_ADDRESS, 'pda-dcc.com');
-        $mail->addAddress($data['receiver_email'], 'PDA-DCC member');
-
-        //Content
-        $email_template = APPROOT . '/views/inc/templateEmailAndPassword.php';
-        $password = $data['password'];
-        $verify_url = URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->account_registration_vkey;
-        $about_url = URLROOT . '/about';
-        $privacy_url = URLROOT . '/about/privacy';
-        $terms_url = URLROOT . '/about/terms';
-        $subject = 'PDA-DCC ' . str_replace('_', ' ', $data['email_confirmation_type']) . ' VERIFICATION';
-
-        //message html templating
-        $message = file_get_contents($email_template);
-        $message = str_replace('{{verify_url}}', $verify_url, $message);
-        $message = str_replace('{{password}}', $password, $message);
-        $message = str_replace('{{about_url}}', $about_url, $message);
-        $message = str_replace('{{privacy_url}}', $privacy_url, $message);
-        $message = str_replace('{{terms_url}}', $terms_url, $message);
-        $mail->isHTML(true);
-
-        //set subject and message
-        $mail->Subject = $subject;
-        $mail->MsgHTML($message);
-
-        $mail->send();
-        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link and password was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
-      } catch (Exception $e) {
-        echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-      }
-    }
-  }
-
   public function report()
   {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    $user = $this->userModel->getUserById($this->session->get(SessionManager::SESSION_USER)->id);
+    $amounts = $this->duesModel->getTotalAmountBetweenYears(date('Y'), date('Y') + 1);
+    $data = [
+      'current_route' => __FUNCTION__,
+      'amounts' => $amounts,
+      'dates' => generateYearsBetween(),
 
-      $data = [
-        'current_route' => __FUNCTION__,
+      'prc_number' => $user->prc_number,
 
-        'prc_number' => trim($_POST['prc_number']),
-        'prc_registration_date' => trim($_POST['prc_registration_date']),
-        'prc_expiration_date' => trim($_POST['prc_expiration_date']),
-        'field_practice' => trim($_POST['field_practice']),
-        'type_practice' => trim($_POST['type_practice']),
+      'prc_number_err' => '',
+    ];
 
-        'prc_number_err' => '',
-        'prc_registration_date_err' => '',
-        'prc_expiration_date_err' => '',
-        'field_practice_err' => '',
-        'type_practice_err' => '',
-      ];
-
-      // Validate prc info
-      if (empty($data['prc_number'])) {
-        $data['prc_number_err'] = 'Please enter your prc number';
-      }
-      if (empty($data['prc_registration_date'])) {
-        $data['prc_registration_date_err'] = 'Please enter your prc registration date';
-      }
-      if (empty($data['prc_expiration_date'])) {
-        $data['prc_expiration_date_err'] = 'Please enter your prc expiration date';
-      }
-      if (empty($data['field_practice'])) {
-        $data['field_practice_err'] = 'Please select your field of practice';
-      }
-      if (empty($data['type_practice'])) {
-        $data['type_practice_err'] = 'Please select your type of practice';
-      }
-
-      // Check if errors are empty
-      if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
-        if ($this->userModel->updatePrcInfo($data)) {
-          flash('update_success', 'Your license profile was updated');
-          redirect('licenseInfo');
-        } else {
-          die('Something went wrong');
-        }
-      } else {
-        // Load view with errors
-        $this->view('admins/report', $data);
-      }
-    } else {
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
-      $amounts = $this->duesModel->getTotalAmountBetweenYears(date('Y'), date('Y') + 1);
-      $data = [
-        'current_route' => __FUNCTION__,
-        'amounts' => $amounts,
-        'dates' => generateYearsBetween(),
-
-        'prc_number' => $user->prc_number,
-
-        'prc_number_err' => '',
-      ];
-
-      $this->view('admins/report', $data);
-    }
+    $this->view('admins/report', $data);
   }
   public function reportsDatatable()
   {
@@ -535,12 +1170,12 @@ class Admins extends Controller
         throw new Error('prc_number: ' . $decoded['paymentForm']['user_id'] . ' is not correct or non existing. Try again');
       }
 
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' registered an amount of ' . $decoded['paymentForm']['amount'] . ' as dues payment to ' . $decoded['paymentForm']['type'] . ' with an OR No. of ' . $decoded['paymentForm']['or_number'],
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' registered an amount of ' . $decoded['paymentForm']['amount'] . ' as dues payment to ' . $decoded['paymentForm']['type'] . ' with an OR No. of ' . $decoded['paymentForm']['or_number'],
             'type' => 'add_payment',
           ]
         );
@@ -692,12 +1327,12 @@ class Admins extends Controller
       }
 
       $spreadsheetRowCount = sizeof($data);
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' imported ' . $spreadsheetRowCount . ' payments.',
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' imported ' . $spreadsheetRowCount . ' payments.',
             'type' => 'add_payment',
           ]
         );
@@ -718,7 +1353,7 @@ class Admins extends Controller
   }
   public function activities()
   {
-    $user = $this->userModel->getUserById($_SESSION['user_id']);
+    $user = $this->userModel->getUserById($this->session->get(SessionManager::SESSION_USER)->id);
     $activities = $this->activityModel->getAll();
     $data = [
       'current_route' => __FUNCTION__,
@@ -853,12 +1488,12 @@ class Admins extends Controller
       }
 
       $userFullname = arrangeFullname($user->first_name, $user->middle_name, $user->last_name);
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' ' . $statusValueLabel . ' ' . $userFullname,
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' ' . $statusValueLabel . ' ' . $userFullname,
             'type' => 'change_status',
           ]
         );
@@ -906,11 +1541,11 @@ class Admins extends Controller
 
       // check user status
       $role = '';
-      if ($this->isAdmin($user->role)) {
-        $role = $this->ROLE_MEMBER;
+      if ($this->role->isAdmin($user->role)) {
+        $role = $this->role->ROLE_MEMBER;
       }
-      if ($this->isMember($user->role)) {
-        $role = $this->ROLE_ADMIN;
+      if ($this->role->isMember($user->role)) {
+        $role = $this->role->ROLE_ADMIN;
       }
 
       // check if user status was not successfully updated
@@ -966,9 +1601,13 @@ class Admins extends Controller
   {
     $userId = $_GET['id'];
 
-    $params = ['id' => $userId, 'idType' => 'id'];
-    $user = $this->userModel->getUserClinic($params);
-    $paymentHistory = $this->duesModel->getUserYearlyPayments(['user_id' => 2]);
+    $user = $this->profileModel->findProfileUser(
+      ['*'],
+      ['profiles.id'],
+      [$userId]
+    );
+
+    $paymentHistory = $this->duesModel->getUserYearlyPayments(['user_id' => $userId]);
 
     $data = [
       'user' => $user,
@@ -978,6 +1617,9 @@ class Admins extends Controller
       'years' => generateYearsBetween()
     ];
 
+    if (!$user) {
+      $data['profile_err'] = 'The profile containing the id \'' . $userId . '\' does not exist';
+    }
     $this->view('admins/viewAccount', $data);
   }
 
@@ -1032,12 +1674,12 @@ class Admins extends Controller
       $user = $this->userModel->getUserById($decoded['profile']['user_id']);
 
       $userFullname = arrangeFullname($user->first_name, $user->middle_name, $user->last_name);
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' updated the profile of ' . $userFullname,
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' updated the profile of ' . $userFullname,
             'type' => 'update_user',
           ]
         );
@@ -1139,12 +1781,12 @@ class Admins extends Controller
       $user = $this->userModel->getUserById($decoded['personal']['user_id']);
 
       $userFullname = arrangeFullname($user->first_name, $user->middle_name, $user->last_name);
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' updated the personal info of ' . $userFullname,
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' updated the personal info of ' . $userFullname,
             'type' => 'update_user',
           ]
         );
@@ -1231,12 +1873,12 @@ class Admins extends Controller
       $user = $this->userModel->getUserById($decoded['license']['user_id']);
 
       $userFullname = arrangeFullname($user->first_name, $user->middle_name, $user->last_name);
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' updated the license info of ' . $userFullname,
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' updated the license info of ' . $userFullname,
             'type' => 'update_user',
           ]
         );
@@ -1323,12 +1965,12 @@ class Admins extends Controller
       $user = $this->userModel->getUserById($decoded['clinic']['user_id']);
 
       $userFullname = arrangeFullname($user->first_name, $user->middle_name, $user->last_name);
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' updated the clinic info of ' . $userFullname,
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' updated the clinic info of ' . $userFullname,
             'type' => 'update_user',
           ]
         );
@@ -1405,12 +2047,12 @@ class Admins extends Controller
       $user = $this->userModel->getUserById($decoded['emergency']['user_id']);
 
       $userFullname = arrangeFullname($user->first_name, $user->middle_name, $user->last_name);
-      if ($_SESSION['role'] == 'admin') {
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => 'Admin: ' . $_SESSION['user_name'] . ' updated the emergency info of ' . $userFullname,
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' updated the emergency info of ' . $userFullname,
             'type' => 'update_user',
           ]
         );

@@ -101,11 +101,11 @@
         <div class="flex flex-col gap-y-8">
           <!-- License no -->
           <div x-data="formGroup()" class="form-group">
-            <label x-bind="formLabel">
-              PRC license no <span class="text-danger-500">*</span>
+            <label class="text-secondary-500 font-semibold text-sm w-1/4">
+              PRC license no
             </label>
             <div x-bind="inputContainer">
-              <input type="number" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number" autofocus>
+              <input disabled class="border-0 border-b text-secondary-500" type="number" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number" autofocus>
 
               <?php if (!empty($data['prc_number_err'])) : ?>
                 <div x-bind="formInputError">

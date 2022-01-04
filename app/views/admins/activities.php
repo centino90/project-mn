@@ -72,11 +72,36 @@
     Alpine.data('app', () => ({
       init() {
         // jquery datatable
-        $('#myTable').DataTable({
-          "order": [[ 0, "desc" ]],
-          "bLengthChange": false,
+        $.fn.dataTable.Debounce = function(table, options) {
+          let tableId = table.settings()[0].sTableId;
+          $('.dataTables_filter input[aria-controls="' + tableId + '"]') // select the correct input field
+            .unbind() // Unbind previous default bindings
+            .bind('input', (delay(function(e) { // Bind our desired behavior
+              table.search($(this).val()).draw();
+              return;
+            }, 1000))); // Set delay in milliseconds
+        }
+
+        function delay(callback, ms) {
+          let timer = 0;
+          return function() {
+            let context = this,
+              args = arguments;
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+              callback.apply(context, args);
+            }, ms || 0);
+          };
+        }
+
+        const dataTable = $('#myTable').DataTable({
+          'order': [
+            [0, 'desc']
+          ],
+          'bLengthChange': false,
           'processing': true,
           'serverSide': true,
+          'searchDelay': 350,
           'serverMethod': 'post',
           'ajax': {
             'url': 'activitiesDatatable'
@@ -91,10 +116,14 @@
               data: 'type'
             },
             {
-              data: 'message'
+              data: 'message',
+              render: function(d, t, r, m) {
+                return `<p class="line-clamp-3 hover:line-clamp-none w-40"> ${r.message}</p>`
+              }
             }
           ]
         });
+        const debounce = new $.fn.dataTable.Debounce(dataTable);
       },
     }))
   })

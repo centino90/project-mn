@@ -1,12 +1,42 @@
 <?php
-class Dues
+class Dues extends Model
 {
-  private $db;
-  private $table = 'dues';
-
   public function __construct()
   {
+    $this->table = 'dues';
+    $this->table2 = 'dues22';
     $this->db = new Database;
+  }
+
+  public function getDatatable2($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
+  {
+    $selected = join(',', $columns);
+    $sql = 'SELECT ' . $selected . ' FROM ' .
+      $this->table2 . ' LEFT JOIN profiles ON profiles.id = ' .
+      $this->table2 . '.profile_id WHERE 1 ' .
+      $filters . ' ORDER BY ' .
+      $orderColumn . ' ' .
+      $orderType . ' LIMIT ' .
+      $limitRow . ',' .
+      $limitPerpage;
+
+    $this->db->query($sql);
+
+    return $this->db->resultSet();
+  }
+  function countAll2()
+  {
+    $sql = 'SELECT count(*) as count FROM ' . $this->table2 . ' LEFT JOIN profiles ON profiles.id = ' . $this->table2 . '.profile_id';
+    $this->db->query($sql);
+
+    return $this->db->single();
+  }
+  function countAllWithFilters2($filters)
+  {
+    $sql = 'SELECT count(*) as count FROM ' . $this->table2 . ' LEFT JOIN profiles ON profiles.id = ' . $this->table2 . '.profile_id WHERE 1 ' . $filters;
+    $this->db->query($sql);
+
+    return $this->db->single();
   }
 
   public function getDatatable($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
@@ -43,44 +73,70 @@ class Dues
   // inherited methods
   public function store($data)
   {
-    // select user by prc_number
     $this->db->query(
-      'SELECT * FROM users WHERE prc_number = :prc_number'
-    );
-    $this->db->bind(':prc_number', $data['user_id']);
-    $row = $this->db->single();
-
-    // insert dues on user containing prc_number
-    if ($row) {
-      $this->db->query(
-        'INSERT INTO dues 
+      'INSERT INTO dues22
           (
-            user_id, type, amount, channel, or_number, remarks, date_created
+            profile_id, prc_number, type, amount, channel, or_number, remarks, date_posted
           ) 
         VALUES
           (
-            :user_id, :type, :amount, :channel, :or_number, :remarks, :date
+            :profile_id, :prc_number, :type, :amount, :channel, :or_number, :remarks, :date_posted
           )
         '
-      );
+    );
 
-      $this->db->bind(':user_id', $row->id);
-      $this->db->bind(':type', $data['type']);
-      $this->db->bind(':amount', $data['amount']);
-      $this->db->bind(':channel', $data['channel']);
-      $this->db->bind(':or_number', $data['or_number']);
-      $this->db->bind(':remarks', $data['remarks']);
-      $this->db->bind(':date', $data['date']);
+    $this->db->bind(':profile_id', $data['profile_id']);
+    $this->db->bind(':prc_number', $data['prc_number']);
+    $this->db->bind(':type', $data['type']);
+    $this->db->bind(':amount', $data['amount']);
+    $this->db->bind(':channel', $data['channel']);
+    $this->db->bind(':or_number', $data['or_number']);
+    $this->db->bind(':date_posted', $data['date_posted']);
+    $this->db->bind(':remarks', $data['remarks']);
 
-      if ($this->db->execute()) {
-        return true;
-      } else {
-        return false;
-      }
+    if ($this->db->execute()) {
+      $this->db->query('SELECT * FROM dues22 WHERE id = @@identity');
+
+      return $this->db->single();
     } else {
       return false;
     }
   }
+
+  public function store2($data)
+  {
+    $this->db()->query(
+      'INSERT INTO dues22
+        (
+          prc_number, amount, type, channel, or_number, date_posted, remarks, profile_id
+        ) 
+      VALUES
+        (
+          :prc_number, :amount, :type, :channel, :or_number, :date_posted, :remarks, :profile_id
+        )
+      '
+    );
+
+    $this->db->bind(':prc_number', $this->column($data['0']));
+    $this->db->bind(':amount', $this->column($data['1']));
+    $this->db->bind(':type', $this->column($data['2']));
+    $this->db->bind(':channel', $this->column($data['3']));
+    $this->db->bind(':or_number', $this->column($data['4']));
+    $this->db->bind(':date_posted', $this->column($data['5']));
+    $this->db->bind(':remarks', $this->column($data['6']));
+    $this->db->bind(':profile_id', $this->column($data['profile_id']));
+
+    if ($this->db()->execute()) {
+      $this->db()->query('SELECT * FROM dues22 WHERE id = @@identity');
+
+      return $this->db()->single();
+    } else {
+      return false;
+    }
+  }
+
+
+
   public function storeByPrcNumber($data)
   {
     // select user by prc_number
@@ -194,7 +250,7 @@ class Dues
     $startMonth == null ? $startMonth = date('m') : $startMonth;
     $endMonth == null ? $endMonth = date('m') : $startMonth;
 
-    $sql = 'SELECT users.*, dues.*, users.id AS user_id, IF(users.is_active = 1, "active", "inactive") AS is_active
+    $sql = 'SELECT users.*, dues.*, users.id AS user_id, users.account_status AS is_active
     FROM users 
       INNER JOIN dues on users.id = dues.user_id 
     WHERE dues.date_created 
@@ -227,29 +283,48 @@ class Dues
   /* JOINS */
   public function getUserYearlyPayments($data)
   {
-    $sql = "SELECT YEAR(dues.date_created) AS year, 
+    $sql = "SELECT YEAR(dues22.date_posted) AS year, 
     GROUP_CONCAT(dcc.dcc_amount SEPARATOR ', ') AS dcc, GROUP_CONCAT(dcc.dcc_or SEPARATOR ', ') AS 'dcc_or', 
     GROUP_CONCAT(pda.pda_amount SEPARATOR ', ') AS pda, GROUP_CONCAT(pda.pda_or SEPARATOR ', ') AS 'pda_or',
-    dues.remarks
-    FROM dues 
+    dues22.remarks
+    FROM dues22
     LEFT JOIN (
         SELECT id AS pda_id, amount AS pda_amount, or_number AS pda_or 
-        FROM dues 
+        FROM dues22
         WHERE type = 'pda'
     ) AS pda 
-      ON dues.id = pda.pda_id 
+      ON dues22.id = pda.pda_id 
     LEFT JOIN (
         SELECT id AS dcc_id, amount AS dcc_amount, or_number AS dcc_or 
-        FROM dues 
+        FROM dues22 
         WHERE type = 'dcc'
     ) AS dcc 
-      ON dues.id = dcc.dcc_id 
+      ON dues22.id = dcc.dcc_id 
     WHERE type IN('dcc', 'pda') 
-    AND user_id = :user_id
-    GROUP BY YEAR(dues.date_created)";
+    AND profile_id = :user_id
+    GROUP BY YEAR(dues22.date_posted)";
 
     $this->db->query($sql);
     $this->db->bind(':user_id', $data['user_id']);
+
+    $row = $this->db->resultSet();
+    return $row;
+  }
+
+  public function getListOfMembersWithGroupedPayments()
+  {
+    $sql = "SELECT users.id, users.first_name, users.middle_name, users.last_name, users.prc_number, CONCAT(GROUP_CONCAT(pda.pda_amount SEPARATOR ', '), ' ', IFNULL(CONCAT('(', users.status_remarks , ')'), '')) AS payments
+    FROM dues 
+        LEFT JOIN users ON users.id = dues.user_id 
+    LEFT JOIN (
+        SELECT id AS pda_id, CONCAT(YEAR(date_created), IFNULL(CONCAT(' (#', or_number , ')'), '')) AS pda_amount
+        FROM dues 
+        WHERE type = 'pda'
+    ) AS pda     
+      ON dues.id = pda.pda_id 
+    GROUP BY dues.user_id";
+
+    $this->db->query($sql);
 
     $row = $this->db->resultSet();
     return $row;

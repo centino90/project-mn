@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+[x-cloak] {
+    @apply 
+    hidden;
+}
+
 /* =========== NAVIGATIONS
 ====================
 */
@@ -75,40 +80,6 @@
 /* =========== FORMS
 ====================
 */
-// .form-group {
-//     @apply
-//     flex flex-wrap 
-//     rounded-md
-// }   
-// .form-label {
-//     @apply 
-//     whitespace-nowrap block 
-//     text-sm font-bold text-secondary-700
-// }
-// .form-input {
-//     @apply 
-//     w-full h-10
-//     block rounded-md 
-//     border-secondary-300 focus:border-primary-500 
-//     sm:text-sm 
-//     focus:ring-primary-500 
-// }
-// .form-input-err {
-//     @apply 
-//     text-sm text-danger-500 
-//     px-2 pt-2
-// }
-
-// .form-btn {
-//     @apply 
-//     flex justify-center items-center 
-//     border border-transparent 
-//     hover:bg-primary-600
-//     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
-//     font-bold 
-//     rounded-md;
-// }
-
 
 .form-group {
     @apply
@@ -129,16 +100,22 @@
     @apply 
     w-full md:w-1/4
     mb-2 md:mb-4
-    whitespace-nowrap
     text-sm font-bold text-secondary-700;
 }
 .form-input {
     @apply 
-    h-10 w-full rounded-md
+    w-full rounded-md
     border-secondary-300 focus:border-primary-500 
     sm:text-sm 
     focus:ring-primary-500;
+
+    &:not(textarea) {
+        @apply
+        h-10 
+    }
 }
+
+
 .form-input-err {
     @apply 
     w-full

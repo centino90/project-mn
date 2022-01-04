@@ -22,7 +22,7 @@
         </li>
         <li class="flex items-center">
           <span aria-current="page">
-            Report
+            Dues
           </span>
         </li>
       </ol>
@@ -31,171 +31,9 @@
 
   <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
     <div class="w-64 flex-shrink-0">
-      <span class="text-2xl font-bold">Report</span>
-    </div>
-    <div class="flex gap-3">
-      <a href="<?php echo URLROOT ?>/users/downloadTemplates?filename=IMPORT_PAYMENTS_TEMPLATE.xlsx" class="flex border border-primary-600 text-primary-600 p-2 text-white rounded-md hover:bg-secondary-100">
-        Download template
-      </a>
-
-      <button type="button" @click="paymentModalOpen = true" class="flex bg-primary-500 p-2 text-white rounded-md hover:bg-primary-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-        Add payments
-      </button>
+      <span class="text-2xl font-bold">Dues</span>
     </div>
   </header>
-
-  <!-- Payment modal dialog -->
-  <div x-cloak x-ref="modal" x-transition x-show.transition.opacity="paymentModalOpen" class="overflow-auto fixed z-20 top-0 left-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center" role="dialog" aria-modal="true">
-    <div class="w-full max-w-screen-md bg-white rounded-xl shadow-xl flex flex-col absolute divide-y divide-secondary-200">
-
-      <div class="px-5 py-4 flex items-center justify-between">
-        <h2 class="text-xl leading-tight text-secondary-700">
-          Add payments
-        </h2>
-
-        <button class="text-secondary-400 hover:text-secondary-600" @click="paymentModalOpen = false">
-          <svg class="w-4 fill-current transition duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512.001 512.001">
-            <path d="M284.286 256.002L506.143 34.144c7.811-7.811 7.811-20.475 0-28.285-7.811-7.81-20.475-7.811-28.285 0L256 227.717 34.143 5.859c-7.811-7.811-20.475-7.811-28.285 0-7.81 7.811-7.811 20.475 0 28.285l221.857 221.857L5.858 477.859c-7.811 7.811-7.811 20.475 0 28.285a19.938 19.938 0 0014.143 5.857 19.94 19.94 0 0014.143-5.857L256 284.287l221.857 221.857c3.905 3.905 9.024 5.857 14.143 5.857s10.237-1.952 14.143-5.857c7.811-7.811 7.811-20.475 0-28.285L284.286 256.002z" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="pb-5 pb-5 mb-5 overflow-auto" id="modal_content" style="min-height: 300px; max-height: 300px">
-        <div class="z-10 px-5 w-full py-2 bg-secondary-50 shadow-sm">
-          <button x-text="!importOpen ? 'Import records' : 'Input form'" @click="importOpen = !importOpen;" class="shadow block bg-white ml-auto text-primary-600 p-2 rounded-md hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-          </button>
-        </div>
-
-        <!-- input form -->
-        <div x-show="!importOpen" class="space-y-4 flex flex-col px-5">
-          <div class="w-full rounded-lg" x-show="openAlertBox" x-transition>
-            <div class="py-4">
-              <div class="flex items-center text-white text-sm font-bold px-4 py-3 rounded shadow-md" :class="alertBackgroundColor" role="alert">
-                <span x-html="alertMessage" class="flex"></span>
-              </div>
-            </div>
-          </div>
-
-          <div x-data="{specifyDate: false}">
-            <a x-show="!specifyDate" @click="specifyDate = true" class="text-primary-500 hover:underline" href="javascript:void(0);">Specify date?</a>
-            <div x-show="specifyDate">
-              <label for="amount" class="form-label">Date (MM/DD/YYYY)</label>
-              <input name="date" x-ref="payment_date" type="date" x-model="paymentForm.date" class="my-3 rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
-              <span class="hidden text-danger-600" id="date_err">
-              </span>
-            </div>
-          </div>
-
-          <label for="user_id" class="form-label">PRC No.</label>
-          <div class="w-full flex flex-col items-center">
-            <div @click.outside="close()" class="w-full">
-              <div class="flex flex-col items-center relative z-0">
-                <div class="w-full">
-                  <div class="mb-2 p-1 bg-white flex border border-secondary-200 rounded">
-                    <input name="user_id" x-model="paymentForm.user_id" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @mousedown="open()" @keydown.enter.stop.prevent="selectOption()" @keydown.arrow-up.prevent="focusPrevOption()" @keydown.arrow-down.prevent="focusNextOption()" placeholder="Search for user" autocomplete="off" class="p-1 px-2 appearance-none outline-none w-full text-secondary-800">
-                    <div class="text-secondary-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-secondary-200">
-                      <button @click="toggle()" class="cursor-pointer w-6 h-6 text-secondary-600 outline-none focus:outline-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <polyline x-show="!isOpen()" points="18 15 12 20 6 15"></polyline>
-                          <polyline x-show="isOpen()" points="18 15 12 9 6 15"></polyline>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div x-show="isOpen()" class="absolute shadow bg-white top-full w-full left-0 rounded overflow-y-auto" style="max-height: 300px;" ;>
-                  <div class="flex flex-col w-full">
-                    <template x-for="(option, index) in filteredOptions()" :key="index">
-                      <div @click="onOptionClick(index)" :class="classOption(option.prc_number, index)" :aria-selected="focusedOptionIndex === index">
-                        <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative hover:border-teal-100">
-                          <div class="w-6 flex flex-col items-center">
-                            <div class="flex relative w-5 h-5 bg-blue-500 justify-center items-center m-1 mr-2 w-4 h-4 mt-1 rounded-full">
-                              <img class="rounded-full" alt="A" x-bind:src="option.profile_img_path ? `<?php echo URLROOT . '/' ?>${option.profile_img_path}` : '<?php echo URLROOT . '/public/img/profiles/default-profile.png' ?>'">
-                            </div>
-                          </div>
-                          <div class="w-full items-center flex">
-                            <div class="mx-2 -mt-1"><span x-text="option.first_name.toUpperCase() + ' ' + option.last_name.toUpperCase()"></span>
-                              <div class="text-xs truncate w-full normal-case font-normal -mt-1 text-secondary-500" x-text="option.email + ' / ' + option.prc_number"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <span class="hidden text-danger-600" id="user_id_err">
-          </span>
-
-          <label for="type" class="form-label">Type</label>
-          <select name="type" x-model="paymentForm.type" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
-            <option value="">Select Type</option>
-            <option value="PDA">PDA</option>
-            <option value="DCC">DCC</option>
-          </select>
-          <span class="hidden text-danger-600" id="type_err">
-          </span>
-
-          <label for="amount" class="form-label">Amount</label>
-          <input name="amount" type="number" x-model="paymentForm.amount" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500" placeholder="amount">
-          <span class="hidden text-danger-600" id="amount_err">
-          </span>
-
-          <label for="channel" class="form-label">Payment option</label>
-          <input name="channel" type="text" x-model="paymentForm.channel" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500" placeholder="payment option (e.g. gcash, paypal, DCC office, etc.)">
-          <span class="hidden text-danger-600" id="channel_err">
-          </span>
-
-          <label for="or_number" class="form-label">OR No.</label>
-          <input name="or_number" type="text" x-model="paymentForm.or_number" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500" placeholder="OR no.">
-          <span class="hidden text-danger-600" id="or_number_err">
-          </span>
-
-          <label for="remarks" class="form-label">Remarks</label>
-          <textarea name="remarks" type="text" x-model="paymentForm.remarks" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
-          </textarea>
-          <span class="hidden text-danger-600" id="remarks_err">
-          </span>
-        </div>
-
-        <!-- import csv -->
-        <div x-show="importOpen" class=" space-y-4 flex flex-col px-5">
-          <div class="w-full rounded-lg" x-show="openAlertBox" x-transition>
-            <div class="py-4">
-              <div class="flex items-center text-white text-sm font-bold px-4 py-3 rounded shadow-md" :class="alertBackgroundColor" role="alert">
-                <span x-html="alertMessage" class="flex"></span>
-              </div>
-            </div>
-          </div>
-
-          <form id="import_payments_form" action="" method="post">
-            <label for="imported_payments" class="form-label">Import csv</label>
-            <input type="file" name="imported_payments" id="imported_payments" class="rounded border border-secondary-300 px-3 py-5 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
-
-            <div class="text-center text-xs text-secondary-400 font-bold p-2">CHOOSE OR DRAG YOUR CSV FILE</div>
-          </form>
-
-        </div>
-
-      </div>
-
-      <!-- items-center justify-end px-5 py-4  -->
-      <div class="flex">
-        <button @click="paymentModalOpen = false" class="w-full p=4 rounded-bl-xl text-secondary-600 font-semibold transition duration-150 hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none">Cancel</button>
-
-        <button x-show="!importOpen" @click="submitForm" class="w-full p-4 rounded-br-xl disabled:opacity-50 disabled:cursor-wait bg-primary-600 text-white font-semibold transition duration-150 hover:bg-primary-500 focus:outline-none">Submit</button>
-        <button x-show="importOpen" @click="importForm" class="w-full p-4 rounded-br-xl disabled:opacity-50 disabled:cursor-wait bg-primary-600 text-white font-semibold transition duration-150 hover:bg-primary-500 focus:outline-none">Import</button>
-      </div>
-
-    </div>
-
-
-  </div>
 
   <div class="gap-y-8">
     <div class="mb-3">
@@ -215,24 +53,24 @@
             </span>
 
             <select name="start_month" x-model="startMonth" id="start_month" class="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-none sm:text-sm border-secondary-300 border-r-0">
-              <option value="1" :selected="1 == afterDrawStartMonth">January</option>
-              <option value="2" :selected="2 == afterDrawStartMonth">February</option>
-              <option value="3" :selected="3 == afterDrawStartMonth">March</option>
-              <option value="4" :selected="4 == afterDrawStartMonth">April</option>
-              <option value="5" :selected="5 == afterDrawStartMonth">May</option>
-              <option value="6" :selected="6 == afterDrawStartMonth">June</option>
-              <option value="7" :selected="7 == afterDrawStartMonth">July</option>
-              <option value="8" :selected="8 == afterDrawStartMonth">August</option>
-              <option value="9" :selected="9 == afterDrawStartMonth">September</option>
-              <option value="10" :selected="10 == afterDrawStartMonth">October</option>
-              <option value="11" :selected="11 == afterDrawStartMonth">November</option>
-              <option value="12" :selected="12 == afterDrawStartMonth">December</option>
+              <option value="1" :selected="1 == startMonth">January</option>
+              <option value="2" :selected="2 == startMonth">February</option>
+              <option value="3" :selected="3 == startMonth">March</option>
+              <option value="4" :selected="4 == startMonth">April</option>
+              <option value="5" :selected="5 == startMonth">May</option>
+              <option value="6" :selected="6 == startMonth">June</option>
+              <option value="7" :selected="7 == startMonth">July</option>
+              <option value="8" :selected="8 == startMonth">August</option>
+              <option value="9" :selected="9 == startMonth">September</option>
+              <option value="10" :selected="10 == startMonth">October</option>
+              <option value="11" :selected="11 == startMonth">November</option>
+              <option value="12" :selected="12 == startMonth">December</option>
             </select>
           </div>
 
           <select name="start_year" x-model="startYear" id="start_year" class="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-secondary-300">
-            <template x-for="(date, index) in dates.slice(1, -1)" :key="index">
-              <option :value="date" x-text="date" :selected="index == 0"></option>
+            <template x-for="(year, index) in dates.slice(1, -1)" :key="index">
+              <option :value="year" x-text="year" :selected="year == startYear"></option>
             </template>
           </select>
         </div>
@@ -250,24 +88,24 @@
             </span>
 
             <select name="end_month" x-model="endMonth" id="end_month" class="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-none sm:text-sm border-secondary-300 border-r-0">
-              <option value="1" :selected="1 == afterDrawEndMonth">January</option>
-              <option value="2" :selected="2 == afterDrawEndMonth">February</option>
-              <option value="3" :selected="3 == afterDrawEndMonth">March</option>
-              <option value="4" :selected="4 == afterDrawEndMonth">April</option>
-              <option value="5" :selected="5 == afterDrawEndMonth">May</option>
-              <option value="6" :selected="6 == afterDrawEndMonth">June</option>
-              <option value="7" :selected="7 == afterDrawEndMonth">July</option>
-              <option value="8" :selected="8 == afterDrawEndMonth">August</option>
-              <option value="9" :selected="9 == afterDrawEndMonth">September</option>
-              <option value="10" :selected="10 == afterDrawEndMonth">October</option>
-              <option value="11" :selected="11 == afterDrawEndMonth">November</option>
-              <option value="12" :selected="12 == afterDrawEndMonth">December</option>
+              <option value="1" :selected="1 == endMonth">January</option>
+              <option value="2" :selected="2 == endMonth">February</option>
+              <option value="3" :selected="3 == endMonth">March</option>
+              <option value="4" :selected="4 == endMonth">April</option>
+              <option value="5" :selected="5 == endMonth">May</option>
+              <option value="6" :selected="6 == endMonth">June</option>
+              <option value="7" :selected="7 == endMonth">July</option>
+              <option value="8" :selected="8 == endMonth">August</option>
+              <option value="9" :selected="9 == endMonth">September</option>
+              <option value="10" :selected="10 == endMonth">October</option>
+              <option value="11" :selected="11 == endMonth">November</option>
+              <option value="12" :selected="12 == endMonth">December</option>
             </select>
           </div>
 
           <select name="end_year" x-model="endYear" id="end_year" class="focus:ring-primary-500 focus:border-primary-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-secondary-300">
-            <template x-for="(date, index) in resetEndYearsFromStartYear(startYear)" :key="index">
-              <option :value="date" x-text="date" :selected="index == 0"></option>
+            <template x-for="(year, index) in resetEndYearsFromStartYear()" :key="index">
+              <option :value="year" x-text="year" :selected="year == endYear"></option>
             </template>
           </select>
         </div>
@@ -393,7 +231,7 @@
             }, ms || 0);
           };
         }
-        
+
         const dataTable = $('#myTable').DataTable({
           'order': [
             [0, 'desc']
@@ -404,15 +242,15 @@
           'searchDelay': 350,
           'serverMethod': 'post',
           'ajax': {
-            'url': 'reportsDatatable',
+            'url': 'duesDatatable',
             'data': function(data) {
               // Append to data
               data.startMonth = app.startMonth;
               data.endMonth = app.endMonth;
               data.startYear = app.startYear;
               data.endYear = app.endYear;
-              data.memberType = app.dt_member_type;
-              data.paymentType = app.dt_payment_type;
+              // data.memberType = app.dt_member_type;
+              // data.paymentType = app.dt_payment_type;
             }
           },
           drawCallback: function(settings) {
@@ -427,18 +265,21 @@
             app.startDateString = `${dayjs().month(app.startMonth - 1).format('MMMM')} ${app.startYear}`
             app.endDateString = `${dayjs().month(app.endMonth - 1).format('MMMM')} ${app.endYear}`
           },
-          'columns': [
-            {
-              data: 'date_created',
+          'columns': [{
+              data: 'date_posted',
               render: function(d, t, r, m) {
-                return `<span class="text-secondary-500">${r.date_created}</span>`
+                return `<span class="text-secondary-500">${r.date_posted}</span>`
               }
             },
             {
               data: 'first_name',
               render: function(d, t, r, m) {
+                if (!r.user_id) {
+                  return `<a>${r.first_name}</a>`;
+                }
+
                 return `<a href="viewAccount/?id=${r.user_id}" class="font-medium hover:underline hover:text-primary-600 hover:bg-primary-50" class="text-danger-500">
-                  ${d} </a>`;
+                  ${r.first_name} </a>`;
               }
             },
             {
@@ -448,9 +289,9 @@
               }
             },
             {
-              data: 'is_active',
+              data: 'payment_status',
               render: function(d, t, r, m) {
-                return `<span :class="'${r.is_active}' == 'active' ? 'bg-success-100 text-success-700' : 'bg-secondary-100 text-secondary-500'" class="rounded-lg px-2">${r.is_active}</span>`;
+                return `<span>${r.payment_status ?? ''}</span>`;
               }
             },
             {
@@ -624,26 +465,6 @@
           $('#myTable #cap_end_year').text(
             `Selected start month and year: ${value}`
           )
-        });
-
-        this.$watch('paymentModalOpen', value => {
-          const body = document.body;
-          if (!this.paymentModalOpen) {
-            body.classList.remove('h-screen');
-            return body.classList.remove('overflow-hidden');
-          } else {
-            body.classList.add('h-screen');
-            return body.classList.add('overflow-hidden');
-          }
-        });
-
-        // alertbox
-        this.$watch('openAlertBox', value => {
-          if (value) {
-            let timeout = window.setTimeout(() => {
-              this.openAlertBox = false
-            }, 10000)
-          }
         });
 
         this.startYear = this.startYear == '' ? '2021' : this.startYear;
@@ -832,41 +653,6 @@
         }
       },
 
-      // Alert notification
-      openAlertBox: false,
-      alertBackgroundColor: '',
-      alertMessage: '',
-      showAlert(type) {
-        this.openAlertBox = true
-        switch (type) {
-          case 'success':
-            this.alertBackgroundColor = 'bg-success-500'
-            this.alertMessage = `${this.successIcon} ${this.defaultSuccessMessage}`
-            break
-          case 'info':
-            this.alertBackgroundColor = 'bg-blue-500'
-            this.alertMessage = `${this.infoIcon} ${this.defaultInfoMessage}`
-            break
-          case 'warning':
-            this.alertBackgroundColor = 'bg-warning-500'
-            this.alertMessage = `${this.warningIcon} ${this.defaultWarningMessage}`
-            break
-          case 'danger':
-            this.alertBackgroundColor = 'bg-danger-500'
-            this.alertMessage = `${this.dangerIcon} ${this.defaultDangerMessage}`
-            break
-        }
-        this.openAlertBox = true
-      },
-      successIcon: `<svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5 mr-2 text-white"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
-      infoIcon: `<svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5 mr-2 text-white"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
-      warningIcon: `<svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5 mr-2 text-white"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
-      dangerIcon: `<svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5 mr-2 text-white"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>`,
-      defaultInfoMessage: `This alert contains info message.`,
-      defaultSuccessMessage: `This alert contains success message.`,
-      defaultWarningMessage: `This alert contains warning message.`,
-      defaultDangerMessage: `This alert contains danger message.`,
-
       // payments (need fix)
       calculateTotalAmount(colIndex) {
         let amountColumn = $('#myTable').DataTable().column(colIndex)
@@ -911,29 +697,20 @@
         return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,")
       },
 
-      startDateString: `${dayjs().format('MMMM')} ${dayjs().year()}`,
+      startDateString: `${dayjs().format('MMMM')} 1981`,
       endDateString: `${dayjs().format('MMMM')} ${dayjs().add(1, 'year').year()}`,
       afterDrawStartMonth: dayjs().month() + 1,
       afterDrawEndMonth: dayjs().month() + 1,
-      afterDrawStartYear: dayjs().year(),
+      afterDrawStartYear: 1981,
       afterDrawEndYear: dayjs().add(1, 'year').year(),
       startMonth: dayjs().month() + 1,
       endMonth: dayjs().month() + 1,
-      startYear: dayjs().year(),
+      startYear: 1981,
       endYear: dayjs().add(1, 'year').year(),
       dates: <?php echo json_encode($data['dates']); ?>,
-      generateYearsBetween: function(startYear = 1980, endYear) {
-        const endDate = endYear || new Date().getFullYear() + 1;
-        let years = [];
-        for (var i = startYear; i <= endDate; i++) {
-          years.push(startYear);
-          startYear++;
-        }
-        return years;
-      },
-      resetEndYearsFromStartYear: function(startYear) {
+      resetEndYearsFromStartYear: function() {
         return this.dates.filter((value, index, arr) => {
-          return value > startYear
+          return value > this.startYear
         })
       },
       type: ''

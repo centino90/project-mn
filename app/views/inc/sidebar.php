@@ -1,7 +1,7 @@
 <div class="sidebar">
   <div class="sidebar-header">
-    [<?php echo $_SESSION['role']; ?>]
-    <?php echo $_SESSION['user_name']; ?>
+    [<?php echo $this->session->get(SessionManager::SESSION_USER)->role; ?>]
+    <?php echo arrangeFullname($this->session->get(SessionManager::SESSION_USER)->first_name, $this->session->get(SessionManager::SESSION_USER)->middle_name, $this->session->get(SessionManager::SESSION_USER)->last_name); ?>
   </div>
 
   <nav class="sidebar-nav">
@@ -12,7 +12,7 @@
       <span class="sidebar-nav-item-label">User profile</span>
     </a>
 
-    <?php if (isAdmin() || isSuperAdmin()) : ?>
+    <?php if ($this->role->isAdmin() || $this->role->isSuperAdmin()) : ?>
       <a href="<?php echo URLROOT ?>/admins/accounts" class="sidebar-nav-item <?php if (in_array($data['current_route'], ['accounts', 'viewAccount'])) : ?> active <?php endif; ?>">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -20,12 +20,12 @@
         <span class="mx-4 font-medium">Accounts</span>
       </a>
 
-      <!-- <a href="<?php echo URLROOT ?>/admins/memberList" class="sidebar-nav-item <?php if ($data['current_route'] == 'memberList') : ?> active <?php endif; ?>">
+      <a href="<?php echo URLROOT ?>/admins/memberList" class="sidebar-nav-item <?php if ($data['current_route'] == 'memberList') : ?> active <?php endif; ?>">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <span class="mx-4 font-medium">List of members</span>
-      </a> -->
+      </a>
 
       <a href="<?php echo URLROOT ?>/admins/report" class="sidebar-nav-item <?php if ($data['current_route'] == 'report') : ?> active <?php endif; ?>">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,9 +33,45 @@
         </svg>
         <span class="mx-4 font-medium">Report</span>
       </a>
+
+
+      <a href="<?php echo URLROOT ?>/admins/users" class="sidebar-nav-item <?php if ($data['current_route'] == 'users') : ?> active <?php endif; ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span class="mx-4 font-medium">Users</span>
+      </a>
+
+      <a href="<?php echo URLROOT ?>/admins/dues" class="sidebar-nav-item <?php if ($data['current_route'] == 'dues') : ?> active <?php endif; ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span class="mx-4 font-medium">Dues</span>
+      </a>
+
+      <a href="<?php echo URLROOT ?>/admins/duesForm" class="sidebar-nav-item <?php if ($data['current_route'] == 'duesForm') : ?> active <?php endif; ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span class="mx-4 font-medium">Add dues</span>
+      </a>
+
+      <a href="<?php echo URLROOT ?>/admins/profiles" class="sidebar-nav-item <?php if ($data['current_route'] == 'profiles') : ?> active <?php endif; ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span class="mx-4 font-medium">Profiles</span>
+      </a>
+
+      <a href="<?php echo URLROOT ?>/admins/profileForm" class="sidebar-nav-item <?php if ($data['current_route'] == 'profileForm') : ?> active <?php endif; ?>">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span class="mx-4 font-medium">Add profiles</span>
+      </a>
     <?php endif; ?>
 
-    <?php if (isSuperAdmin()) : ?>
+    <?php if ($this->role->isSuperAdmin()) : ?>
       <a href="<?php echo URLROOT ?>/admins/activities" class="sidebar-nav-item <?php if ($data['current_route'] == 'activities') : ?> active <?php endif; ?>">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -44,7 +80,7 @@
       </a>
     <?php endif; ?>
 
-    <?php if (!isSuperAdmin()) : ?>
+    <?php if (!$this->role->isSuperAdmin()) : ?>
       <a href="<?php echo URLROOT ?>/profiles/paymentHistory" class="sidebar-nav-item <?php if ($data['current_route'] == 'paymentHistory') : ?> active <?php endif; ?>">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
