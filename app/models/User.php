@@ -720,7 +720,7 @@ class User extends Model
     }
 
     if ($this->db()->execute()) {
-      $this->db()->query('SELECT * FROM profiles WHERE id = @@identity');
+      $this->db()->query('SELECT * FROM accounts WHERE id = @@identity');
 
       return $this->db()->single();
     } else {

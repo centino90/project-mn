@@ -87,12 +87,12 @@ function tryAndLoginWithGoogle($get, $usersController)
 				// save user info to session
 				$_SESSION['google_user_info'] = $googleUserInfo;
 
-				$userInfoWithId = $userModel->getRowWithValue('users', 'google_user_id', $googleUserInfo->id);				
+				$userInfoWithId = $userModel->findUserProfile(['*', 'accounts.id AS id'], ['google_user_id'], [$googleUserInfo->id]);
 
 				if ($userInfoWithId) {
 					//check if the registration is done inside or outside
 					if ($usersController->isLoggedIn()) {
-						$loggedInUser = $userModel->getRowWithValue('users', 'id', $usersController->session->get('user')->id);
+						$loggedInUser = $usersController->session->auth(false);
 
 						if ($userInfoWithId->id != $loggedInUser->id) {
 							$status = 'fail';
@@ -115,8 +115,12 @@ function tryAndLoginWithGoogle($get, $usersController)
 							$vkeyType = 'account_registration_vkey';
 							$cancellable = true;
 						} else {
-							$userModel->updateRowById('google_access_token', $_SESSION['google_access_token'], $userInfoWithId->id);
-							$userModel->updateRowById('google_user_id', $googleUserInfo->id, $userInfoWithId->id);
+							$userModel->update4(
+								['google_access_token', 'google_user_id'],
+								[$_SESSION['google_access_token'], $googleUserInfo->id],
+								['id'],
+								[$userInfoWithId->id]
+							);
 
 							$status = 'ok';
 							$message = 'You have successfully logged in using your google account';
@@ -125,26 +129,26 @@ function tryAndLoginWithGoogle($get, $usersController)
 					}
 				} else {
 					if ($usersController->isLoggedIn()) {
-						$loggedInUser = $userModel->getRowWithValue('users', 'id', $usersController->session->get('user')->id);
+						$loggedInUser = $usersController->session->auth();
 
-						$userModel->updateRowById('google_access_token', $_SESSION['google_access_token'], $loggedInUser->id);
-						$userModel->updateRowById('google_user_id', $googleUserInfo->id, $loggedInUser->id);
+						$userModel->update4(
+							['google_access_token', 'google_user_id'],
+							[$_SESSION['google_access_token'], $googleUserInfo->id],
+							['id'],
+							[$loggedInUser->id]
+						);
 
 						$status = 'ok';
 						$message = 'Google was added to your user account successfully.';
 						$isAdded = true;
 					} else {
-						if ($userModel->register(
-							[
-								'google_user_id' => $googleUserInfo->id,
-								'google_access_token' => $_SESSION['google_access_token']
-							]
-						)) {
+						$user = $userModel->store2(
+							['google_access_token', 'google_user_id'],
+							[$_SESSION['google_access_token'], $googleUserInfo->id],
+						);
 
-							$status = 'ok';
-							$message = 'You successfully registered using your Facebook account.';
-							$user = $userModel->getRowByColumn('google_user_id', $googleUserInfo->id);
-						}
+						$status = 'ok';
+						$message = 'You successfully registered using your Facebook account.';
 					}
 				}
 			} else if (empty($googleUserInfo->email)) {

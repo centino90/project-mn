@@ -82,7 +82,7 @@
         <div class="flex gap-3">
           <div class="w-full lg:w-auto">
             <label for="" class="form-label">Role</label>
-            <select class="form-input" @change="roleTab = $event.target.value; filterColumnBySelectedTab($event.target.value)">
+            <select class="form-input" x-model="role">
               <option value="">Select role</option>
               <option value="member">Members</option>
               <option value="admin">Admins</option>
@@ -91,7 +91,7 @@
 
           <div class="w-full lg:w-auto">
             <label for="" class="form-label">Status</label>
-            <select class="form-input" @change="status = $event.target.value; filterColumnByStatus($event.target.value)" name="" id="">
+            <select class="form-input" x-model="account_status">
               <option value="">Select status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
@@ -105,6 +105,7 @@
       <table id="myTable" style="width: 100%">
         <thead class="border-t border-b">
           <tr>
+            <th></th>
             <th>SIGNED UP AT</th>
             <th>email</th>
             <th>role</th>
@@ -123,6 +124,237 @@
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
       init() {
+        const app = this
+
+
+        $.fn.dataTable.Debounce = function(table, options) {
+          let tableId = table.settings()[0].sTableId;
+          $('.dataTables_filter input[aria-controls="' + tableId + '"]')
+            .unbind()
+            .bind('input', (delay(function(e) {
+              table.search($(this).val()).draw();
+              return;
+            }, 1000)));
+        }
+
+        function delay(callback, ms) {
+          let timer = 0;
+          return function() {
+            let context = this,
+              args = arguments;
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+              callback.apply(context, args);
+            }, ms || 0);
+          };
+        }
+
+        const dataTable = $('#myTable').DataTable({
+          'bLengthChange': false,
+          'processing': true,
+          'serverSide': true,
+          'searchDelay': 350,
+          'serverMethod': 'post',
+          'ajax': {
+            'url': 'usersDatatable',
+            'data': function(data) {
+              // Append to data
+              data.role = app.role
+              data.accountStatus = app.account_status
+            }
+          },
+          'columns': [{
+              data: 'thumbnail_img_path',
+              class: 'disabled-cols',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `
+                <div class="flex items-center gap-2">
+                <a href="<?php echo URLROOT ?>/${r.profile_img_path ?? 'img/profiles/default-profile.png'}" target="_blank" class="block rounded-full w-10 h-10 overflow-hidden">
+                  <img class="w-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
+                </a>
+                <div class="relative" x-data="{dropDownOpen:false}">
+                  <a @click="dropDownOpen = true" href="javascript:void(0)" class="block text-lg text-secondary-500 hover:bg-secondary-200 rounded-full p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                    </svg>
+                  </a>
+                  <div 
+                    class="absolute top-0 left-10 w-64 flex flex-col bg-white shadow-2xl border border-secondary-300 space-y-2 mt-2" 
+                    x-show="dropDownOpen" 
+                    @click.away="dropDownOpen=false"
+                    x-transition:enter-start="transition ease-in duration-3000"
+                  >
+                    <a href="javascript:void(0)" @click="confirmSendAssignRole(${r.user_id})" class="flex gap-2 items-center justify-center text-secondary-700 text-center bg-white hover:bg-secondary-100 focus:bg-primary-500 focus:text-white px-4 py-2">
+                    ${r.role == 'admin' 
+                      ? `<img width="20" src="<?php echo URLROOT ?>/img/icons/x-circle.svg"/>`
+                      : `<img width="20" src="<?php echo URLROOT ?>/img/icons/badge-check.svg"/>`
+                    }
+                    ${r.role == 'admin' ? 'Retire as admin' : 'Assign as admin'}
+                    </a>
+                  </div>
+                </div>
+                </div>
+                `
+              }
+            },
+            {
+              data: 'created_at',
+            },
+            {
+              data: 'email'
+            },
+            {
+              data: 'role',
+              sortable: false
+            },
+            {
+              data: 'account_status',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `<span class="px-2 py-1 rounded-full" :class="'${r.account_status}' == 'active' ? 'bg-success-100 text-success-700' : 'bg-secondary-100 text-secondary-700'">${r.account_status}</span>`
+              }
+            },
+            {
+              data: 'logged_at'
+            }
+          ],
+          initComplete: function() {
+            const api = this.api();
+            api.columns('.hidden-first').visible(false)
+          },
+          order: [
+            [0, 'desc']
+          ],
+          dom: 'fBrtip',
+          buttons: [{
+              text: 'exports',
+              extend: 'collection',
+              className: 'custom-html-collection',
+              buttons: [
+                '<header>Export to</header>',
+                {
+                  extend: 'csv',
+                  exportOptions: {
+                    columns: ':visible :not(.disabled-cols)'
+                  },
+                  customize: function(csv) {
+                    console.log(csv)
+                    return 'CHAPTER:______________________                                                                                                                                                  PDA MEMBERSHIP REMITTANCE FORM \n' +
+                      "PRESIDENT'S NAME:______________________\n" +
+                      'TOTAL NUMBER OF MEMBERS REMITTED:______________________\n' +
+                      'TOTAM AMOUNT REMITTED:______________________\n\n' +
+                      csv;
+                  }
+                },
+                {
+                  extend: 'excel',
+                  exportOptions: {
+                    columns: ':visible :not(.disabled-cols)'
+                  },
+                  customize: function(xlsx) {
+                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                    var numrows = 6;
+                    var clR = $('row', sheet);
+
+                    //update Row
+                    clR.each(function() {
+                      var attr = $(this).attr('r');
+                      var ind = parseInt(attr);
+                      ind = ind + numrows;
+                      $(this).attr("r", ind);
+                    });
+
+                    // Create row before data
+                    $('row c ', sheet).each(function(index) {
+                      var attr = $(this).attr('r');
+
+                      var pre = attr.substring(0, 1);
+                      var ind = parseInt(attr.substring(1, attr.length));
+                      ind = ind + numrows;
+                      $(this).attr("r", pre + ind);
+                    });
+
+                    function Addrow(index, data) {
+                      var row = sheet.createElement('row');
+                      row.setAttribute("r", index);
+                      for (i = 0; i < data.length; i++) {
+                        var key = data[i].key;
+                        var value = data[i].value;
+
+                        var c = sheet.createElement('c');
+                        c.setAttribute("t", "inlineStr");
+                        c.setAttribute("s", "2");
+                        c.setAttribute("r", key + index);
+
+                        var is = sheet.createElement('is');
+                        var t = sheet.createElement('t');
+                        var text = sheet.createTextNode(value)
+
+                        t.appendChild(text);
+                        is.appendChild(t);
+                        c.appendChild(is);
+
+                        row.appendChild(c);
+                      }
+
+                      return row;
+                    }
+
+                    var r1 = Addrow(1, [{
+                      key: 'E',
+                      value: 'PDA MEMBERSHIP REMITTANCE FORM'
+                    }]);
+                    var r2 = Addrow(2, [{
+                      key: 'A',
+                      value: 'CHAPTER:__________________________'
+                    }]);
+                    var r3 = Addrow(3, [{
+                      key: 'A',
+                      value: "PRESIDENT'S NAME:__________________________"
+                    }]);
+                    var r4 = Addrow(4, [{
+                      key: 'A',
+                      value: 'TOTAL NUMBER OF MEMBERS REMITTED:__________________________'
+                    }]);
+                    var r5 = Addrow(5, [{
+                      key: 'A',
+                      value: 'TOTAL AMOUNT REMITTED:__________________________'
+                    }]);
+                    var r6 = Addrow(6, [{
+                      key: 'A',
+                      value: ''
+                    }]);
+
+                    var sheetData = sheet.getElementsByTagName('sheetData')[0];
+
+                    sheetData.insertBefore(r6, sheetData.childNodes[0]);
+                    sheetData.insertBefore(r5, sheetData.childNodes[0]);
+                    sheetData.insertBefore(r4, sheetData.childNodes[0]);
+                    sheetData.insertBefore(r3, sheetData.childNodes[0]);
+                    sheetData.insertBefore(r2, sheetData.childNodes[0]);
+                    sheetData.insertBefore(r1, sheetData.childNodes[0]);
+                  }
+                },
+              ]
+            },
+            {
+              text: 'column visibility',
+              extend: 'colvis',
+              columns: ':not(:first-child)'
+            },
+          ],
+        });
+
+        let debounce = new $.fn.dataTable.Debounce(dataTable);
+
+        this.$watch('role', (value) => {
+          dataTable.draw();
+        });
+        this.$watch('account_status', (value) => {
+          dataTable.draw();
+        });
+
         this.$watch('setStatusModalOpen', value => {
           if (value === false) {
             this.enableRemarks = false
@@ -208,361 +440,32 @@
       setRole: {
         user_id: ''
       },
-      confirmSendAssignRole: function($user_id) {
-        this.setRole.user_id = $user_id
+      confirmSendAssignRole: function(user_id) {
+        this.setRole.user_id = user_id
 
-        this.sendAssignRole().then(data => data.json())
+        fetch('<?php echo URLROOT . "/admins/reassignAdminRole" ?>', {
+            method: "POST",
+            body: JSON.stringify({
+              user_id: user_id
+            }),
+            headers: {
+              "Content-type": "application/json"
+            }
+          }).then(data => data.json())
           .then(res => {
             console.log(res)
             if (res.status == 'ok') {
-              window.location.reload()
+              $('#myTable').DataTable().draw();
             }
           })
       },
-      sendAssignRole: async function() {
-        return await fetch('<?php echo URLROOT . "/admins/reassignAdminRole" ?>', {
-          method: "POST",
-          body: JSON.stringify({
-            user_id: this.setRole.user_id
-          }),
-          headers: {
-            "Content-type": "application/json"
-          }
-        })
-      },
 
-      roleTab: '',
+      role: '',
+      account_status: '',
       practiceType: '',
-      status: '',
-      filterColumnBySelectedTab(newTab) {
-        let roleColumn = $('#myTable').DataTable().column(2)
-        this.roleTab = newTab
-
-        roleColumn
-          .search(this.roleTab ? '^' + this.roleTab + '$' : '', true, false)
-          .draw();
-      },
-      filterColumnByStatus(status) {
-        let statusColumn = $('#myTable').DataTable().column(3)
-        this.status = status
-
-        statusColumn
-          .search(this.status ? '^' + this.status + '$' : '', true, false)
-          .draw();
-      }
     }))
 
-    $.fn.dataTable.Debounce = function(table, options) {
-      let tableId = table.settings()[0].sTableId;
-      $('.dataTables_filter input[aria-controls="' + tableId + '"]')
-        .unbind()
-        .bind('input', (delay(function(e) {
-          table.search($(this).val()).draw();
-          return;
-        }, 1000)));
-    }
 
-    function delay(callback, ms) {
-      let timer = 0;
-      return function() {
-        let context = this,
-          args = arguments;
-        clearTimeout(timer);
-        timer = setTimeout(function() {
-          callback.apply(context, args);
-        }, ms || 0);
-      };
-    }
-
-    const dataTable = $('#myTable').DataTable({
-      'bLengthChange': false,
-      'processing': true,
-      'serverSide': true,
-      'searchDelay': 350,
-      'serverMethod': 'post',
-      'ajax': {
-        'url': 'usersDatatable',
-        'data': function(data) {
-          // Append to data
-          // data.role = app.role;
-          // data.status = app.status;
-        }
-      },
-      'columns': [{
-          data: 'created_at',
-        },
-        {
-          data: 'email'
-        },
-        {
-          data: 'role',
-          sortable: false
-        },
-        {
-          data: 'account_status',
-          sortable: false,
-          render: function(d, t, r, m) {
-            return r.account_status
-          }
-        },
-        {
-          data: 'logged_at'
-        }
-      ],
-      initComplete: function() {
-        const api = this.api();
-        api.columns('.hidden-first').visible(false)
-      },
-      order: [
-        [0, 'desc']
-      ],
-      dom: 'fBrtip',
-      buttons: [{
-          text: 'exports',
-          extend: 'collection',
-          className: 'custom-html-collection',
-          buttons: [
-            '<header>Export to</header>',
-            {
-              extend: 'csv',
-              exportOptions: {
-                columns: ':visible :not(.more)'
-              },
-              customize: function(csv) {
-                console.log(csv)
-                return 'CHAPTER:______________________                                                                                                                                                  PDA MEMBERSHIP REMITTANCE FORM \n' +
-                  "PRESIDENT'S NAME:______________________\n" +
-                  'TOTAL NUMBER OF MEMBERS REMITTED:______________________\n' +
-                  'TOTAM AMOUNT REMITTED:______________________\n\n' +
-                  csv;
-              }
-            },
-            {
-              extend: 'excel',
-              exportOptions: {
-                columns: ':visible :not(.more)'
-              },
-              customize: function(xlsx) {
-                var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                var numrows = 6;
-                var clR = $('row', sheet);
-
-                //update Row
-                clR.each(function() {
-                  var attr = $(this).attr('r');
-                  var ind = parseInt(attr);
-                  ind = ind + numrows;
-                  $(this).attr("r", ind);
-                });
-
-                // Create row before data
-                $('row c ', sheet).each(function(index) {
-                  var attr = $(this).attr('r');
-
-                  var pre = attr.substring(0, 1);
-                  var ind = parseInt(attr.substring(1, attr.length));
-                  ind = ind + numrows;
-                  $(this).attr("r", pre + ind);
-                });
-
-                function Addrow(index, data) {
-                  var row = sheet.createElement('row');
-                  row.setAttribute("r", index);
-                  for (i = 0; i < data.length; i++) {
-                    var key = data[i].key;
-                    var value = data[i].value;
-
-                    var c = sheet.createElement('c');
-                    c.setAttribute("t", "inlineStr");
-                    c.setAttribute("s", "2");
-                    c.setAttribute("r", key + index);
-
-                    var is = sheet.createElement('is');
-                    var t = sheet.createElement('t');
-                    var text = sheet.createTextNode(value)
-
-                    t.appendChild(text);
-                    is.appendChild(t);
-                    c.appendChild(is);
-
-                    row.appendChild(c);
-                  }
-
-                  return row;
-                }
-
-                var r1 = Addrow(1, [{
-                  key: 'E',
-                  value: 'PDA MEMBERSHIP REMITTANCE FORM'
-                }]);
-                var r2 = Addrow(2, [{
-                  key: 'A',
-                  value: 'CHAPTER:__________________________'
-                }]);
-                var r3 = Addrow(3, [{
-                  key: 'A',
-                  value: "PRESIDENT'S NAME:__________________________"
-                }]);
-                var r4 = Addrow(4, [{
-                  key: 'A',
-                  value: 'TOTAL NUMBER OF MEMBERS REMITTED:__________________________'
-                }]);
-                var r5 = Addrow(5, [{
-                  key: 'A',
-                  value: 'TOTAL AMOUNT REMITTED:__________________________'
-                }]);
-                var r6 = Addrow(6, [{
-                  key: 'A',
-                  value: ''
-                }]);
-
-                var sheetData = sheet.getElementsByTagName('sheetData')[0];
-
-                sheetData.insertBefore(r6, sheetData.childNodes[0]);
-                sheetData.insertBefore(r5, sheetData.childNodes[0]);
-                sheetData.insertBefore(r4, sheetData.childNodes[0]);
-                sheetData.insertBefore(r3, sheetData.childNodes[0]);
-                sheetData.insertBefore(r2, sheetData.childNodes[0]);
-                sheetData.insertBefore(r1, sheetData.childNodes[0]);
-              }
-            },
-          ]
-        },
-        {
-          text: 'column visibility',
-          extend: 'colvis'
-        },
-      ],
-    });
-
-    // const dataTable = $('#myTable').DataTable({
-    //   initComplete: function() {
-    //     const api = this.api();
-    //     api.columns('.hidden-first').visible(false)
-    //   },
-    //   order: [
-    //     [0, 'desc']
-    //   ],
-    //   dom: 'fBrtip',
-    //   buttons: [{
-    //       text: 'exports',
-    //       extend: 'collection',
-    //       className: 'custom-html-collection',
-    //       buttons: [
-    //         '<header>Export to</header>',
-    //         {
-    //           extend: 'csv',
-    //           exportOptions: {
-    //             columns: ':visible :not(.more)'
-    //           },
-    //           customize: function(csv) {
-    //             console.log(csv)
-    //             return 'CHAPTER:______________________                                                                                                                                                  PDA MEMBERSHIP REMITTANCE FORM \n' +
-    //               "PRESIDENT'S NAME:______________________\n" +
-    //               'TOTAL NUMBER OF MEMBERS REMITTED:______________________\n' +
-    //               'TOTAM AMOUNT REMITTED:______________________\n\n' +
-    //               csv;
-    //           }
-    //         },
-    //         {
-    //           extend: 'excel',
-    //           exportOptions: {
-    //             columns: ':visible :not(.more)'
-    //           },
-    //           customize: function(xlsx) {
-    //             var sheet = xlsx.xl.worksheets['sheet1.xml'];
-    //             var numrows = 6;
-    //             var clR = $('row', sheet);
-
-    //             //update Row
-    //             clR.each(function() {
-    //               var attr = $(this).attr('r');
-    //               var ind = parseInt(attr);
-    //               ind = ind + numrows;
-    //               $(this).attr("r", ind);
-    //             });
-
-    //             // Create row before data
-    //             $('row c ', sheet).each(function(index) {
-    //               var attr = $(this).attr('r');
-
-    //               var pre = attr.substring(0, 1);
-    //               var ind = parseInt(attr.substring(1, attr.length));
-    //               ind = ind + numrows;
-    //               $(this).attr("r", pre + ind);
-    //             });
-
-    //             function Addrow(index, data) {
-    //               var row = sheet.createElement('row');
-    //               row.setAttribute("r", index);
-    //               for (i = 0; i < data.length; i++) {
-    //                 var key = data[i].key;
-    //                 var value = data[i].value;
-
-    //                 var c = sheet.createElement('c');
-    //                 c.setAttribute("t", "inlineStr");
-    //                 c.setAttribute("s", "2");
-    //                 c.setAttribute("r", key + index);
-
-    //                 var is = sheet.createElement('is');
-    //                 var t = sheet.createElement('t');
-    //                 var text = sheet.createTextNode(value)
-
-    //                 t.appendChild(text);
-    //                 is.appendChild(t);
-    //                 c.appendChild(is);
-
-    //                 row.appendChild(c);
-    //               }
-
-    //               return row;
-    //             }
-
-    //             var r1 = Addrow(1, [{
-    //               key: 'E',
-    //               value: 'PDA MEMBERSHIP REMITTANCE FORM'
-    //             }]);
-    //             var r2 = Addrow(2, [{
-    //               key: 'A',
-    //               value: 'CHAPTER:__________________________'
-    //             }]);
-    //             var r3 = Addrow(3, [{
-    //               key: 'A',
-    //               value: "PRESIDENT'S NAME:__________________________"
-    //             }]);
-    //             var r4 = Addrow(4, [{
-    //               key: 'A',
-    //               value: 'TOTAL NUMBER OF MEMBERS REMITTED:__________________________'
-    //             }]);
-    //             var r5 = Addrow(5, [{
-    //               key: 'A',
-    //               value: 'TOTAL AMOUNT REMITTED:__________________________'
-    //             }]);
-    //             var r6 = Addrow(6, [{
-    //               key: 'A',
-    //               value: ''
-    //             }]);
-
-    //             var sheetData = sheet.getElementsByTagName('sheetData')[0];
-
-    //             sheetData.insertBefore(r6, sheetData.childNodes[0]);
-    //             sheetData.insertBefore(r5, sheetData.childNodes[0]);
-    //             sheetData.insertBefore(r4, sheetData.childNodes[0]);
-    //             sheetData.insertBefore(r3, sheetData.childNodes[0]);
-    //             sheetData.insertBefore(r2, sheetData.childNodes[0]);
-    //             sheetData.insertBefore(r1, sheetData.childNodes[0]);
-    //           }
-    //         },
-    //       ]
-    //     },
-    //     {
-    //       text: 'column visibility',
-    //       extend: 'colvis'
-    //     },
-    //   ],
-    // });
-
-    let debounce = new $.fn.dataTable.Debounce(dataTable);
 
   })
 </script>

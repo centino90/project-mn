@@ -427,6 +427,7 @@ class Admins extends Controller
         // $selectables[] = $column['data'];
         $selectables[] = 'profiles.*';
         $selectables[] = 'dues22.*';
+        $selectables[] = '(SELECT SUM(dues22.amount) FROM dues22) AS total_amount';
       }
 
       // Row count without filtering
@@ -448,7 +449,8 @@ class Admins extends Controller
           "type" => $row->type,
           "channel" => $row->channel,
           "or_number" => $row->or_number,
-          'user_id' => $row->profile_id
+          'user_id' => $row->profile_id,
+          'total_amount' => $row->total_amount
         );
       }
 
@@ -500,13 +502,21 @@ class Admins extends Controller
       $searchValue = $_POST['search']['value'];
 
       // custom filters
-      // $memberType = $_POST['memberType'];
-      // $role = $_POST['role'];
+      $accountStatus = $_POST['accountStatus'];
+      $role = $_POST['role'];
 
       // initialize search filter
-      $searchQuery = "";
+      $searchQuery = " AND role != 'superadmin'";
       if ($searchValue != '') {
         $searchQuery .= " and ( account_status = '" . $searchValue . "') ";
+      }
+
+      if ($role != '') {
+        $searchQuery .= " and ( role = '" . $role . "') ";
+      }
+
+      if ($accountStatus != '') {
+        $searchQuery .= " and ( account_status = '" . $accountStatus . "') ";
       }
 
       // initilize columns to be selected
@@ -523,16 +533,29 @@ class Admins extends Controller
       $empRecords = $this->userModel->getDatatable2($selectables, $searchQuery, $columnName, $columnSortOrder, $row, $rowperpage);
       $data = array();
 
-      // $row->is_active ? 'active' : 'inactive'
       foreach ($empRecords as $row) {
+        $today = date('Y-m-d');
+        $lastLogDate = date('Y-m-d', strtotime($row->logged_at));
+        $dateInSixMonthsSinceLastLog = date('Y-m-d', strtotime($lastLogDate . ' + 6 months'));
+
         $data[] = array(
+          "profile_img_path" => $row->profile_img_path,
+          "thumbnail_img_path" => $row->thumbnail_img_path,
           "created_at" => $row->created_at,
           "email" => $row->email,
           "role" => $row->role,
-          "account_status" => $row->account_status,
+          "account_status" => $dateInSixMonthsSinceLastLog <= $today ? 'inactive' : 'active',
           "logged_at" => $row->logged_at,
+
+          "user_id" => $row->id,
         );
       }
+
+      //  $currentDate = 
+
+      //   dd(date('Y-m-d', strtotime(date('Y-m-d'). ' + 6 months')));
+
+
 
       $response = array(
         "draw" => intval($draw),
@@ -598,8 +621,11 @@ class Admins extends Controller
 
       // initilize columns to be selected
       $selectables = [];
-      $selectables[] = '*';
+      $selectables[] = 'GROUP_CONCAT(YEAR(cd_dues.cd_dates)) AS cd_dates';
+      $selectables[] = 'GROUP_CONCAT(CONCAT(YEAR(cd_dues.cd_dates), IFNULL(CONCAT(" (#", or_number, ")" ), "")) SEPARATOR ", ") AS dcdc_dues';
+      $selectables[] = 'profiles.*';
 
+     
       // Row count without filtering
       $totalRecords = $this->profileModel->countAll2()->count;
 
@@ -610,14 +636,33 @@ class Admins extends Controller
       $empRecords = $this->profileModel->getDatatable2($selectables, $searchQuery, $columnName, $columnSortOrder, $row, $rowperpage);
       $data = array();
 
-      // $row->is_active ? 'active' : 'inactive'
+      $lastThreeYears = [
+        date('Y', strtotime(date('Y-m-d') . ' - 1 year')),
+        date('Y', strtotime(date('Y-m-d') . ' - 2 year')),
+        date('Y', strtotime(date('Y-m-d') . ' - 3 year')),
+      ];
       foreach ($empRecords as $row) {
+        $paymentDates = array_reverse(explode(',', $row->cd_dates));
+        $firstYearOfPayment = $paymentDates[0];
+        $missingYears = $this->getMissingYears($paymentDates, $firstYearOfPayment);
+        $paymentStatus = '';
+
+        if(empty($missingYears)) $paymentStatus = 'Complete Payment';
+        else $paymentStatus = 'Incomplete Payment';
+        if(empty($firstYearOfPayment)) $paymentStatus = '';
+        if(
+          in_array($lastThreeYears[0], $missingYears) &&
+          in_array($lastThreeYears[1], $missingYears) &&
+          in_array($lastThreeYears[2], $missingYears)
+        ) $paymentStatus = 'Dormant';
+
         $data[] = array(
+          "dcdc_dues" => $row->dcdc_dues,
+          
           "prc_number" => $row->prc_number,
           "last_name" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name),
-          "payment_status" => $row->payment_status,
+          "payment_status" => $paymentStatus,
           "status_remarks" => $row->status_remarks,
-
           "birthdate" => $row->birthdate,
           "address" => $row->address,
           "contact_number" => $row->contact_number,
@@ -659,6 +704,24 @@ class Admins extends Controller
 
       exit(json_encode($response));
     }
+  }
+
+  private function getMissingYears(array $years, $dateStart = '1981'): ?array
+  {
+    $missingYears = array();
+    $dateStart .= '-01-01';
+    $dateStart = date_create($dateStart);
+    $years = array_map(fn ($y) => $y .= '-01-01', $years);
+
+    $dateEnd   = date_create();
+    $interval  = new DateInterval('P1Y');
+    $period    = new DatePeriod($dateStart, $interval, $dateEnd);
+    foreach ($period as $year) {
+      $formatted = $year->format("Y-m-d");
+      if (!in_array($formatted, $years)) $missingYears[] = date('Y', strtotime($formatted));
+    }
+
+    return $missingYears;
   }
 
   public function profileForm()
@@ -1537,23 +1600,27 @@ class Admins extends Controller
         $decoded['errors']['user_id_err'] = 'The account\'s user id must not be empty';
       }
 
-      $user = $this->userModel->getUserById($decoded['user_id']);
+      $user = $this->userModel->find(
+        ['*'],
+        ['id'],
+        [$decoded['user_id']]
+      );
 
       // check user status
       $role = '';
       if ($this->role->isAdmin($user->role)) {
-        $role = $this->role->ROLE_MEMBER;
+        $role = Roles::ROLE_MEMBER;
       }
       if ($this->role->isMember($user->role)) {
-        $role = $this->role->ROLE_ADMIN;
+        $role = Roles::ROLE_ADMIN;
       }
 
       // check if user status was not successfully updated
-      if (!$this->userModel->update2(
+      if (!$this->userModel->update4(
         ['role'],
         [$role],
-        'id',
-        $decoded['user_id']
+        ['id'],
+        [$decoded['user_id']]
       )) {
         throw new Error('user_id: ' . $decoded['user_id'] . ' is not correct or non existing. Try again');
       }
@@ -1695,7 +1762,6 @@ class Admins extends Controller
       $decoded['message'] = $th->getMessage();
       $reply = json_encode($decoded);
 
-      header("Content-Type: application/json; charset=UTF-8");
       exit($reply);
     }
   }

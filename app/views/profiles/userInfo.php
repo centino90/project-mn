@@ -103,7 +103,7 @@
                                     <span @click="onEditMode = !onEditMode" class="cursor-pointer hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Create username and password</span>
                                 <?php endif ?>
                                 <?php if ($data['has_facebook_auth']) : ?>
-                                    <a href="<?php echo getFacebookLoginUrl(); ?>" @click.prevent="if (confirm('Change facebook auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-blue-100 text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full hover:underline">Change Facebook</a>
+                                    <a href="<?php echo getFacebookReauthenticateLoginUrl(); ?>" @click.prevent="if (confirm('Change facebook auth account?')) window.location.href=$event.target.getAttribute('href')" class="bg-blue-100 text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full hover:underline">Change Facebook</a>
                                 <?php else : ?>
                                     <a href="<?php echo getFacebookLoginUrl(); ?>" class="hover:underline text-blue-600 whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">Activate Facebook</a>
                                 <?php endif ?>

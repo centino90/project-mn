@@ -99,6 +99,7 @@
           <tr>
             <th>Name</th>
             <th>PRC #</th>
+            <th>DCDC Dues</th>
             <th>Payment Status</th>
             <th>Status remarks</th>
             <th>birthdate</th>
@@ -180,6 +181,9 @@
             },
             {
               data: 'prc_number'
+            },
+            {
+              data: 'dcdc_dues'
             },
             {
               data: 'payment_status',

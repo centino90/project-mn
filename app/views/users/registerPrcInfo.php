@@ -105,7 +105,7 @@
               PRC license no
             </label>
             <div x-bind="inputContainer">
-              <input disabled class="border-0 border-b text-secondary-500" type="number" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number" autofocus>
+              <input disabled class="border-0 border-b text-secondary-500" type="text" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number" autofocus>
 
               <?php if (!empty($data['prc_number_err'])) : ?>
                 <div x-bind="formInputError">

@@ -190,9 +190,9 @@ class Users extends Controller
               [$user->id]
             );
 
-            $verifiedUser = $this->userModel->find(
-              ['*'],
-              ['id', 'email_verified'],
+            $verifiedUser = $this->userModel->findUserProfile(
+              ['*', 'accounts.id AS id'],
+              ['accounts.id', 'email_verified'],
               [$userId, true]
             );
             if ($verifiedUser) {
@@ -508,8 +508,7 @@ class Users extends Controller
       if (empty($data['email_err']) && empty($data['password_err'])) {
 
         // Check and set logged in user
-        // $requestedUser = $this->userModel->getRowByColumn('email', $data['email']);
-        $requestedUser = $this->userModel->find(['*'], ['email'], [$data['email']]);
+        $requestedUser = $this->userModel->findUserProfile(['*', 'accounts.id AS id'], ['email'], [$data['email']]);
         if ($requestedUser) {
           // if inputted email exist in db
           $hashed_password = $requestedUser->password;
@@ -739,11 +738,22 @@ class Users extends Controller
       ) {
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
-        if (!$this->userModel->updateRowsById(['email', 'password'], [$data['email'], $data['password']], $this->session->auth()->id)) {
-          $data['password_err'] = 'Something went wrong';
-          $this->view('users/registerEmailPassword', $data);
-          return;
-        }
+        $this->userModel->update4(
+          ['email', 'password'],
+          [$data['email'], $data['password']],
+          ['id'],
+          [$this->session->auth()->id]
+        );
+        // $data['password_err'] = 'Something went wrong';
+        // $this->view('users/registerEmailPassword', $data);
+
+
+
+        // if (!$this->userModel->updateRowsById(['email', 'password'], [$data['email'], $data['password']], $this->session->auth()->id)) {
+        //   $data['password_err'] = 'Something went wrong';
+        //   $this->view('users/registerEmailPassword', $data);
+        //   return;
+        // }
 
         $this->handleUserRegistration(
           [
@@ -1459,7 +1469,7 @@ class Users extends Controller
       return;
     }
 
-    $userProfile = $this->session->auth();
+    $userProfile = $this->session->auth(false);
 
     // check if profile has empty fields
     if (
@@ -1482,6 +1492,23 @@ class Users extends Controller
         'type' => 'user_login',
       ]
     );
+
+    // update login timestamp
+    $this->userModel->update4(
+      ['logged_at'],
+      [date("Y-m-d H:i:s")],
+      ['id'],
+      [$this->session->auth(false)->id]
+    );
+
+    //update payment status
+    // $this->profileModel->update3(
+    //   ['payment_status'],
+    //   ['dormant'],
+    //   ['id'],
+    //   [$this->session->auth(false)->profile_id]
+    // );
+
     $this->url->redirectToHomepage();
   }
 

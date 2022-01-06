@@ -124,12 +124,33 @@ class Profile extends Model
   {
     $selected = join(',', $columns);
     $sql = 'SELECT ' . $selected . ' FROM ' .
-      $this->table . ' WHERE 1 ' .
-      $filters . ' ORDER BY ' .
+      $this->table . ' LEFT JOIN (SELECT or_number, date_posted AS cd_dates, profile_id FROM dues22 GROUP BY dues22.profile_id, date_posted) cd_dues ON cd_dues.profile_id = profiles.id '
+      . ' WHERE 1 ' .
+      $filters . ' GROUP BY profiles.id ORDER BY ' .
       $orderColumn . ' ' .
       $orderType . ' LIMIT ' .
       $limitRow . ',' .
       $limitPerpage;
+
+      // $sql = "SELECT users.id, users.first_name, users.middle_name, users.last_name, users.prc_number, CONCAT(GROUP_CONCAT(pda.pda_amount SEPARATOR ', '), ' ', IFNULL(CONCAT('(', users.status_remarks , ')'), '')) AS payments
+      // FROM dues 
+      //     LEFT JOIN users ON users.id = dues.user_id 
+      // LEFT JOIN (
+      //     SELECT id AS pda_id, CONCAT(YEAR(date_created), IFNULL(CONCAT(' (#', or_number , ')'), '')) AS pda_amount
+      //     FROM dues 
+      //     WHERE type = 'pda'
+      // ) AS pda     
+      //   ON dues.id = pda.pda_id 
+      // GROUP BY dues.user_id";
+
+    // SELECT GROUP_CONCAT(YEAR(cd_dues.cd_dates)), profiles.last_name FROM `profiles` LEFT JOIN (SELECT date_posted AS cd_dates, profile_id FROM dues22 GROUP BY dues22.profile_id, date_posted) cd_dues ON cd_dues.profile_id = profiles.id GROUP BY profiles.id
+    // $sql = 'SELECT ' . $selected . ' FROM ' .
+    //   $this->table . ' WHERE 1 ' .
+    //   $filters . ' ORDER BY ' .
+    //   $orderColumn . ' ' .
+    //   $orderType . ' LIMIT ' .
+    //   $limitRow . ',' .
+    //   $limitPerpage;
 
     $this->db->query($sql);
 
@@ -470,6 +491,11 @@ class Profile extends Model
   public function update2($columns, $values, $idType, $id)
   {
     return $this->db->update($this->table, $columns, $values, $idType, $id);
+  }
+
+  public function update3($columns, $values, $idTypes, $ids)
+  {
+    return $this->db->update2($this->table, $columns, $values, $idTypes, $ids);
   }
 
   public function verifyEmail($data)

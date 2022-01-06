@@ -254,8 +254,9 @@
             }
           },
           drawCallback: function(settings) {
+            const totalAmount = settings.aoData[0]._aData.total_amount
             app.writeToFooterColumn(0, 'Payment Summary', 'text')
-            app.writeToFooterColumn(2, app.calculateTotalAmount(2), 'currency')
+            app.writeToFooterColumn(2, parseInt(totalAmount), 'currency')
 
             app.afterDrawStartMonth = app.startMonth
             app.afterDrawStartYear = app.startYear
