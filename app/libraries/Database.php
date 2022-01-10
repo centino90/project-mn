@@ -63,8 +63,10 @@ class Database
   }
 
   // Execute the prepared statement
-  public function execute()
+  public function execute(array $params = [])
   {
+    if(!empty($params)) return $this->stmt->execute($params);
+    
     return $this->stmt->execute();
   }
 
@@ -136,7 +138,7 @@ class Database
 
     return $this->single();
   }
-  function selectAll($table, $columns = [], $values = [], $includeAdmin = true)
+  function selectAll($table, $columns = [], $values = [])
   {
     if (sizeof($columns) !== sizeof($values)) {
       throw new Error('Error: columns and values must have the same length');
@@ -145,7 +147,7 @@ class Database
     $i = 0;
     $setString = '';
     if (!empty($columns) && !empty($values)) {
-      $setString.= 'WHERE ';
+      $setString .= 'WHERE ';
       foreach ($columns as $column) {
         if (++$i === count($columns)) {
           $setString .= $column . ' = :' . $column;
@@ -167,7 +169,7 @@ class Database
     return $this->resultSet();
   }
 
-  function select($idType, $id, $table, $columns = [], $values = [], $includeAdmin = true)
+  function select($idType, $id, $table, $columns = [], $values = [])
   {
     if (sizeof($columns) !== sizeof($values)) {
       throw new Error('Error: columns and values must have the same length');
@@ -176,7 +178,7 @@ class Database
     $i = 0;
     $setString = '';
     if (!empty($columns) && !empty($values)) {
-      $setString.= 'WHERE ';
+      $setString .= 'WHERE ';
       foreach ($columns as $column) {
         if (++$i === count($columns)) {
           $setString .= $column . ' = :' . $column;
@@ -202,6 +204,7 @@ class Database
 
     return $this->resultSet();
   }
+
 
   function insert($table, $column, $value, $id)
   {
@@ -232,6 +235,56 @@ class Database
       $this->bind(':' . $columns[$i], $values[$i]);
     }
     $this->bind(':id', $id);
+
+    if ($this->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  function update2(string $table, array $columns, array $values, array $filterCols, array $filterVals)
+  {
+    if (sizeof($columns) !== sizeof($values)) {
+      throw new Error('Error: columns and values must have the same length');
+    }
+
+    // append and fromat update string
+    $i = 0;
+    $setString = '';
+    foreach ($columns as $column) {
+      if (++$i === count($columns)) {
+        $setString .= $column . ' = :' . $column;
+        break;
+      }
+      $setString .= $column . ' = :' . $column . ' , ';
+    }
+
+    
+    if (sizeof($filterCols) !== sizeof($filterVals)) {
+      throw new Error('Error: columns and values must have the same length');
+    }
+
+    $i2 = 0;
+    $whereString = '';
+    foreach ($filterCols as $column) {
+      if (++$i2 === count($filterCols)) {
+        $whereString .= $column . ' = :' . $column;
+        break;
+      }
+      $whereString .= $column . ' = :' . $column . ' AND ';
+    }
+
+    $sql = 'UPDATE ' . $table . ' SET ' . $setString . ' WHERE ' . $whereString;
+    $this->query($sql);
+
+    for ($i = 0; $i < sizeof($columns); $i++) {
+      $this->bind(':' . $columns[$i], $values[$i]);
+    }
+
+    for ($i = 0; $i < sizeof($filterCols); $i++) {
+      $this->bind(':' . $filterCols[$i], $filterVals[$i]);
+    }
 
     if ($this->execute()) {
       return true;

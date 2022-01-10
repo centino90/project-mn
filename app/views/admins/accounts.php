@@ -102,219 +102,38 @@
     </div>
 
     <div class="table-container">
-      <table id="myTable" style="width: 100%">
+      <table id="myTable" style="width: 100%" x-cloak>
         <thead class="border-t border-b">
           <tr>
-            <th scope="col">
-              TIMESTAMP
-            </th>
-            <th scope="col">
-              Name
-            </th>
-            <th scope="col">
-              Role
-            </th>
-            <th scope="col">
-              Status
-            </th>
-            <th scope="col" class="hidden-first">
-              Remarks
-            </th>
-            <th scope="col" class="more">
-              More
-            </th>
+            <th>SIGNED UP AT</th>
+            <th>email</th>
+            <th>role</th>
+            <th>Account status</th>
+            <th>Last Log in</th>
+            <th>Payment status</th>
+            <th class="hidden-first">status_remarks</th>
+            <th class="hidden-first">email</th>
+            <th class="hidden-first">prc_number</th>
+            <th class="hidden-first">prc_registration_date</th>
+            <th class="hidden-first">prc_expiration_date</th>
+            <th class="hidden-first">field_practice</th>
+            <th class="hidden-first">type_practice</th>
+            <th class="hidden-first">birthdate</th>
+            <th class="hidden-first">gender</th>
+            <th class="hidden-first">contact_number</th>
+            <th class="hidden-first">fb_account_name</th>
+            <th class="hidden-first">address</th>
+            <th class="hidden-first">clinic_name</th>
+            <th class="hidden-first">clinic_street</th>
+            <th class="hidden-first">clinic_district</th>
+            <th class="hidden-first">clinic_city</th>
+            <th class="hidden-first">clinic_contact_number</th>
+            <th class="hidden-first">emergency_person_name</th>
+            <th class="hidden-first">emergency_address</th>
+            <th class="hidden-first">emergency_contact_number</th>
 
-            <th scope="col" class="hidden-first">
-              Email Address
-            </th>
-            <th scope="col" class="hidden-first">
-              Timestamp of creation
-            </th>
-            <th scope="col" class="hidden-first">
-              PRC license no.
-            </th>
-            <th scope="col" class="hidden-first">
-              PRC Registration date
-            </th>
-            <th scope="col" class="hidden-first">
-              PRC Date of expiry
-            </th>
-            <th scope="col" class="hidden-first">
-              Field of practice
-            </th>
-            <th scope="col" class="hidden-first">
-              Type of practice
-            </th>
-            <th scope="col" class="hidden-first">
-              Date of Birth
-            </th>
-            <th scope="col" class="hidden-first">
-              Gender
-            </th>
-            <th scope="col" class="hidden-first">
-              Contact number
-            </th>
-            <th scope="col" class="hidden-first">
-              Practice type
-            </th>
-            <th scope="col" class="hidden-first">
-              Facebook Account Name
-            </th>
-            <th scope="col" class="hidden-first">
-              Home Address
-            </th>
-            <th scope="col" class="hidden-first">
-              Clinic Registered Name
-            </th>
-            <th scope="col" class="hidden-first">
-              Clinic Street
-            </th>
-            <th scope="col" class="hidden-first">
-              Clinic District
-            </th>
-            <th scope="col" class="hidden-first">
-              Clinic Municipality
-            </th>
-            <th scope="col" class="hidden-first">
-              Clinic Contact
-            </th>
-            <th scope="col" class="hidden-first">
-              Emergency person
-            </th>
-            <th scope="col" class="hidden-first">
-              Emergency person address
-            </th>
-            <th scope="col" class="hidden-first">
-              Emergency person contact
-            </th>
           </tr>
         </thead>
-        <tbody class="bg-white relative">
-          <?php foreach ($data['accounts'] as $member) : ?>
-            <tr>
-              <td>
-                <?php echo $member->created_at ?>
-              </td>
-              <td class=" <?php if ($member->id == $_SESSION['user_id']) : ?> text-primary-600 font-semibold <?php endif ?>">
-                <a href="<?php echo URLROOT ?>/admins/viewAccount?id=<?php echo $member->id ?>" class="hover:underline hover:text-primary-600 hover:bg-primary-50">
-                  <?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>
-                </a>
-              </td>
-              <td>
-                <?php echo $member->role ?>
-              </td>
-              <td>
-                <span class="rounded-lg px-2 <?php if ($member->is_active) : ?> bg-success-100 text-success-700 <?php else : ?>bg-secondary-100 text-secondary-400 <?php endif ?>"><?php echo $member->is_active ? 'active' : 'inactive' ?></span>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->status_remarks ?>
-              </td>
-              <td class="more" x-data="{ dropdownOpen: false }">
-                <button @click="dropdownOpen = !dropdownOpen" class="relative whitespace-nowrap text-base font-medium text-secondary-500 hover:text-secondary-900">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                  </svg>
-
-                  <div x-show="dropdownOpen" class="absolute right-0 text-left mt-2 py-2 w-48 bg-white rounded-md shadow-2xl z-20 overflow-y-auto">
-                    <!-- set status -->
-                    <?php if ($member->is_active) : ?>
-                      <a @click="openModalOnClick" href="javascript:void(0);" data-userid="<?php echo $member->id ?>" data-remarks="<?php echo $member->status_remarks ?>" data-username="<?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                        Set as inactive
-                      </a>
-                    <?php else : ?>
-                      <a @click="openModalOnClick" href="javascript:void(0);" data-userid="<?php echo $member->id ?>" data-remarks="<?php echo $member->status_remarks ?>" data-username="<?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                        Update remarks
-                      </a>
-                      <a @click="openModalOnClick" href="javascript:void(0);" data-userid="<?php echo $member->id ?>" data-remarks="<?php echo $member->status_remarks ?>" data-username="<?php echo strtoupper(arrangeFullname($member->first_name, $member->middle_name, $member->last_name)) ?>" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                        Set as active
-                      </a>
-                    <?php endif ?>
-
-                    <!-- set role -->
-                    <?php if (isSuperAdmin()) : ?>
-                      <?php if ($member->role == 'admin') : ?>
-                        <a @click="if (confirm('Retire admin role?')){ confirmSendAssignRole(<?php echo $member->id ?>) }" href="javascript:void(0);" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                          Retire as admin
-                        </a>
-                      <?php elseif ($member->role == 'member') : ?>
-                        <a @click="if (confirm('Assign admin role?')){ confirmSendAssignRole(<?php echo $member->id ?>) }" href="javascript:void(0);" class="block px-4 py-2 text-sm capitalize text-gray-700 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-                          Set as admin
-                        </a>
-                      <?php endif ?>
-                    <?php endif ?>
-                  </div>
-                </button>
-
-                <!-- backdrop -->
-                <div x-show="dropdownOpen" @click="dropdownOpen = false" class="fixed inset-0 h-full w-full z-10"></div>
-              </td>
-
-              <td class="hidden-first ">
-                <?php echo $member->email ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->created_at ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->prc_number ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->prc_registration_date ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->prc_expiration_date ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->field_practice ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->type_practice ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->birthdate ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->gender ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->contact_number ?>
-              </td>
-              <td class="hidden-first ">
-                <?php echo $member->type_practice ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->fb_account_name ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->address ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->clinic_name ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->clinic_street ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->clinic_district ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->clinic_city ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->clinic_contact_no ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->emergency_person_name ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->emergency_address ?>
-              </td>
-              <td class="hidden-first">
-                <?php echo $member->emergency_contact_number ?>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
       </table>
     </div>
   </div>
@@ -377,7 +196,7 @@
       setStatusModalSubject: '',
       enableRemarks: false,
       setStatus: {
-        initiator: '<?php echo $_SESSION['user_name'] ?>',
+        initiator: '<?php echo arrangeFullname($this->session->get(SessionManager::SESSION_USER)->first_name, $this->session->get(SessionManager::SESSION_USER)->middle_name, $this->session->get(SessionManager::SESSION_USER)->last_name) ?>',
         remarks: '',
         user_id: '',
         updateRemarks: false
@@ -455,7 +274,164 @@
       }
     }))
 
-    $('#myTable').DataTable({
+    $.fn.dataTable.Debounce = function(table, options) {
+      let tableId = table.settings()[0].sTableId;
+      $('.dataTables_filter input[aria-controls="' + tableId + '"]')
+        .unbind()
+        .bind('input', (delay(function(e) {
+          table.search($(this).val()).draw();
+          return;
+        }, 1000)));
+    }
+
+    function delay(callback, ms) {
+      let timer = 0;
+      return function() {
+        let context = this,
+          args = arguments;
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+          callback.apply(context, args);
+        }, ms || 0);
+      };
+    }
+
+    const dataTable = $('#myTable').DataTable({
+      'order': [
+        [0, 'desc']
+      ],
+      'bLengthChange': false,
+      'processing': true,
+      'serverSide': true,
+      'searchDelay': 350,
+      'serverMethod': 'post',
+      'ajax': {
+        'url': 'accountsDatatable',
+        'data': function(data) {
+          // Append to data
+          // data.role = app.role;
+          // data.status = app.status;
+        }
+      },
+      'columns': [{
+          data: 'created_at'
+        },
+        {
+          data: 'first_name'
+        },
+        {
+          data: 'role',
+          sortable: false
+        },
+        {
+          data: 'account_status',
+          sortable: false,
+          render: function(d, t, r, m) {
+            return r.account_status
+          }
+        },
+        {
+          data: 'logged_at'
+        },
+        {
+          data: 'payment_status',
+          sortable: false,
+          visible: false,
+          render: function(d, t, r, m) {
+            return r.payment_status
+            // if (r.payment_statuses[0] == '') return r.payment_statuses
+
+            // let str = ''
+            // r.payment_statuses.forEach(function(item, index) {
+            //   let theme = ['incomplete_payment', 'recovered'].includes(item) ? 'bg-danger-100' :
+            //     ('dormant' == item) ? 'bg-secondary-100' : 'bg-blue-100'
+            //   str += `<span class="rounded-full px-4 py-1 mx-1 ${theme}">${r.payment_statuses[index]}</span>`
+            // })
+
+            // return str
+          }
+        },
+        {
+          data: 'status_remarks',
+          visible: false
+        },
+        {
+          data: 'email',
+          visible: false
+        },
+        {
+          data: 'prc_number',
+          visible: false
+        },
+        {
+          data: 'prc_registration_date',
+          visible: false
+        },
+        {
+          data: 'prc_expiration_date',
+          visible: false
+        },
+        {
+          data: 'field_practice',
+          visible: false
+        },
+        {
+          data: 'type_practice',
+          visible: false
+        },
+        {
+          data: 'birthdate',
+          visible: false
+        },
+        {
+          data: 'gender',
+          visible: false
+        },
+        {
+          data: 'contact_number',
+          visible: false
+        },
+        {
+          data: 'fb_account_name',
+          visible: false
+        },
+        {
+          data: 'address',
+          visible: false
+        },
+        {
+          data: 'clinic_name',
+          visible: false
+        },
+        {
+          data: 'clinic_street',
+          visible: false
+        },
+        {
+          data: 'clinic_district',
+          visible: false
+        },
+        {
+          data: 'clinic_city',
+          visible: false
+        },
+        {
+          data: 'clinic_contact_number',
+          visible: false
+        },
+        {
+          data: 'emergency_person_name',
+          visible: false
+        },
+        {
+          data: 'emergency_address',
+          visible: false
+        },
+        {
+          data: 'emergency_contact_number',
+          visible: false
+        },
+      ],
       initComplete: function() {
         const api = this.api();
         api.columns('.hidden-first').visible(false)
@@ -463,7 +439,7 @@
       order: [
         [0, 'desc']
       ],
-      dom: 'Bfrtip',
+      dom: 'fBrtip',
       buttons: [{
           text: 'exports',
           extend: 'collection',
@@ -581,6 +557,136 @@
         },
       ],
     });
+
+    // const dataTable = $('#myTable').DataTable({
+    //   initComplete: function() {
+    //     const api = this.api();
+    //     api.columns('.hidden-first').visible(false)
+    //   },
+    //   order: [
+    //     [0, 'desc']
+    //   ],
+    //   dom: 'fBrtip',
+    //   buttons: [{
+    //       text: 'exports',
+    //       extend: 'collection',
+    //       className: 'custom-html-collection',
+    //       buttons: [
+    //         '<header>Export to</header>',
+    //         {
+    //           extend: 'csv',
+    //           exportOptions: {
+    //             columns: ':visible :not(.more)'
+    //           },
+    //           customize: function(csv) {
+    //             console.log(csv)
+    //             return 'CHAPTER:______________________                                                                                                                                                  PDA MEMBERSHIP REMITTANCE FORM \n' +
+    //               "PRESIDENT'S NAME:______________________\n" +
+    //               'TOTAL NUMBER OF MEMBERS REMITTED:______________________\n' +
+    //               'TOTAM AMOUNT REMITTED:______________________\n\n' +
+    //               csv;
+    //           }
+    //         },
+    //         {
+    //           extend: 'excel',
+    //           exportOptions: {
+    //             columns: ':visible :not(.more)'
+    //           },
+    //           customize: function(xlsx) {
+    //             var sheet = xlsx.xl.worksheets['sheet1.xml'];
+    //             var numrows = 6;
+    //             var clR = $('row', sheet);
+
+    //             //update Row
+    //             clR.each(function() {
+    //               var attr = $(this).attr('r');
+    //               var ind = parseInt(attr);
+    //               ind = ind + numrows;
+    //               $(this).attr("r", ind);
+    //             });
+
+    //             // Create row before data
+    //             $('row c ', sheet).each(function(index) {
+    //               var attr = $(this).attr('r');
+
+    //               var pre = attr.substring(0, 1);
+    //               var ind = parseInt(attr.substring(1, attr.length));
+    //               ind = ind + numrows;
+    //               $(this).attr("r", pre + ind);
+    //             });
+
+    //             function Addrow(index, data) {
+    //               var row = sheet.createElement('row');
+    //               row.setAttribute("r", index);
+    //               for (i = 0; i < data.length; i++) {
+    //                 var key = data[i].key;
+    //                 var value = data[i].value;
+
+    //                 var c = sheet.createElement('c');
+    //                 c.setAttribute("t", "inlineStr");
+    //                 c.setAttribute("s", "2");
+    //                 c.setAttribute("r", key + index);
+
+    //                 var is = sheet.createElement('is');
+    //                 var t = sheet.createElement('t');
+    //                 var text = sheet.createTextNode(value)
+
+    //                 t.appendChild(text);
+    //                 is.appendChild(t);
+    //                 c.appendChild(is);
+
+    //                 row.appendChild(c);
+    //               }
+
+    //               return row;
+    //             }
+
+    //             var r1 = Addrow(1, [{
+    //               key: 'E',
+    //               value: 'PDA MEMBERSHIP REMITTANCE FORM'
+    //             }]);
+    //             var r2 = Addrow(2, [{
+    //               key: 'A',
+    //               value: 'CHAPTER:__________________________'
+    //             }]);
+    //             var r3 = Addrow(3, [{
+    //               key: 'A',
+    //               value: "PRESIDENT'S NAME:__________________________"
+    //             }]);
+    //             var r4 = Addrow(4, [{
+    //               key: 'A',
+    //               value: 'TOTAL NUMBER OF MEMBERS REMITTED:__________________________'
+    //             }]);
+    //             var r5 = Addrow(5, [{
+    //               key: 'A',
+    //               value: 'TOTAL AMOUNT REMITTED:__________________________'
+    //             }]);
+    //             var r6 = Addrow(6, [{
+    //               key: 'A',
+    //               value: ''
+    //             }]);
+
+    //             var sheetData = sheet.getElementsByTagName('sheetData')[0];
+
+    //             sheetData.insertBefore(r6, sheetData.childNodes[0]);
+    //             sheetData.insertBefore(r5, sheetData.childNodes[0]);
+    //             sheetData.insertBefore(r4, sheetData.childNodes[0]);
+    //             sheetData.insertBefore(r3, sheetData.childNodes[0]);
+    //             sheetData.insertBefore(r2, sheetData.childNodes[0]);
+    //             sheetData.insertBefore(r1, sheetData.childNodes[0]);
+    //           }
+    //         },
+    //       ]
+    //     },
+    //     {
+    //       text: 'column visibility',
+    //       extend: 'colvis'
+    //     },
+    //   ],
+    // });
+
+    let debounce = new $.fn.dataTable.Debounce(dataTable);
+
   })
 </script>
 

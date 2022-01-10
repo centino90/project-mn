@@ -56,6 +56,23 @@ function getFacebookLoginUrl()
 	return $endpoint . '?' . http_build_query($params);
 }
 
+function getFacebookReauthenticateLoginUrl()
+{
+	// endpoint for facebook login dialog
+	$endpoint = 'https://www.facebook.com/' . FB_GRAPH_VERSION . '/dialog/oauth';
+
+	$params = array( // login url params required to direct user to facebook and promt them with a login dialog
+		'client_id' => FB_APP_ID,
+		'redirect_uri' => FB_REDIRECT_URI,
+		'state' => FB_APP_STATE,
+		'scope' => ['email'],
+		'auth_type' => 'reauthenticate'
+	);
+
+	// return login url
+	return $endpoint . '?' . http_build_query($params);
+}
+
 /**
  * Get an access token with the code from facebook
  *
@@ -159,13 +176,12 @@ function tryAndLoginWithFacebook($get, $usersController)
 				// save user info to session
 				$_SESSION['fb_user_info'] = $fbUserInfo['fb_response'];
 
-				$userInfoWithId = $userModel->getRowWithValue('users', 'fb_user_id', $fbUserInfo['fb_response']['id']);
-				$loggedInUser = $userModel->getRowWithValue('users', 'id', $_SESSION['user_id'] ?? '');
-
+				$userInfoWithId = $userModel->findUserProfile(['*', 'accounts.id AS id'], ['fb_user_id'], [$fbUserInfo['fb_response']['id']]);
 
 				if ($userInfoWithId) {
 					//check if the registration is done inside or outside
-					if (isLoggedIn()) {
+					if ($usersController->isLoggedIn()) {
+						$loggedInUser = $usersController->session->auth(false);
 						if ($userInfoWithId->id != $loggedInUser->id) {
 							$status = 'fail';
 							$reason = 'accountTaken';
@@ -179,7 +195,7 @@ function tryAndLoginWithFacebook($get, $usersController)
 						if (!$userInfoWithId->email_verified && $userInfoWithId->email) {
 							$status = 'fail';
 							$reason = 'unverifiedEmail';
-							$message = 'Your email ' . $userInfoWithId->email . ' is still not verified. Please check your email to verify your account.';	
+							$message = 'Your email ' . $userInfoWithId->email . ' is still not verified. Please check your email to verify your account.';
 							$email_confirmation_type = 'ACCOUNT_REGISTRATION';
 							$id_type = 'fb_user_id';
 							$id = $fbUserInfo['fb_response']['id'];
@@ -187,8 +203,12 @@ function tryAndLoginWithFacebook($get, $usersController)
 							$vkeyType = 'account_registration_vkey';
 							$cancellable = true;
 						} else {
-							$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $userInfoWithId->id);
-							$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithId->id);
+							$userModel->update4(
+								['fb_access_token', 'fb_user_id'],
+								[$_SESSION['fb_access_token'], $fbUserInfo['fb_response']['id']],
+								['id'],
+								[$userInfoWithId->id]
+							);
 
 							$status = 'ok';
 							$message = 'You have successfully logged in using your facebook account';
@@ -196,25 +216,27 @@ function tryAndLoginWithFacebook($get, $usersController)
 						}
 					}
 				} else {
-					if (isLoggedIn()) {
-						$userModel->updateRowById('fb_access_token', $_SESSION['fb_access_token'], $loggedInUser->id);
-						$userModel->updateRowById('fb_user_id', $fbUserInfo['fb_response']['id'], $loggedInUser->id);
+					if ($usersController->isLoggedIn()) {
+						$loggedInUser = $usersController->session->auth(false);
+
+						$userModel->update4(
+							['fb_access_token', 'fb_user_id'],
+							[$_SESSION['fb_access_token'], $fbUserInfo['fb_response']['id']],
+							['id'],
+							[$loggedInUser->id]
+						);
 
 						$status = 'ok';
 						$message = 'Facebook was added to your user account successfully.';
 						$isAdded = true;
 					} else {
-						if ($userModel->register(
-							[
-								'fb_user_id' => $fbUserInfo['fb_response']['id'],
-								'fb_access_token' => $accessTokenInfo['fb_response']['access_token']
-							]
-						)) {
+						$user = $userModel->store2(
+							['fb_access_token', 'fb_user_id'],
+							[$_SESSION['fb_access_token'], $fbUserInfo['fb_response']['id']],
+						);
 
-							$status = 'ok';
-							$message = 'You successfully registered using your Facebook account.';
-							$user = $userModel->getRowByColumn('fb_user_id', $fbUserInfo['fb_response']['id']);
-						}
+						$status = 'ok';
+						$message = 'You successfully registered using your Facebook account.';
 					}
 				}
 			} else if (empty($fbUserInfo['fb_response']['email'])) {

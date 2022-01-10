@@ -59,24 +59,51 @@
   </div>
 </div>
 
-<!-- <script src="<?php echo URLROOT ?>/public/vendors/jquery-3.6.0.min.js"></script>
-<script src="<?php echo URLROOT ?>/public/vendors/datatables.min.js"></script>
-<script defer src="<?php echo URLROOT ?>/public/vendors/FixedColumns-4.0.1/js/dataTables.fixedColumns.min.js"></script>
-<script defer src="<?php echo URLROOT ?>/public/vendors/Buttons-2.1.1/js/buttons.dataTables.min.js"></script>
-<script defer src="<?php echo URLROOT ?>/public/vendors/JSZip-2.5.0/jszip.min.js"></script>
-<script defer src="<?php echo URLROOT ?>/public/vendors/Buttons-2.1.1/js/buttons.colVis.min.js"></script> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script>
+<script src="<?php echo URLROOT ?>/vendors/jquery-3.6.0.min.js"></script>
+<script src="<?php echo URLROOT ?>/vendors/datatable/datatables.min.js"></script>
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+<!-- <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.3/af-2.3.7/b-2.1.1/b-colvis-2.1.1/b-html5-2.1.1/b-print-2.1.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/rg-1.1.4/rr-1.2.8/sc-2.0.5/sb-1.3.0/sp-1.4.0/sl-1.3.3/sr-1.0.1/datatables.min.js"></script> -->
 <script>
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
       init() {
         // jquery datatable
-        $('#myTable').DataTable({
-          "order": [[ 0, "desc" ]],
-          "bLengthChange": false,
+        $.fn.dataTable.Debounce = function(table, options) {
+          let tableId = table.settings()[0].sTableId;
+          $('.dataTables_filter input[aria-controls="' + tableId + '"]') // select the correct input field
+            .unbind() // Unbind previous default bindings
+            .bind('input', (delay(function(e) { // Bind our desired behavior
+              table.search($(this).val()).draw();
+              return;
+            }, 1000))); // Set delay in milliseconds
+        }
+
+        function delay(callback, ms) {
+          let timer = 0;
+          return function() {
+            let context = this,
+              args = arguments;
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+              callback.apply(context, args);
+            }, ms || 0);
+          };
+        }
+
+        const dataTable = $('#myTable').DataTable({
+          'order': [
+            [0, 'desc']
+          ],
+          dom: 'lfrtip',
+          lengthMenu: [
+            [5, 10, 25, <?php echo MAX_ROW ?>],
+            ['5 rows', '10 rows', '25 rows', 'All rows']
+          ],
+          'pageLength': 5,
           'processing': true,
           'serverSide': true,
+          'searchDelay': 350,
           'serverMethod': 'post',
           'ajax': {
             'url': 'activitiesDatatable'
@@ -88,13 +115,19 @@
               data: 'initiator'
             },
             {
-              data: 'type'
+              data: 'type',
+              sortable: false
             },
             {
-              data: 'message'
+              data: 'message',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `<p class="line-clamp-3 hover:line-clamp-none w-40"> ${r.message}</p>`
+              }
             }
           ]
         });
+        const debounce = new $.fn.dataTable.Debounce(dataTable);
       },
     }))
   })

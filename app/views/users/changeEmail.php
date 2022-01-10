@@ -44,10 +44,6 @@
         </div>
 
         <form action="<?php echo URLROOT; ?>/users/updateEmail" method="POST" @submit.prevent="if (confirm('Change email?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
-            <!-- <div class="text-black text-center">
-        <?php flash('update_success'); ?>
-      </div> -->
-
             <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
                 <div class="w-64 flex-shrink-0">
                     <span class="text-2xl font-bold">Change email</span>

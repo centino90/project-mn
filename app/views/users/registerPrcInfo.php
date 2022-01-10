@@ -101,11 +101,11 @@
         <div class="flex flex-col gap-y-8">
           <!-- License no -->
           <div x-data="formGroup()" class="form-group">
-            <label x-bind="formLabel">
-              PRC license no <span class="text-danger-500">*</span>
+            <label class="text-secondary-500 font-semibold text-sm w-1/4">
+              PRC license no
             </label>
             <div x-bind="inputContainer">
-              <input type="number" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number" autofocus>
+              <input disabled class="border-0 border-b text-secondary-500" type="text" value="<?php echo $data['prc_number'] ?>" x-bind="formInput" name="prc_number" autofocus>
 
               <?php if (!empty($data['prc_number_err'])) : ?>
                 <div x-bind="formInputError">
@@ -118,7 +118,7 @@
           <!-- Registration date -->
           <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
-              Registration date <small class="font-medium">(MM/DD/YY)</small>
+              Registration date <span class="text-danger-500">*</span> <small class="font-medium">(MM/DD/YY)</small>
             </label>
             <div x-bind="inputContainer">
               <input type="date" value="<?php echo $data['prc_registration_date'] ?>" x-bind="formInput" :max="dayjs().format('YYYY-MM-DD')" name="prc_registration_date">
@@ -133,7 +133,7 @@
           <!-- Expiration date -->
           <div x-data="formGroup()" class="form-group">
             <label x-bind="formLabel">
-              Expiration date <small class="font-medium">(MM/DD/YY)</small>
+              Expiration date <span class="text-danger-500">*</span> <small class="font-medium">(MM/DD/YY)</small>
             </label>
             <div x-bind="inputContainer">
               <input type="date" value="<?php echo $data['prc_expiration_date'] ?>" x-bind="formInput" :min="dayjs().add(1, 'day').format('YYYY-MM-DD')" name="prc_expiration_date">
@@ -146,23 +146,17 @@
           </div>
 
           <!-- Field of practice -->
-          <div x-data="formGroup()" class="form-group">
+          <div x-data="formGroup()" class="form-group" x-init="$refs.select_field_practice.value != 'General' ? specified = true : specified = false">
             <label x-bind="formLabel">
               Field of practice <span class="text-danger-500">*</span>
-              <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="!specified">Specify</a>
-              <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="specified">Select</a>
+              <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="specified">Change option</a>
             </label>
             <div x-bind="inputContainer">
-              <input type="text" value="<?php echo $data['field_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice">
-              <select x-bind="formInput" x-show="!specified" :disabled="specified" name="field_practice">
+              <input type="text" x-ref="input_field_practice" value="<?php echo $data['field_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice(s) (e.g. Endodontics, Prosthodontics, etc.)">
+              <select x-bind="formInput" x-ref="select_field_practice" x-show="!specified" @change="if($event.target.value == 'Specialist') { specified = true;event.target.value = '';$refs.input_field_practice.value = ''}" :disabled="specified" name="field_practice">
                 <option value="">Select</option>
-                <option <?php if ($data['field_practice'] == 'General Practice') : ?> selected <?php endif; ?> value="General Practice">General Practice</option>
-                <option <?php if ($data['field_practice'] == 'Endodontics') : ?> selected <?php endif; ?> value="Endodontics">Endodontics</option>
-                <option <?php if ($data['field_practice'] == 'Prosthodontics') : ?> selected <?php endif; ?> value="Prosthodontics">Prosthodontics</option>
-                <option <?php if ($data['field_practice'] == 'Orthodontics') : ?> selected <?php endif; ?> value="Orthodontics">Orthodontics</option>
-                <option <?php if ($data['field_practice'] == 'Oral and maxillofacial surgery') : ?> selected <?php endif; ?> value="Oral and maxillofacial surgery">Oral and maxillofacial surgery</option>
-                <option <?php if ($data['field_practice'] == 'Pedodontics') : ?> selected <?php endif; ?> value="Pedodontics">Pedodontics</option>
-                <option <?php if ($data['field_practice'] == 'Periodontics') : ?> selected <?php endif; ?> value="Periodontics">Periodontics</option>
+                <option <?php if ($data['field_practice'] == 'General') : ?> selected <?php endif; ?> value="General">General</option>
+                <option value="Specialist">Specialist</option>
               </select>
               <?php if (!empty($data['field_practice_err'])) : ?>
                 <div x-bind="formInputError">
@@ -177,7 +171,7 @@
             <label x-bind="formLabel">
               Type of practice <span class="text-danger-500">*</span>
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="!specified">Specify</a>
-              <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="specified">Select</a>
+              <a class="mx-1 text-blue-400 hover:underline cursor-pointer" x-on:click="specified = !specified" x-show="specified">Change option</a>
             </label>
             <div x-bind="inputContainer">
               <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formInput" x-show="specified" :disabled="!specified" name=" type_practice" placeholder="Specify your type of practice">

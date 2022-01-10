@@ -5,7 +5,7 @@
 
 <div class="flex flex-col w-full" x-data="app()">
   <div class="min-w-full px-4 lg:px-1">
-    <form action="<?php echo URLROOT; ?>/profiles/licenseInfo" method="POST" @submit.prevent="if (confirm('Confirm the changes of your license information?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
+    <form method="POST" @submit.prevent>
       <div class="mb-4">
         <nav class="text-black" aria-label="Breadcrumb">
           <ol class="list-none p-0 inline-flex text-sm text-secondary-500">
@@ -43,131 +43,106 @@
             </svg>
             Enable editing
           </button>
-          <button type="button" @click="onEditMode = !onEditMode" x-show="onEditMode" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+          <button type="button" class="flex text-blue-600 p-2 rounded-md bg-secondary-100 hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Disable editing
+            Cancel editing
           </button>
         </div>
       </header>
 
       <div class="flex flex-col gap-y-8">
-        <!-- License no -->
         <div x-bind="formGroup">
           <label x-bind="formGroup.formLabel">
-            PRC license no
+            PRC license no <span x-show="onEditMode" class="text-danger-600">*</span>
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="number" value="<?php echo $data['prc_number'] ?>" x-bind="formGroup.formInput" name="prc_number">
-            <?php if (!empty($data['prc_number_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['prc_number_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="license.prc_number" x-bind="formGroup.formInput" name="prc_number">
+            <span x-bind="formGroup.formInputError" id="prc_number_err">
           </div>
         </div>
 
         <!-- Registration date -->
         <div x-bind="formGroup">
           <label x-bind="formGroup.formLabel">
-            Registration date <small class="font-medium">(MM/DD/YY)</small>
+            Registration date <small class="font-medium">(MM/DD/YY)</small> <span x-show="onEditMode" class="text-danger-600">*</span>
           </label>
           <div x-bind="formGroup.inputContainer">
             <div class="flex flex-1 items-center">
-              <input :type="!onEditMode ? 'text' : 'date'" :value="!onEditMode ? `<?php echo $data['prc_registration_date'] ?> (${dayjs('<?php echo $data['prc_registration_date'] ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['prc_registration_date'] ?>'" x-bind="formGroup.formInput" :max="dayjs().format('YYYY-MM-DD')" name="prc_registration_date">
+              <input :type="!onEditMode ? 'text' : 'date'" x-model="license.prc_registration_date" x-bind="formGroup.formInput" :max="dayjs().format('YYYY-MM-DD')" name="prc_registration_date">
             </div>
-            <?php if (!empty($data['prc_registration_date_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['prc_registration_date_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <span x-bind="formGroup.formInputError" id="prc_registration_date_err">
           </div>
         </div>
 
         <!-- Expiration date -->
         <div x-bind="formGroup">
           <label x-bind="formGroup.formLabel">
-            Expiration date <small class="font-medium">(MM/DD/YY)</small>
+            Expiration date <small class="font-medium">(MM/DD/YY)</small> <span x-show="onEditMode" class="text-danger-600">*</span>
           </label>
           <div x-bind="formGroup.inputContainer">
             <div class="flex flex-1 items-center">
-              <input :type="!onEditMode ? 'text' : 'date'" :value="!onEditMode ? `<?php echo $data['prc_expiration_date'] ?> (${dayjs('<?php echo $data['prc_expiration_date'] ?>').format('MMMM DD, YYYY')})` : '<?php echo $data['prc_expiration_date'] ?>'" x-bind="formGroup.formInput" :min="dayjs().add(1, 'day').format('YYYY-MM-DD')" name="prc_expiration_date">
-              <span x-show="!onEditMode" :class="checkIfRegistrationIsExpired() ? 'bg-danger-100 text-danger-800' : 'bg-warning-100 text-warning-800'" class="whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">
+              <input :type="!onEditMode ? 'text' : 'date'" x-model="license.prc_expiration_date" x-bind="formGroup.formInput" :min="dayjs().add(1, 'day').format('YYYY-MM-DD')" name="prc_expiration_date">
+              <span x-show="!onEditMode && license.prc_expiration_date != ''" :class="checkIfRegistrationIsExpired() ? 'bg-danger-100 text-danger-800' : 'bg-warning-100 text-warning-800'" class="whitespace-nowrap px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span x-text="generateExpirationStatus()">
+                <span x-ref="expiry_status" x-text="generateExpirationStatus()">
                 </span>
               </span>
             </div>
-            <?php if (!empty($data['prc_expiration_date_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['prc_expiration_date_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <span x-bind="formGroup.formInputError" id="prc_expiration_date_err">
           </div>
         </div>
 
         <!-- Field of practice -->
-        <div x-bind="formGroup" x-data="{specified: false}">
+        <div x-bind="formGroup" x-data="{specified: false}" x-init="license.field_practice != 'General' ? specified = true : specified = false">
           <label x-bind="formGroup.formLabel">
-            Field of practice
-            <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && !specified">Specify</a>
-            <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Select</a>
+            Field of practice <span x-show="onEditMode" class="text-danger-600">*</span>
+            <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Change option</a>
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['field_practice'] ?>" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice">
-            <select x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="field_practice">
+            <select x-model="license.field_practice" @change="if($event.target.value == 'Specialist') { specified = true;license.field_practice = ''}" x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="field_practice">
               <option value="">Select</option>
-              <option <?php if ($data['field_practice'] == 'General Practice') : ?> selected <?php endif; ?> value="General Practice">General Practice</option>
-              <option <?php if ($data['field_practice'] == 'Endodontics') : ?> selected <?php endif; ?> value="Endodontics">Endodontics</option>
-              <option <?php if ($data['field_practice'] == 'Prosthodontics') : ?> selected <?php endif; ?> value="Prosthodontics">Prosthodontics</option>
-              <option <?php if ($data['field_practice'] == 'Orthodontics') : ?> selected <?php endif; ?> value="Orthodontics">Orthodontics</option>
-              <option <?php if ($data['field_practice'] == 'Oral and maxillofacial surgery') : ?> selected <?php endif; ?> value="Oral and maxillofacial surgery">Oral and maxillofacial surgery</option>
-              <option <?php if ($data['field_practice'] == 'Pedodontics') : ?> selected <?php endif; ?> value="Pedodontics">Pedodontics</option>
-              <option <?php if ($data['field_practice'] == 'Periodontics') : ?> selected <?php endif; ?> value="Periodontics">Periodontics</option>
+              <option value="General">General</option>
+              <option value="Specialist">Specialist</option>
             </select>
-            <?php if (!empty($data['field_practice_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['field_practice_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="license.field_practice" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="field_practice" placeholder="Specify your field of practice(s) (e.g. Endodontics, Prosthodontics, etc.)">
+            <span x-bind="formGroup.formInputError" id="field_practice_err">
           </div>
         </div>
 
         <!-- Type of practice -->
         <div x-bind="formGroup" x-data="{specified: false}">
           <label x-bind="formGroup.formLabel">
-            Type of practice
-            <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && !specified">Specify</a>
-            <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Select</a>
+            Type of practice <span x-show="onEditMode" class="text-danger-600">*</span>
+            <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified;license.type_practice = ''" x-show="onEditMode && !specified">Specify</a>
+            <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="onEditMode && specified">Change option</a>
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['type_practice'] ?>" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="type_practice" placeholder="Specify your type of practice">
-            <select x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="type_practice">
+            <input type="text" x-model="license.type_practice" x-bind="formGroup.formInput" x-show="!onEditMode || specified" :disabled="!specified" name="type_practice" placeholder="Specify your type of practice">
+            <select x-model="license.type_practice" x-bind="formGroup.formInput" x-show="onEditMode && !specified" :disabled="specified" name="type_practice">
               <option value="">Select</option>
-              <option <?php if ($data['type_practice'] == 'Government Dentist') : ?> selected <?php endif; ?> value="Government Dentist">Government Dentist</option>
-              <option <?php if ($data['type_practice'] == 'Clinic Owner') : ?> selected <?php endif; ?> value="Clinic Owner">Clinic Owner</option>
-              <option <?php if ($data['type_practice'] == 'Dental Associate') : ?> selected <?php endif; ?> value="Dental Associate">Dental Associate</option>
-              <option <?php if ($data['type_practice'] == 'School Dentist') : ?> selected <?php endif; ?> value="School Dentist">School Dentist</option>
-              <option <?php if ($data['type_practice'] == 'None Practicing') : ?> selected <?php endif; ?> value="None Practicing">None Practicing</option>
+              <option value="Government Dentist">Government Dentist</option>
+              <option value="Clinic Owner">Clinic Owner</option>
+              <option value="Dental Associate">Dental Associate</option>
+              <option value="School Dentist">School Dentist</option>
+              <option value="None Practicing">None Practicing</option>
             </select>
-            <?php if (!empty($data['type_practice_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['type_practice_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <span x-bind="formGroup.formInputError" id="type_practice_err">
+            </span>
           </div>
         </div>
 
         <!-- Form submit -->
         <div x-bind="formGroup" x-show="onEditMode">
-          <label x-bind="formGroup.formLabel">
+          <label class="form-label">
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
-            </input>
+            <button @click="submitForm" type="submit" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              Update
+            </button>
           </div>
         </div>
       </div>
@@ -179,31 +154,22 @@
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
       init() {
-        if (this.checkServerValidationError()) {
-          this.onEditMode = true
-        } else {
-          this.onEditMode = false
-        }
       },
       onEditMode: false,
-      serverData: <?php echo json_encode($data); ?>,
       formGroup: {
         [':class']() {
           let defaultClass = 'form-group'
 
           return this.onEditMode ? `${defaultClass} border-0` : `${defaultClass} border-b`
         },
-        formLabel: {
-          [':for']() {
-            return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
-          },
-          [':class']() {
-            return 'mb-4 form-label'
-          }
-        },
         inputContainer: {
           [':class']() {
             return 'input-container'
+          }
+        },
+        formLabel: {
+          [':class']() {
+            return 'form-label'
           }
         },
         formInput: {
@@ -226,44 +192,80 @@
           [':class']() {
             return 'form-input-err'
           }
-        }
+        },
+      },
+
+      license: {
+        prc_number: '<?php echo $data['prc_number'] ?>',
+        prc_registration_date: '<?php echo $data['prc_registration_date'] ?>',
+        prc_expiration_date: '<?php echo $data['prc_expiration_date'] ?>',
+        field_practice: '<?php echo $data['field_practice'] ?>',
+        type_practice: '<?php echo $data['type_practice'] ?>'
+      },
+      submitForm(event) {
+        event.target.textContent = 'Please wait...'
+
+        const f = fetch('<?php echo URLROOT . "/profiles/updateLicense" ?>', {
+          method: "POST",
+          body: JSON.stringify({
+            license: this.license
+          }),
+          headers: {
+            "Content-type": "application/json"
+          }
+        })
+
+        f.then(data => data.json()
+          .then(res => {
+            console.log(res)
+            if (res.status == 'ok') {
+              this.onEditMode = false
+
+              document.querySelector('#prc_number_err').classList.add('hidden')
+              document.querySelector('#prc_registration_date_err').classList.add('hidden')
+              document.querySelector('#prc_expiration_date_err').classList.add('hidden')
+              document.querySelector('#field_practice_err').classList.add('hidden')
+              document.querySelector('#type_practice_err').classList.add('hidden')
+            } else {
+              document.querySelector('#prc_number_err').classList.remove('hidden')
+              document.querySelector('#prc_registration_date_err').classList.remove('hidden')
+              document.querySelector('#prc_expiration_date_err').classList.remove('hidden')
+              document.querySelector('#field_practice_err').classList.remove('hidden')
+              document.querySelector('#type_practice_err').classList.remove('hidden')
+
+              document.querySelector('#prc_number_err').textContent = res.errors.prc_number_err
+              document.querySelector('#prc_registration_date_err').textContent = res.errors.prc_registration_date_err
+              document.querySelector('#prc_expiration_date_err').textContent = res.errors.prc_expiration_date_err
+              document.querySelector('#field_practice_err').textContent = res.errors.field_practice_err
+              document.querySelector('#type_practice_err').textContent = res.errors.type_practice_err
+            }
+          }))
+
+        event.target.textContent = 'Save'
       },
 
       checkIfRegistrationIsExpired: function() {
-        return dayjs(this.serverData.prc_expiration_date) < dayjs() ? true : false
+        return dayjs(this.license.prc_expiration_date) < dayjs() ? true : false
       },
       getRelativeTimeSinceExpiration: function() {
-        return `expired ${dayjs(this.serverData.prc_expiration_date).from(dayjs())}`
+        return `expired ${dayjs(this.license.prc_expiration_date).from(dayjs())}`
       },
       getRemainingTimeBeforeExpiration: function() {
-        let remainingYear = dayjs(this.serverData.prc_expiration_date).year() - dayjs().year()
+        let remainingYear = dayjs(this.license.prc_expiration_date).year() - dayjs().year()
 
-        return dayjs(this.serverData.prc_expiration_date).subtract(remainingYear, 'year')
+        return dayjs(this.license.prc_expiration_date).subtract(remainingYear, 'year')
       },
       getRelativeTimeBeforeExpiration: function() {
         let remainingTime = this.getRemainingTimeBeforeExpiration();
 
-        return `expires ${dayjs(this.serverData.remainingTime).to(dayjs(this.serverData.prc_expiration_date))}`
+        return `expires ${dayjs(this.license.remainingTime).to(dayjs(this.license.prc_expiration_date))}`
       },
       generateExpirationStatus: function() {
         if (this.checkIfRegistrationIsExpired()) {
-          console.log('yeehuh')
           return this.getRelativeTimeSinceExpiration()
         } else {
           return this.getRelativeTimeBeforeExpiration()
         }
-      },
-      checkServerValidationError: function() {
-        if (
-          this.serverData.prc_number_err !== '' ||
-          this.serverData.prc_registration_date_err !== '' ||
-          this.serverData.prc_expiration_date_err !== '' ||
-          this.serverData.field_practice_err !== '' ||
-          this.serverData.type_practice_err !== ''
-        ) {
-          return true
-        }
-        return false
       },
     }))
   })

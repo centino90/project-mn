@@ -5,11 +5,7 @@
 
 <div class="flex flex-col w-full" x-data="app()">
   <div class="min-w-full px-4 lg:px-1">
-    <form action="<?php echo URLROOT; ?>/profiles/clinicInfo" method="POST" @submit.prevent="if (confirm('Confirm the changes of your clinic information?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
-      <!-- <div class="text-black text-center">
-        <?php flash('update_success'); ?>
-      </div> -->
-
+    <form method="POST" @submit.prevent>
       <div class="mb-4">
         <nav class="text-black" aria-label="Breadcrumb">
           <ol class="list-none p-0 inline-flex text-sm text-secondary-500">
@@ -47,11 +43,11 @@
             </svg>
             Enable editing
           </button>
-          <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
+          <button type="button" class="flex text-blue-600 p-2 rounded-md bg-secondary-100 hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Disable editing
+            Cancel editing
           </button>
         </div>
       </header>
@@ -63,12 +59,8 @@
             Name
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['clinic_name'] ?>" x-bind="formGroup.formInput" name="clinic_name">
-            <?php if (!empty($data['clinic_name_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['clinic_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="clinic.clinic_name" x-bind="formGroup.formInput" name="clinic_name">
+            <span x-bind="formGroup.formInputError" id="clinic_name_err">
           </div>
         </div>
 
@@ -78,12 +70,8 @@
             Street
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['clinic_street'] ?>" x-bind="formGroup.formInput" name="clinic_street">
-            <?php if (!empty($data['clinic_street_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['clinic_street_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="clinic.clinic_street" x-bind="formGroup.formInput" name="clinic_street">
+            <span x-bind="formGroup.formInputError" id="clinic_street_err">
           </div>
         </div>
 
@@ -93,12 +81,8 @@
             District
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['clinic_district'] ?>" x-bind="formGroup.formInput" name="clinic_district">
-            <?php if (!empty($data['clinic_district_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['clinic_district_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="clinic.clinic_district" x-bind="formGroup.formInput" name="clinic_district">
+            <span x-bind="formGroup.formInputError" id="clinic_district_err">
           </div>
         </div>
 
@@ -108,12 +92,8 @@
             City
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['clinic_city'] ?>" x-bind="formGroup.formInput" name="clinic_city">
-            <?php if (!empty($data['clinic_city_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['clinic_city_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="clinic.clinic_city" x-bind="formGroup.formInput" name="clinic_city">
+            <span x-bind="formGroup.formInputError" id="clinic_city_err">
           </div>
         </div>
 
@@ -123,21 +103,19 @@
             Contact number
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="number" value="<?php echo $data['clinic_contact_number'] ?>" x-bind="formGroup.formInput" name="clinic_contact_number">
-            <?php if (!empty($data['clinic_contact_number_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['clinic_contact_number_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="number" x-model="clinic.clinic_contact_number" x-bind="formGroup.formInput" name="clinic_contact_number">
+            <span x-bind="formGroup.formInputError" id="clinic_contact_number_err">
           </div>
         </div>
 
         <!-- Form submit -->
         <div x-bind="formGroup" x-show="onEditMode">
-          <label x-bind="formGroup.formLabel"></label>
+          <label class="form-label">
+          </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
-            </input>
+            <button @click="submitForm" type="submit" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              Update
+            </button>
           </div>
         </div>
       </div>
@@ -148,15 +126,8 @@
 <script>
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
-      init() {
-        if (this.checkServerValidationError()) {
-          this.onEditMode = true
-        } else {
-          this.onEditMode = false
-        }
-      },
+      init() {},
       onEditMode: false,
-      serverData: <?php echo json_encode($data); ?>,
       formGroup: {
         [':class']() {
           let defaultClass = 'form-group'
@@ -169,9 +140,6 @@
           }
         },
         formLabel: {
-          [':for']() {
-            return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
-          },
           [':class']() {
             return 'form-label'
           }
@@ -198,19 +166,78 @@
           }
         },
       },
+      clinic: {
+        clinic_name: '<?php echo $data['clinic_name'] ?>',
+        clinic_street: '<?php echo $data['clinic_street'] ?>',
+        clinic_district: '<?php echo $data['clinic_district'] ?>',
+        clinic_city: '<?php echo $data['clinic_city'] ?>',
+        clinic_contact_number: '<?php echo $data['clinic_contact_number'] ?>',
+      },
+      submitForm(event) {
+        event.target.textContent = 'Please wait...'
 
-      checkServerValidationError: function() {
-        if (
-          this.serverData.clinic_name_err !== '' ||
-          this.serverData.clinic_street_err !== '' ||
-          this.serverData.clinic_district_err !== '' ||
-          this.serverData.clinic_city_err !== '' ||
-          this.serverData.clinic_contact_number_err !== ''
-        ) {
-          return true
+        const f = fetch('<?php echo URLROOT . "/profiles/updateClinic" ?>', {
+          method: "POST",
+          body: JSON.stringify({
+            clinic: this.clinic
+          }),
+          headers: {
+            "Content-type": "application/json"
+          }
+        })
+
+        f.then(data => data.json()
+          .then(res => {
+            console.log(res)
+            if (res.status == 'ok') {
+              this.onEditMode = false
+
+              document.querySelector('#clinic_name_err').classList.add('hidden')
+              document.querySelector('#clinic_street_err').classList.add('hidden')
+              document.querySelector('#clinic_district_err').classList.add('hidden')
+              document.querySelector('#clinic_city_err').classList.add('hidden')
+              document.querySelector('#clinic_contact_number_err').classList.add('hidden')
+            } else {
+              document.querySelector('#clinic_name_err').classList.remove('hidden')
+              document.querySelector('#clinic_street_err').classList.remove('hidden')
+              document.querySelector('#clinic_district_err').classList.remove('hidden')
+              document.querySelector('#clinic_city_err').classList.remove('hidden')
+              document.querySelector('#clinic_contact_number_err').classList.remove('hidden')
+
+              document.querySelector('#clinic_name_err').textContent = res.errors.clinic_name_err
+              document.querySelector('#clinic_street_err').textContent = res.errors.clinic_street_err
+              document.querySelector('#clinic_district_err').textContent = res.errors.clinic_district_err
+              document.querySelector('#clinic_city_err').textContent = res.errors.clinic_city_err
+              document.querySelector('#clinic_contact_number_err').textContent = res.errors.clinic_contact_number_err
+            }
+          }))
+
+        event.target.textContent = 'Save'
+      },
+
+      checkIfRegistrationIsExpired: function() {
+        return dayjs(this.license.prc_expiration_date) < dayjs() ? true : false
+      },
+      getRelativeTimeSinceExpiration: function() {
+        return `expired ${dayjs(this.license.prc_expiration_date).from(dayjs())}`
+      },
+      getRemainingTimeBeforeExpiration: function() {
+        let remainingYear = dayjs(this.license.prc_expiration_date).year() - dayjs().year()
+
+        return dayjs(this.license.prc_expiration_date).subtract(remainingYear, 'year')
+      },
+      getRelativeTimeBeforeExpiration: function() {
+        let remainingTime = this.getRemainingTimeBeforeExpiration();
+
+        return `expires ${dayjs(this.license.remainingTime).to(dayjs(this.license.prc_expiration_date))}`
+      },
+      generateExpirationStatus: function() {
+        if (this.checkIfRegistrationIsExpired()) {
+          return this.getRelativeTimeSinceExpiration()
+        } else {
+          return this.getRelativeTimeBeforeExpiration()
         }
-        return false
-      }
+      },
     }))
   })
 </script>

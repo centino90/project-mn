@@ -33,10 +33,12 @@ module.exports = {
     extend: {
       opacity: ['disabled'],
       cursor: ['hover', 'focus', 'disabled'],
-      pointerEvents: ['hover', 'focus', 'disabled']
+      pointerEvents: ['hover', 'focus', 'disabled'],
+      lineClamp: ['responsive', 'hover']
     },
   },
   plugins: [
     require('@tailwindcss/forms'),
+    require('@tailwindcss/line-clamp'),
   ],
 }

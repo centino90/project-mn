@@ -196,14 +196,14 @@ function redirectNotFullyRegisteredUser()
 
 function redirectInactiveUserOrRegenerateTimer()
 {
-  if (isIdleUser()) {
-    session_unset();
-    session_destroy();
-    redirect("users/login");
-    return;
-  }
-  session_regenerate_id(true);
-  $_SESSION['login_time_stamp'] = time();
+  // if (isIdleUser()) {
+  //   session_unset();
+  //   session_destroy();
+  //   redirect("users/login");
+  //   return;
+  // }
+  // session_regenerate_id(true);
+  // $_SESSION['login_time_stamp'] = time();
 }
 
 function sessionDestroyAll()

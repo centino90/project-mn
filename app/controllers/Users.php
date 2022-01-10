@@ -10,15 +10,49 @@ class Users extends Controller
   {
     $this->userModel = $this->model('User');
     $this->activityModel = $this->model('Activity');
-    // $this->dog = new Mailer;
+    $this->profileModel = $this->model('Profile');
+
+    parent::__construct();
   }
 
   public function index()
   {
-    redirect('users/login');
+    $this->url->redirectToLoginpage();
   }
 
   /* ALL ACCESSIBLE ENDPOINTS */
+  public function fetchUserProfile()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $decoded['message'] = 'User profiles were successfully fetched!';
+      $decoded['status'] = 'ok';
+      $decoded['errors'] = [];
+
+      $decoded['data'] = $this->profileModel->getProfileUser(
+        ['*', 'profiles.id AS id']
+      );
+
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    } catch (\Throwable $th) {
+      header("Content-Type: application/json; charset=UTF-8");
+      $decoded['status'] = 'fail';
+      $decoded['message'] = $th->getMessage();
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    }
+  }
+
   public function redirectPage(): void
   {
     //Check Facebook API request code
@@ -34,7 +68,7 @@ class Users extends Controller
         }
       } else if ($fb['status'] == 'ok') {
         if ($fb['user']) {
-          $this->createUserSession($fb['user'], false);
+          $this->createUserSession($fb['user']);
         } else if ($fb['added']) {
           $this->view('users/redirectPage', $fb);
         }
@@ -54,7 +88,7 @@ class Users extends Controller
         }
       } else if ($gg['status'] == 'ok') {
         if ($gg['user']) {
-          $this->createUserSession($gg['user'], false);
+          $this->createUserSession($gg['user']);
         } else if ($gg['added']) {
           $this->view('users/redirectPage', $gg);
         }
@@ -72,7 +106,12 @@ class Users extends Controller
   */
   public function handlePasswordResetRequest($data = null)
   {
-    $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
+    $unverifiedUser = $this->userModel->find(
+      ['*'],
+      [$data['id_type']],
+      [$data['id']]
+    );
+
     if ($unverifiedUser) {
       $mail = new PHPMailer(true);
 
@@ -126,28 +165,6 @@ class Users extends Controller
     }
   }
 
-  public function handleRegisterConfirmation()
-  {
-    // die(var_dump($_POST));
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-
-      $d = $this->userModel->updateAuthCredentials(
-        [
-          'access_token' => 'fb_access_token',
-          'auth_id' => 'fb_user_id'
-        ],
-        [
-          'access_token' => $_POST['access_token'],
-          'auth_id' => $_POST['auth_id'],
-        ],
-        $_POST['user_id']
-      );
-      die($d);
-      // $userModel->updateUserById('fb_user_id', $fbUserInfo['fb_response']['id'], $userInfoWithEmail->id);
-    }
-  }
-
   public function handleEmailConfirmation()
   {
     if (isset($_GET['type'])) {
@@ -158,25 +175,28 @@ class Users extends Controller
           $userId = $_GET['id'];
           $accountRegistrationVkey = $_GET['vkey'];
 
-          $rows = $this->userModel->getRowsWithColumns(['id', 'account_registration_vkey'], [$userId, $accountRegistrationVkey]);
+          $user = $this->userModel->find(
+            ['*'],
+            ['id', 'account_registration_vkey'],
+            [$userId, $accountRegistrationVkey]
+          );
 
-          if ($rows) {
-            if (!$this->userModel->verifyEmail(
-              [
-                'user_id' => $rows[0]->id,
-                'email_vkey' => $rows[0]->email_vkey,
-                'email_verified' => true
-              ]
-            )) {
-              // if user id or verification key is not correct
-              $this->view('users/redirectPage', ['message' => 'User verification failed. Try again.']);
-              return;
-            }
+          if ($user) {
+            $this->userModel->update4(
+              ['email_verified'],
+              [true],
+              ['id'],
+              [$user->id]
+            );
 
-            $verifiedUser = $this->userModel->getRowsWithColumns(['id', 'email_verified'], [$userId, true]);
+            $verifiedUser = $this->userModel->findUserProfile(
+              ['*', 'accounts.id AS id'],
+              ['accounts.id', 'email_verified'],
+              [$userId, true]
+            );
             if ($verifiedUser) {
-              $this->userModel->regenerateVkey('account_registration_vkey', 'email', $rows[0]->email);
-              $this->createUserSession($verifiedUser[0]);
+              $this->userModel->regenerateVkey('account_registration_vkey', 'email', $verifiedUser->email);
+              $this->createUserSession($verifiedUser);
             }
           } else {
             // id or vkey is not correct
@@ -189,35 +209,34 @@ class Users extends Controller
           $newEmail = $_GET['newEmail'];
           $changeEmailVkey = $_GET['vkey'];
 
-          $rows = $this->userModel->getRowsWithColumns(['id', 'change_email_vkey'], [$userId, $changeEmailVkey]);
+          $user = $this->userModel->find(
+            ['*'],
+            ['id', 'change_email_vkey'],
+            [$userId, $changeEmailVkey]
+          );
 
-          if ($rows) {
-            if ($rows[0]->email_verified && !$rows[0]->changing_email) {
+          if ($user) {
+            if ($user->email_verified && !$user->changing_email) {
               $this->view('users/redirectPage', ['message' => 'This verification key is already used or replaced.']);
               return;
-            } else if ($rows[0]->email_verified && $rows[0]->changing_email) {
-              if ($newEmail != $rows[0]->new_email) {
+            } else if ($user->email_verified && $user->changing_email) {
+              if ($newEmail != $user->new_email) {
                 $this->view('users/redirectPage', ['message' => 'These credentials are not correct. Try again.']);
                 return;
               }
 
-              if (!$this->userModel->changeEmail(
-                [
-                  'user_id' => $rows[0]->id,
-                  'email_vkey' => $rows[0]->email_vkey,
-                  'new_email' => $rows[0]->new_email
-                ]
-              )) {
-                $this->view('users/redirectPage', ['message' => 'User verification failed. Try again.']);
-                return;
-              }
+              $this->userModel->update4(
+                ['email', 'new_email', 'changing_email'],
+                [$user->new_email, null, false],
+                ['id'],
+                [$user->id]
+              );
 
-              if ($this->userModel->updateRowById('changing_email', false, $rows[0]->id)) {
-                $this->view('users/redirectPage', ['message' => 'Your email was successfully changed. Sign in again.']);
-                sessionDestroyAll();
-              }
+              $this->view('users/redirectPage', ['message' => 'Your email was successfully changed. Sign in again.']);
+
+              $this->session->clear();
             } else {
-              die('not verified');
+              $this->view('users/redirectPage', ['message' => 'Email not verified']);
             }
           } else {
             $this->view('users/redirectPage', $data = ['message' => 'These verification credentials are not correct.']);
@@ -228,19 +247,27 @@ class Users extends Controller
           $userId = $_GET['id'];
           $forgotPasswordVkey = $_GET['vkey'];
 
-          $rows = $this->userModel->getRowsWithColumns(['id', 'forgot_password_vkey'], [$userId, $forgotPasswordVkey]);
+          $user = $this->userModel->find(
+            ['*'],
+            ['id', 'forgot_password_vkey'],
+            [$userId, $forgotPasswordVkey]
+          );
 
-          if ($rows) {
-            if (empty($rows[0]->new_password)) {
+          if ($user) {
+            if (empty($user->new_password)) {
               $this->view('users/redirectPage', ['message' => 'This verification key is already used or replaced.']);
               return;
             }
-            $newPassword = $this->userModel->resetPasswordAndReturnUnencryptedVersion($rows[0]->id, $rows[0]->email_vkey);
+            $newPassword = $this->userModel->resetPasswordAndReturnUnencryptedVersion($user->id);
 
-            if ($this->userModel->updateRowById('new_password', null, $rows[0]->id)) {
-              $this->view('users/redirectPage', ['message' => 'Your password was successfully resetted. Here is your new password: <b>' . $newPassword . '</b>', 'reason' => 'passwordReset', 'email' => $rows[0]->email]);
-              sessionDestroyAll();
-            }
+            $this->userModel->update4(
+              ['new_password'],
+              [null],
+              ['id'],
+              [$user->id]
+            );
+            $this->view('users/redirectPage', ['message' => 'Your password was successfully resetted. Here is your new password: <b>' . $newPassword . '</b>', 'reason' => 'passwordReset', 'email' => $user->email]);
+            $this->session->clear();
           } else {
             $this->view('users/redirectPage', ['message' => 'These verification credentials are not correct.']);
           }
@@ -263,13 +290,17 @@ class Users extends Controller
 
     $vkeyType = $data['vkeyType'];
 
-    $unverifiedUser = $this->userModel->getRowByColumn($data['id_type'], $data['id']);
+    $unverifiedUser = $this->userModel->find(
+      ['*'],
+      [$data['id_type']],
+      [$data['id']]
+    );
+
     if ($unverifiedUser) {
       $mail = new PHPMailer(true);
 
       try {
-        //Server settings
-        // $mail->SMTPDebug = SMTP::DEBUG_SERVER;                  
+        //Server settings             
         $mail->isSMTP();
         $mail->Host       = MAIL_HOST;
         $mail->SMTPAuth   = true;
@@ -312,13 +343,12 @@ class Users extends Controller
         $mail->Subject = $subject;
         $mail->MsgHTML($message);
 
-        // $mail->Body    =  '<h1>Confirm Registration</h1>' .
-        //   'Click this <a href="' . URLROOT . '/users/handleEmailConfirmation?type=' . $data['email_confirmation_type'] . '&newEmail=' . $data['receiver_email'] . '&id=' . $unverifiedUser->id . '&vkey=' . $unverifiedUser->email_vkey . '">link</a> to continue registration';
-        // // $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
         $mail->send();
+        
         if (isset($data['logoutAfter']) && $data['logoutAfter']) {
-          sessionDestroyAll();
+          $this->session->clear();
         }
+
         $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
@@ -351,7 +381,7 @@ class Users extends Controller
       if (
         empty($data['email_err'])
       ) {
-        if (!$this->userModel->deleteUser('email', $data['email'], false, false)) {
+        if (!$this->userModel->deletePermanent(['email'], [$data['email']])) {
           $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
         }
 
@@ -362,8 +392,7 @@ class Users extends Controller
         $this->view('users/register', $data);
       }
     } else {
-
-      die('yes');
+      $this->view('users/redirectPage', ['message' => 'GET request is prohibited. Try again.']);
     }
   }
 
@@ -399,17 +428,19 @@ class Users extends Controller
           $data['email_err'] = 'Please enter a valid email format';
         }
 
-        if (!$this->userModel->findUserByEmail($data['email'])) {
+        if (!$this->userModel->find(['*'], ['email'], [$data['email']])) {
           $data['email_err'] = 'Email not found';
         }
       }
 
       // Check if all errors are empty
       if (empty($data['email_err']) && empty($data['g_recaptcha_response_err'])) {
-        if (!$this->userModel->storeNewPassword($data['email'])) {
-          $this->view('users/redirectPage', $data = ['message' => 'New password was not stored. Try again']);
-          return;
-        }
+        $this->userModel->update4(
+          ['new_password'],
+          [password_hash(uniqid(), PASSWORD_DEFAULT)],
+          ['email'],
+          [$data['email']]
+        );
 
         $this->handlePasswordResetRequest(
           [
@@ -442,7 +473,9 @@ class Users extends Controller
   /* GUEST ACCESSIBLE ENDPOINTS */
   public function login(): void
   {
-    redirectAuthUserWithRole();
+    if ($this->isLoggedin() && $this->isEmailVerified()) {
+      $this->url->redirectToHomepage();
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -468,7 +501,7 @@ class Users extends Controller
       if (empty($data['email_err']) && empty($data['password_err'])) {
 
         // Check and set logged in user
-        $requestedUser = $this->userModel->getRowByColumn('email', $data['email']);
+        $requestedUser = $this->userModel->findUserProfile(['*', 'accounts.id AS id'], ['email'], [$data['email']]);
         if ($requestedUser) {
           // if inputted email exist in db
           $hashed_password = $requestedUser->password;
@@ -527,7 +560,9 @@ class Users extends Controller
   */
   public function register()
   {
-    redirectAuthUserWithRole();
+    if ($this->isLoggedin() && $this->isEmailVerified()) {
+      $this->url->redirectToHomepage();
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -561,7 +596,7 @@ class Users extends Controller
           $data['email_err'] = 'Please enter your email';
         }
 
-        if ($this->userModel->findUserByEmail($data['email'])) {
+        if ($this->userModel->find(['*'], ['email'], [$data['email']])) {
           $data['email_err'] = 'Email is already taken';
         }
       }
@@ -586,9 +621,10 @@ class Users extends Controller
       ) {
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
-        if (!$this->userModel->register($data)) {
-          $this->view('users/redirectPage', $data = ['message' => 'Oooops. Something went wrong. Try again.']);
-        }
+        $this->userModel->store2(
+          ['email', 'password', 'email_vkey'],
+          [$data['email'], $data['password'], uniqid()]
+        );
 
         // initialize data to pass as params for email sending
         $this->handleUserRegistration(
@@ -628,13 +664,23 @@ class Users extends Controller
     *triggered when user sign in using 3rd party auths*
 
     Prompts user to register email and password to a newly created user
-    and redirects to the *steps*
+    and then redirects to the *steps*
   */
   public function registerEmailPassword()
   {
-    redirectIfNotLoggedIn();
-    redirectIfEmailAndPassRegistered();
-    redirectFullyRegisteredUser();
+    $this->session->start();
+
+    if (!$this->isLoggedin()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($this->isPasswordRegistered()) {
+      $this->url->redirectToHomepage();
+    }
+
+    if ($this->isLoggedin() && $this->isEmailVerified() && $this->isCompleteInfo()) {
+      $this->url->redirectToHomepage();
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
@@ -657,7 +703,7 @@ class Users extends Controller
           $data['email_err'] = 'Please enter your email';
         }
 
-        if ($this->userModel->findUserByEmail($data['email'])) {
+        if ($this->userModel->find(['*'], ['email'], [$data['email']])) {
           $data['email_err'] = 'Email is already taken';
         }
       }
@@ -681,11 +727,12 @@ class Users extends Controller
       ) {
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
-        if (!$this->userModel->updateRowsById(['email', 'password'], [$data['email'], $data['password']], $_SESSION['user_id'])) {
-          $data['password_err'] = 'Something went wrong';
-          $this->view('users/registerEmailPassword', $data);
-          return;
-        }
+        $this->userModel->update4(
+          ['email', 'password'],
+          [$data['email'], $data['password']],
+          ['id'],
+          [$this->session->auth()->id]
+        );
 
         $this->handleUserRegistration(
           [
@@ -718,25 +765,124 @@ class Users extends Controller
     }
   }
 
+  public function searchProfileBeforeRegister()
+  {
+    try {
+      $this->session->start();
+      if (!$this->isLoggedin() || !$this->isPasswordRegistered()) {
+        $this->url->redirectToLoginpage();
+      }
+
+      if ($this->isLoggedin() && $this->isEmailVerified() && $this->isCompleteInfo()) {
+        $this->url->redirectToHomepage();
+      }
+
+      if ($this->profileModel->find(['*'], ['id'], [$this->session->auth()->profile_id])) {
+        $this->url->redirect('users/registerPrcNumber');
+      }
+
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $data = [
+          'prc_number' => '',
+
+          'prc_number_err' => '',
+        ];
+
+        $this->view('users/searchProfileBeforeRegister', $data);
+        return;
+      }
+
+      $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+      $data = [
+        'prc_number' => trim($_POST['prc_number']),
+
+        'prc_number_err' => ''
+      ];
+
+      // Validate prc info
+      if (empty($data['prc_number'])) {
+        $data['prc_number_err'] = 'Please enter your prc number';
+      }
+
+      // Check if errors are empty
+      if (empty($data['prc_number_err'])) {
+        // if prc_number is existing
+        if ($this->profileModel->hasRow(['prc_number'], [trim($data['prc_number'])])) {
+          $profile = $this->profileModel->find(
+            ['*'],
+            ['prc_number'],
+            [$data['prc_number']]
+          );
+
+          $this->userModel->update4(
+            ['profile_id'],
+            [$profile->id],
+            ['id'],
+            [$this->session->auth()->id]
+          );
+
+          $user = $this->session->auth(false);
+
+          $this->createUserSession($user);
+          return;
+        }
+
+        $lastInsertedProfile = $this->profileModel->store2(
+          ['prc_number'],
+          [$data['prc_number']]
+        );
+
+        $this->userModel->update4(
+          ['profile_id'],
+          [$lastInsertedProfile->id],
+          ['id'],
+          [$this->session->auth()->id]
+        );
+
+        $this->session->set(SessionManager::SESSION_CURRENT_REGS_STEP, 'registerPrcInfo');
+        $this->url->redirect('users/registerPrcInfo');
+        return;
+      }
+      // Load view with errors
+      $this->view('users/searchProfileBeforeRegister', $data);
+    } catch (\Throwable $th) {
+      $data = [
+        'prc_number' => '',
+
+        'prc_number_err' => $th->getCode() == '23000' ? 'Profile is already taken. Try again.' : $th->getMessage(),
+      ];
+
+      $this->view('users/searchProfileBeforeRegister', $data);
+    }
+  }
+
   /* 
     Registers/updates user info during
     post-registration
   */
   public function registerPrcInfo()
   {
-    // redirectIfNotAuthUser();
-    redirectIfNotLoggedIn();
-    redirectIfEmailAndPassNotRegistered();
-    redirectFullyRegisteredUser();
-    redirectInactiveUserOrRegenerateTimer();
+    $this->session->start();
+    if (!$this->isLoggedin() || !$this->isPasswordRegistered()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($this->isLoggedin() && $this->isEmailVerified() && $this->isCompleteInfo()) {
+      $this->url->redirectToHomepage();
+    }
+
+    if (empty($this->session->auth()->profile_id)) {
+      $this->url->redirect('users/searchProfileBeforeRegister');
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       $data = [
-        'user_id' => $_SESSION['user_id'] ?? '',
+        'user_id' => $this->session->auth()->id ?? '',
 
-        'prc_number' => trim($_POST['prc_number']),
+        'prc_number' => $this->session->auth()->prc_number,
         'prc_registration_date' => trim($_POST['prc_registration_date']),
         'prc_expiration_date' => trim($_POST['prc_expiration_date']),
         'field_practice' => trim($_POST['field_practice']),
@@ -768,18 +914,34 @@ class Users extends Controller
 
       // Check if errors are empty
       if (empty($data['prc_number_err']) && empty($data['prc_registration_date_err']) && empty($data['prc_expiration_date_err']) && empty($data['field_practice_err']) && empty($data['type_practice_err'])) {
-        if ($this->userModel->updatePrcInfo($data)) {
-          $_SESSION['current_registration_step'] = 'registerPersonalInfo';
-          redirect('users/registerPersonalInfo');
+        if ($this->profileModel->update3(
+          [
+            'prc_number',
+            'prc_registration_date',
+            'prc_expiration_date',
+            'field_practice',
+            'type_practice'
+          ],
+          [
+            $data['prc_number'],
+            $data['prc_registration_date'],
+            $data['prc_expiration_date'],
+            $data['field_practice'],
+            $data['type_practice']
+          ],
+          ['id'],
+          [$this->session->auth()->profile_id]
+        )) {
+          $this->session->set(SessionManager::SESSION_CURRENT_REGS_STEP, 'registerPersonalInfo');
+          $this->url->redirect('users/registerPersonalInfo');
           return;
         }
-        die('Something went wrong');
-        return;
       }
       // Load view with errors
       $this->view('users/registerPrcInfo', $data);
     } else {
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
+
+      $user = $this->session->auth();
 
       $data = [
         'prc_number' => $user->prc_number ?? '',
@@ -800,16 +962,26 @@ class Users extends Controller
   }
   public function registerPersonalInfo()
   {
-    redirectIfNotAuthUser();
-    redirectFullyRegisteredUser();
-    redirectInactiveUserOrRegenerateTimer();
+    $this->session->start();
+
+    if (!$this->isLoggedin() || !$this->isPasswordRegistered()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($this->isLoggedin() && $this->isEmailVerified() && $this->isCompleteInfo()) {
+      $this->url->redirectToHomepage();
+    }
+
+    if (empty($this->session->auth()->profile_id)) {
+      $this->url->redirect('users/searchProfileBeforeRegister');
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       $data = [
-        'user_id' => $_SESSION['user_id'] ?? '',
+        'user_id' => $this->session->auth()->id ?? '',
 
         'first_name' => trim($_POST['first_name']),
         'middle_name' => trim($_POST['middle_name']),
@@ -817,7 +989,6 @@ class Users extends Controller
         'birthdate' => trim($_POST['birthdate']),
         'gender' => trim($_POST['gender']),
         'contact_number' => trim($_POST['contact_number']),
-        'email' => trim($_POST['email']),
         'fb_account_name' => trim($_POST['fb_account_name']),
         'address' => trim($_POST['address']),
 
@@ -825,7 +996,6 @@ class Users extends Controller
         'middle_name_err' => '',
         'last_name_err' => '',
         'gender_err' => '',
-        'email_err' => '',
         'fb_account_name_err' => '',
         'contact_number_err' => '',
         'birthdate_err' => '',
@@ -854,13 +1024,6 @@ class Users extends Controller
       if (empty($data['fb_account_name'])) {
         $data['fb_account_name_err'] = 'Please enter your fb account name';
       }
-      if (empty($data['email'])) {
-        $data['email_err'] = 'Please enter your email';
-      } else {
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-          $data['email_err'] = 'Please enter your email';
-        }
-      }
       if (empty($data['address'])) {
         $data['address_err'] = 'Please enter your home address';
       }
@@ -870,22 +1033,43 @@ class Users extends Controller
         empty($data['first_name_err']) && empty($data['middle_name_err'])
         && empty($data['last_name_err']) && empty($data['birthdate_err'])
         && empty($data['gender_err']) && empty($data['contact_number_err'])
-        && empty($data['fb_account_name_err']) && empty($data['email_err'])
-        && empty($data['address_err'])
+        && empty($data['fb_account_name_err']) && empty($data['address_err'])
       ) {
 
-        if ($this->userModel->updatePersonalInfo($data)) {
-          $_SESSION['current_registration_step'] = 'registerClinicInfo';
-          redirect('users/registerClinicInfo');
-        } else {
-          die('Something went wrong');
+        if ($this->profileModel->update3(
+          [
+            'first_name',
+            'middle_name',
+            'last_name',
+            'birthdate',
+            'gender',
+            'contact_number',
+            'fb_account_name',
+            'address'
+          ],
+          [
+            $data['first_name'],
+            $data['middle_name'],
+            $data['last_name'],
+            $data['birthdate'],
+            $data['gender'],
+            $data['contact_number'],
+            $data['fb_account_name'],
+            $data['address'],
+          ],
+          ['id'],
+          [$this->session->auth()->profile_id]
+        )) {
+          $this->session->set(SessionManager::SESSION_CURRENT_REGS_STEP, 'registerClinicInfo');
+          $this->url->redirect('users/registerClinicInfo');
+          return;
         }
       } else {
         // Load view with errors
         $this->view('users/registerPersonalInfo', $data);
       }
     } else {
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
+      $user = $this->session->auth();
 
       $data = [
         'first_name' => $user->first_name ?? '',
@@ -893,7 +1077,6 @@ class Users extends Controller
         'last_name' => $user->last_name ?? '',
         'gender' => $user->gender ?? '',
         'fb_account_name' => $user->fb_account_name ?? '',
-        'email' => $user->email ?? '',
         'contact_number' => $user->contact_number ?? '',
         'birthdate' => $user->birthdate ?? '',
         'address' => $user->address ?? '',
@@ -904,7 +1087,6 @@ class Users extends Controller
         'last_name_err' => '',
         'gender_err' => '',
         'fb_account_name_err' => '',
-        'email_err' => '',
         'contact_number_err' => '',
         'birthdate_err' => '',
         'address_err' => '',
@@ -915,15 +1097,25 @@ class Users extends Controller
   }
   public function registerClinicInfo()
   {
-    redirectIfNotAuthUser();
-    redirectFullyRegisteredUser();
-    redirectInactiveUserOrRegenerateTimer();
+    $this->session->start();
+
+    if (!$this->isLoggedin() || !$this->isPasswordRegistered()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($this->isLoggedin() && $this->isEmailVerified() && $this->isCompleteInfo()) {
+      $this->url->redirectToHomepage();
+    }
+
+    if (empty($this->session->auth()->profile_id)) {
+      $this->url->redirect('users/searchProfileBeforeRegister');
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       $data = [
-        'user_id' => $_SESSION['user_id'] ?? '',
+        'user_id' => $this->session->auth()->id ?? '',
 
         'clinic_name' => trim($_POST['clinic_name']),
         'clinic_street' => trim($_POST['clinic_street']),
@@ -961,24 +1153,41 @@ class Users extends Controller
         && empty($data['clinic_district_err']) && empty($data['clinic_city_err'])
         && empty($data['clinic_contact_number_err'])
       ) {
-        if ($this->model('Clinic')->updateOrInsert($data)) {
-          redirect('users/registerEmergencyInfo');
-        } else {
-          die('Something went wrong');
+        if ($this->profileModel->update3(
+          [
+            'clinic_name',
+            'clinic_street',
+            'clinic_district',
+            'clinic_city',
+            'clinic_contact'
+          ],
+          [
+            $data['clinic_name'],
+            $data['clinic_street'],
+            $data['clinic_district'],
+            $data['clinic_city'],
+            $data['clinic_contact_number']
+          ],
+          ['id'],
+          [$this->session->auth()->profile_id]
+        )) {
+          $this->session->set(SessionManager::SESSION_CURRENT_REGS_STEP, 'registerEmergencyInfo');
+          $this->url->redirect('users/registerEmergencyInfo');
+          return;
         }
       } else {
         // Load view with errors
         $this->view('users/registerClinicInfo', $data);
       }
     } else {
-      $clinic = $this->model('Clinic')->getClinicById($_SESSION['user_id']);
+      $user = $this->session->auth();
 
       $data = [
-        'clinic_name' => $clinic->name ?? '',
-        'clinic_street' => $clinic->street ?? '',
-        'clinic_district' => $clinic->district ?? '',
-        'clinic_city' => $clinic->city ?? '',
-        'clinic_contact_number' => $clinic->contact_number ?? '',
+        'clinic_name' => $user->clinic_name,
+        'clinic_street' => $user->clinic_street,
+        'clinic_district' => $user->clinic_district,
+        'clinic_city' => $user->clinic_city,
+        'clinic_contact_number' => $user->clinic_contact,
 
         'clinic_name_err' => '',
         'clinic_street_err' => '',
@@ -992,15 +1201,25 @@ class Users extends Controller
   }
   public function registerEmergencyInfo()
   {
-    redirectIfNotAuthUser();
-    redirectFullyRegisteredUser();
-    redirectInactiveUserOrRegenerateTimer();
+    $this->session->start();
+
+    if (!$this->isLoggedin() || !$this->isPasswordRegistered()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($this->isLoggedin() && $this->isEmailVerified() && $this->isCompleteInfo()) {
+      $this->url->redirectToHomepage();
+    }
+
+    if (empty($this->session->auth()->profile_id)) {
+      $this->url->redirect('users/searchProfileBeforeRegister');
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       $data = [
-        'user_id' => $_SESSION['user_id'] ?? '',
+        'user_id' => $this->session->auth()->id ?? '',
 
         'emergency_person_name' => trim($_POST['emergency_person_name']),
         'emergency_address' => trim($_POST['emergency_address']),
@@ -1026,21 +1245,30 @@ class Users extends Controller
         empty($data['emergency_person_name_err']) && empty($data['emergency_address_err'])
         && empty($data['emergency_contact_number_err'])
       ) {
-        if ($this->userModel->updateEmergencyInfo($data)) {
-          $user = $this->userModel->getUserById($_SESSION['user_id']);
-
-          if ($this->userModel->updateRowById('is_active', true, $_SESSION['user_id'])) {
-            $this->createUserSession($user);
-          }
-        } else {
-          die('Something went wrong');
+        if ($this->profileModel->update3(
+          [
+            'emergency_person_name',
+            'emergency_address',
+            'emergency_contact_number'
+          ],
+          [
+            $data['emergency_person_name'],
+            $data['emergency_address'],
+            $data['emergency_contact_number']
+          ],
+          ['id'],
+          [$this->session->auth()->profile_id]
+        )) {
+          $user = $this->session->auth(false);
+          $this->createUserSession($user);
+          return;
         }
       } else {
         // Load view with errors
         $this->view('users/registerEmergencyInfo', $data);
       }
     } else {
-      $user = $this->userModel->getUserById($_SESSION['user_id']);
+      $user = $this->session->auth();
 
       $data = [
         'emergency_person_name' => $user->emergency_person_name ?? '',
@@ -1063,14 +1291,21 @@ class Users extends Controller
   */
   public function updateEmail()
   {
-    redirectIfNotAuthUser();
-    redirectNotFullyRegisteredUser();
+    $this->session->start();
+
+    if (!$this->isLoggedin() || !$this->isEmailVerified()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($this->isLoggedin() && $this->isPasswordRegistered() && !$this->isCompleteInfo()) {
+      $this->url->redirect('users/registerPrcInfo');
+    }
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
       $data = [
-        'current_email' => $_SESSION['user_email'],
+        'current_email' => $this->session->auth()->email,
         'email' => trim($_POST['email']) ?? '',
         'password' => trim($_POST['password']) ?? '',
         'confirm_password' => trim($_POST['confirm_password']) ?? '',
@@ -1088,7 +1323,7 @@ class Users extends Controller
           $data['email_err'] = 'Please enter your email';
         }
 
-        if ($this->userModel->findUserByEmail($data['email'])) {
+        if ($this->userModel->find(['*'], ['email'], [$data['email']])) {
           $data['email_err'] = 'Email is already taken';
         }
       }
@@ -1113,7 +1348,11 @@ class Users extends Controller
         empty($data['confirm_password_err'])
       ) {
         // Check and set logged in user
-        $verifiedUser = $this->userModel->getVerifiedUserByEmail($data['current_email']);
+        $verifiedUser = $this->userModel->find(
+          ['*'],
+          ['email', 'email_verified'],
+          [$data['current_email'], true]
+        );
 
         if (!$verifiedUser) {
           $this->view('users/redirectPage', $data = ['message' => 'Current email is not verified']);
@@ -1121,11 +1360,13 @@ class Users extends Controller
         }
 
         $hashed_password = $verifiedUser->password;
-        if (password_verify($data['password'], $hashed_password)) {
-          if (!$this->userModel->storeNewEmail($data)) {
-            $this->view('users/redirectPage', $data = ['message' => 'New email was not stored']);
-            return;
-          }
+        if (password_verify($data['password'], $hashed_password)) {      
+          $this->userModel->update4(
+            ['new_email', 'changing_email'],
+            [$data['email'], true],
+            ['email', 'email_verified'],
+            [$data['current_email'], true]
+          );
 
           $this->handleUserRegistration(
             [
@@ -1150,7 +1391,7 @@ class Users extends Controller
 
       $data = [
         'current_route' => 'userInfo',
-        'email' => $_SESSION['user_email'],
+        'email' => $this->session->auth()->email,
         'password' => '',
         'confirm_password' => '',
 
@@ -1163,103 +1404,123 @@ class Users extends Controller
     }
   }
 
-  public function createUserSession(object $user = null, bool $notThirdParty = true): void
+  public function createUserSession(object $user = null): void
   {
     if (empty($user)) {
       exit($this->view('users/redirectPage', ['message' => 'You are illegally accessing a route']));
     }
 
-    $_SESSION['email_verified'] = $user->email_verified ? true : false;
-    $_SESSION['user_id'] = $user->id;
-    $_SESSION['user_email'] = $user->email;
-    $_SESSION['user_name'] = ucwords($user->last_name) . ', ' . ucwords($user->first_name) . ' ' . ucwords(substr($user->middle_name, 0, 1) . '.');
-    $_SESSION['role'] = $user->role;
-    $_SESSION['password_registered'] = true;
+    $this->session->start()
+      ->set(SessionManager::SESSION_EMAIL_VERIFIED, $user->email_verified ? true : false)
+      ->set(SessionManager::SESSION_USER, $user)
+      ->set(SessionManager::SESSION_LOGIN_TIMESTAMP, time())
+      ->set(SessionManager::SESSION_PASS_REGISTERED, true);
 
     if (empty($user->email) && empty($user->password)) {
-      $_SESSION['password_registered'] = false;
-      $_SESSION["login_time_stamp"] = time();
+      $this->session->start()
+        ->set(SessionManager::SESSION_PASS_REGISTERED, false);
 
-      $this->view('users/registerEmailPassword', [
-        'email' => '',
-        'password' => '',
-        'confirm_password' => '',
-
-        'email_err' => '',
-        'password_err' => '',
-        'confirm_password_err' => '',
-      ]);
+      $this->url->redirect('users/registerEmailPassword');
+      return;
     }
 
-    if (isSuperAdmin()) {
-      $_SESSION['complete_info'] = true;
-      $_SESSION["login_time_stamp"] = time();
+    if ($this->role->isSuperAdmin($user->role)) {
+      $this->session->start()->set(SessionManager::SESSION_COMPLETE_INFO, true);
 
-      redirectAuthUserWithRole();
+      if ($this->isLoggedIn()) {
+        $this->url->redirectToHomepage();
+      }
       return;
     }
 
     if (
-      $notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
-      && !empty($user->prc_number) && !empty($user->emergency_person_name)
+      empty($user->profile_id)
+      || !$this->profileModel->find(['*'], ['id'], [$user->profile_id])
     ) {
-      $_SESSION['complete_info'] = true;
-      $_SESSION["login_time_stamp"] = time();
-
-      if ($_SESSION['role'] == 'admin') {
-        $this->activityModel->store(
-          [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => $_SESSION['user_name'] . ' (' . $_SESSION['role'] . '): logged in successfully',
-            'type' => 'user_login',
-          ]
-        );
-      }
-
-      redirectAuthUserWithRole();
-    } else if (
-      !$notThirdParty && !empty($user->middle_name) && !empty($user->birthdate)
-      && !empty($user->prc_number) && !empty($user->emergency_person_name)
-    ) {
-      $_SESSION['complete_info'] = true;
-      $_SESSION["login_time_stamp"] = time();
-
-      if ($_SESSION['role'] == 'admin') {
-        $this->activityModel->store(
-          [
-            'user_id' => $_SESSION['user_id'],
-            'initiator' => $_SESSION['user_name'],
-            'message' => $_SESSION['user_name'] . ' (' . $_SESSION['role'] . '): logged in successfully',
-            'type' => 'user_login',
-          ]
-        );
-      }
-
-      redirectAuthUserWithRole();
-    } else {
-      $_SESSION['complete_info'] = false;
-      $_SESSION["login_time_stamp"] = time();
-
-      redirectNotFullyRegisteredUser();
+      $this->session->start()->set(SessionManager::SESSION_COMPLETE_INFO, false);
+      $this->url->redirect('users/searchProfileBeforeRegister');
+      return;
     }
+
+    $userProfile = $this->session->auth(false);
+
+    // check if profile has empty fields
+    if (
+      empty($userProfile->first_name) || empty($userProfile->last_name)
+      || empty($userProfile->prc_number) || empty($userProfile->clinic_name)
+    ) {
+      $this->session->start()
+        ->set(SessionManager::SESSION_COMPLETE_INFO, false)
+        ->set(SessionManager::SESSION_CURRENT_REGS_STEP, 'registerPrcInfo');
+      $this->url->redirect('users/registerPrcInfo');
+      return;
+    }
+
+    $this->session->start()->set(SessionManager::SESSION_COMPLETE_INFO, true);
+    $this->activityModel->store(
+      [
+        'user_id' => $user->id,
+        'initiator' => arrangeFullname($user->first_name, $user->middle_name, $user->last_name),
+        'message' => arrangeFullname($user->first_name, $user->middle_name, $user->last_name) . ' (' . $user->role . '): logged in successfully',
+        'type' => 'user_login',
+      ]
+    );
+
+    // update login timestamp
+    $this->userModel->update4(
+      ['logged_at'],
+      [date("Y-m-d H:i:s")],
+      ['id'],
+      [$this->session->auth(false)->id]
+    );
+
+    //update payment status
+    // $this->profileModel->update3(
+    //   ['payment_status'],
+    //   ['dormant'],
+    //   ['id'],
+    //   [$this->session->auth(false)->profile_id]
+    // );
+
+    $this->url->redirectToHomepage();
   }
 
   public function logout(): void
   {
-    redirectIfNotAuthUser();
+    if (!$this->isLoggedin()) {
+      $this->url->redirectToLoginpage();
+    }
 
-    sessionDestroyAll();
-    redirect('users/login');
+    $this->session->clear();
+    $this->url->redirect('users/login');
   }
 
-  public function restartSessionTimer(): void
+  public function restartSessionTimer()
   {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['current_timestamp'])) {
-      // session_regenerate_id(true);
-      $_SESSION['login_time_stamp'] = $_POST['current_timestamp'];
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+      throw new Error('Your request method must be in \'POST\'');
+    }
 
-      echo json_encode(['ok' => true, 'status' => 200, 'message' => 'Session timer was successfully restarted']);
+    $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+    if (strpos($contentType, 'multipart/form-data') === false) {
+      throw new Error('Your content type must be in \'multipart/form-data\'');
+    }
+
+    if (empty($_POST['current_timestamp'])) {
+      throw new Error('The body must contain the params \'current_timestamp\' and it should not have an empty value.');
+    }
+
+    if (!$this->isLoggedin()) {
+      $this->url->redirectToLoginpage();
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['current_timestamp'])) {
+      $this->session->set(SessionManager::SESSION_LOGIN_TIMESTAMP, $_POST['current_timestamp']);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit(json_encode(['status' => 'ok', 'message' => 'Session timer was successfully restarted', 'data' => ['session_login_timestamp' => $this->session->get(SessionManager::SESSION_LOGIN_TIMESTAMP)]]));
     }
   }
 
@@ -1268,7 +1529,7 @@ class Users extends Controller
     if (isset($_GET['filename'])) {
       $filename = $_GET['filename'];
 
-      if (!in_array($filename, ['IMPORT_PAYMENTS_TEMPLATE.xlsx'])) {
+      if (!in_array($filename, ['IMPORT_DUES_TEMPLATE.xlsx', 'IMPORT_PROFILES_TEMPLATE.xlsx'])) {
         throw new Error('Parameters are not correct');
       }
 
@@ -1299,27 +1560,23 @@ class Users extends Controller
     }
   }
 
-  public function __destruct()
-  {
-    // unset($_SESSION['email_confirmation_info']);
-  }
 }
 
   // public function removeThirdPartyAuth($authChannel = null)
   // {
   //   if (isset($_GET['authChannel']) && !isset($authChannel)) {
   //     $authChannel = $_GET['authChannel'];
-  //     // $user = $this->userModel->getUserById($_SESSION['user_id']);
+  //     // $user = $this->userModel->getUserById($this->session->auth()->id);
   //     // if ($user->username || $user->fb_user_id || $user->gmail_user_id) {
   //     // }
 
   //     if ($authChannel == 'facebook') {
-  //       if ($this->userModel->removeThirdPartyAuth('fb_user_id', 'fb_access_token', $_SESSION['user_id'])) {
-  //         redirect('profiles/userInfo');
+  //       if ($this->userModel->removeThirdPartyAuth('fb_user_id', 'fb_access_token', $this->session->auth()->id)) {
+  //         $this->url->redirect('profiles/userInfo');
   //       }
   //     } else if ($authChannel == 'google') {
-  //       if ($this->userModel->removeThirdPartyAuth('google_user_id', 'google_access_token', $_SESSION['user_id'])) {
-  //         redirect('profiles/userInfo');
+  //       if ($this->userModel->removeThirdPartyAuth('google_user_id', 'google_access_token', $this->session->auth()->id)) {
+  //         $this->url->redirect('profiles/userInfo');
   //       }
   //     } else {
   //       $this->view('users/redirectPage', $data = ['message' => 'This auth channel does not exist. Try again.']);

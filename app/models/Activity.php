@@ -36,20 +36,17 @@ class Activity
     }
   }
 
-  public function getAll()
+  public function get()
   {
     return $this->db->selectAllWithSingleJoin(
       $this->table,
-      'users',
+      'accounts',
       'user_id',
-      'users.id',
+      'accounts.id',
       [
         $this->table . '.*'
       ]
     );
-  }
-  public function get()
-  {
   }
   public function selectAll($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
   {

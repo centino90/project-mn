@@ -5,11 +5,7 @@
 
 <div class="flex flex-col w-full" x-data="app()">
   <div class="min-w-full px-4 lg:px-1">
-    <form action="<?php echo URLROOT; ?>/profiles/personalInfo" method="post" @submit.prevent="if (confirm('Confirm the changes of your personal information?')){ $refs.submit.disabled = true; $refs.submit.value = 'Please wait...'; $el.closest('form').submit()}">
-      <!-- <div class="text-black text-center">
-      <?php flash('update_success'); ?>
-      </div> -->
-
+    <form method="post" @submit.prevent>
       <div class="mb-4">
         <nav class="text-black" aria-label="Breadcrumb">
           <ol class="list-none p-0 inline-flex text-sm text-secondary-500">
@@ -47,11 +43,11 @@
             </svg>
             Enable editing
           </button>
-          <button type="button" class="flex text-blue-600 p-2 rounded-md hover:bg-secondary-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
+          <button type="button" class="flex text-blue-600 p-2 rounded-md bg-secondary-100 hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500" @click="onEditMode = !onEditMode" x-show="onEditMode">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Disable editing
+            Cancel editing
           </button>
         </div>
       </header>
@@ -63,12 +59,9 @@
             First name
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['first_name'] ?>" x-bind="formGroup.formInput" name="first_name">
-            <?php if (!empty($data['first_name_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['first_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="personal.first_name" x-bind="formGroup.formInput" name="first_name">
+            <span x-bind="formGroup.formInputError" id="first_name_err">
+            </span>
           </div>
         </div>
 
@@ -78,12 +71,9 @@
             Middle name
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['middle_name'] ?>" x-bind="formGroup.formInput" name="middle_name">
-            <?php if (!empty($data['middle_name_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['middle_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="personal.middle_name" x-bind="formGroup.formInput" name="middle_name">
+            <span x-bind="formGroup.formInputError" id="middle_name_err">
+            </span>
           </div>
         </div>
 
@@ -93,12 +83,8 @@
             Last name
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['last_name'] ?>" x-bind="formGroup.formInput" name="last_name">
-            <?php if (!empty($data['last_name_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['last_name_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="personal.last_name" x-bind="formGroup.formInput" name="last_name">
+            <span x-bind="formGroup.formInputError" id="last_name_err">
           </div>
         </div>
 
@@ -108,12 +94,8 @@
             Date of Birth
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="date" value="<?php echo $data['birthdate'] ?>" x-bind="formGroup.formInput" name="birthdate">
-            <?php if (!empty($data['birthdate_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['birthdate_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="date" x-model="personal.birthdate" x-bind="formGroup.formInput" name="birthdate">
+            <span x-bind="formGroup.formInputError" id="birthdate_err">
           </div>
         </div>
 
@@ -123,16 +105,12 @@
             Gender
           </label>
           <div x-bind="formGroup.inputContainer">
-            <select x-bind="formGroup.formInput" name="gender">
+            <select x-bind="formGroup.formInput" name="gender" x-model="personal.gender">
               <option value="">Select</option>
-              <option <?php if ($data['gender'] == 'Female') : ?> selected <?php endif; ?> value="Female">Female</option>
-              <option <?php if ($data['gender'] == 'Male') : ?> selected <?php endif; ?> value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
             </select>
-            <?php if (!empty($data['gender_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['gender_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <span x-bind="formGroup.formInputError" id="gender_err">
           </div>
         </div>
 
@@ -142,12 +120,8 @@
             Contact number
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['contact_number'] ?>" x-bind="formGroup.formInput" name="contact_number">
-            <?php if (!empty($data['contact_number_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['contact_number_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="personal.contact_number" x-bind="formGroup.formInput" name="contact_number">
+            <span x-bind="formGroup.formInputError" id="contact_number_err">
           </div>
         </div>
 
@@ -157,27 +131,8 @@
             Facebook account name
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['fb_account_name'] ?>" x-bind="formGroup.formInput" name="fb_account_name">
-            <?php if (!empty($data['fb_account_name_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['fb_account_name_err']; ?> !
-              </div>
-            <?php endif; ?>
-          </div>
-        </div>
-
-        <!-- Email -->
-        <div x-bind="formGroup">
-          <label x-bind="formGroup.formLabel">
-            Email 
-          </label>
-          <div x-bind="formGroup.inputContainer">
-            <input type="email" value="<?php echo $data['email'] ?>" x-bind="formGroup.formInput" name="email">
-            <?php if (!empty($data['email_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['email_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="personal.fb_account_name" x-bind="formGroup.formInput" name="fb_account_name">
+            <span x-bind="formGroup.formInputError" id="fb_account_name_err">
           </div>
         </div>
 
@@ -187,12 +142,8 @@
             Home address
           </label>
           <div x-bind="formGroup.inputContainer">
-            <input type="text" value="<?php echo $data['address'] ?>" x-bind="formGroup.formInput" name="address">
-            <?php if (!empty($data['address_err'])) : ?>
-              <div x-bind="formGroup.formInputError">
-                <?php echo $data['address_err']; ?> !
-              </div>
-            <?php endif; ?>
+            <input type="text" x-model="personal.address" x-bind="formGroup.formInput" name="address">
+            <span x-bind="formGroup.formInputError" id="address_err">
           </div>
         </div>
 
@@ -200,8 +151,9 @@
         <div x-bind="formGroup" x-show="onEditMode">
           <label x-bind="formGroup.formLabel"></label>
           <div x-bind="formGroup.inputContainer">
-            <input type="submit" value="Update" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
-            </input>
+            <button @click="submitForm" type="submit" x-ref="submit" class="form-btn bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              Update
+            </button>
           </div>
         </div>
       </div>
@@ -212,32 +164,22 @@
 <script>
   document.addEventListener('alpine:init', () => {
     Alpine.data('app', () => ({
-      init() {
-        if (this.checkServerValidationError()) {
-          this.onEditMode = true
-        } else {
-          this.onEditMode = false
-        }
-      },
+      init() {},
       onEditMode: false,
-      serverData: <?php echo json_encode($data); ?>,
       formGroup: {
         [':class']() {
           let defaultClass = 'form-group'
 
           return this.onEditMode ? `${defaultClass} border-0` : `${defaultClass} border-b`
         },
-        formLabel: {
-          [':for']() {
-            return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
-          },
-          [':class']() {
-            return 'mb-4 form-label'
-          }
-        },
         inputContainer: {
           [':class']() {
             return 'input-container'
+          }
+        },
+        formLabel: {
+          [':class']() {
+            return 'form-label'
           }
         },
         formInput: {
@@ -249,9 +191,8 @@
           },
           [':class']() {
             let defaultClass = 'form-input'
-            let uppercase =  this.$el.getAttribute('type') != 'email' ? 'uppercase' : ''
 
-            return !this.onEditMode ? `${defaultClass} border-0 ${uppercase}` : `${defaultClass} border-secondary-300`
+            return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-secondary-300`
           },
         },
         formInputError: {
@@ -263,23 +204,91 @@
           }
         },
       },
+      personal: {
+        first_name: '<?php echo $data['first_name'] ?>',
+        middle_name: '<?php echo $data['middle_name'] ?>',
+        last_name: '<?php echo $data['last_name'] ?>',
+        birthdate: '<?php echo $data['birthdate'] ?>',
+        gender: '<?php echo $data['gender'] ?>',
+        contact_number: '<?php echo $data['contact_number'] ?>',
+        fb_account_name: '<?php echo $data['fb_account_name'] ?>',
+        address: '<?php echo $data['address'] ?>',
+      },
+      submitForm(event) {
+        event.target.textContent = 'Please wait...'
 
-      checkServerValidationError: function() {
-        if (
-          this.serverData.first_name_err !== '' ||
-          this.serverData.middle_name_err !== '' ||
-          this.serverData.last_name_err !== '' ||
-          this.serverData.gender_err !== '' ||
-          this.serverData.fb_account_name_err !== '' ||
-          this.serverData.email_err !== '' ||
-          this.serverData.contact_number_err !== '' ||
-          this.serverData.birthdate_err !== '' ||
-          this.serverData.address_err !== ''
-        ) {
-          return true
+        const f = fetch('<?php echo URLROOT . "/profiles/updatePersonal" ?>', {
+          method: "POST",
+          body: JSON.stringify({
+            personal: this.personal
+          }),
+          headers: {
+            "Content-type": "application/json"
+          }
+        })
+
+        f.then(data => data.json()
+          .then(res => {
+            console.log(res)
+            if (res.status == 'ok') {
+              this.onEditMode = false
+
+              document.querySelector('#first_name_err').classList.add('hidden')
+              document.querySelector('#middle_name_err').classList.add('hidden')
+              document.querySelector('#last_name_err').classList.add('hidden')
+              document.querySelector('#birthdate_err').classList.add('hidden')
+              document.querySelector('#gender_err').classList.add('hidden')
+              document.querySelector('#contact_number_err').classList.add('hidden')
+              document.querySelector('#fb_account_name_err').classList.add('hidden')
+              document.querySelector('#address_err').classList.add('hidden')
+
+            } else {
+              document.querySelector('#first_name_err').classList.remove('hidden')
+              document.querySelector('#middle_name_err').classList.remove('hidden')
+              document.querySelector('#last_name_err').classList.remove('hidden')
+              document.querySelector('#birthdate_err').classList.remove('hidden')
+              document.querySelector('#gender_err').classList.remove('hidden')
+              document.querySelector('#contact_number_err').classList.remove('hidden')
+              document.querySelector('#fb_account_name_err').classList.remove('hidden')
+              document.querySelector('#address_err').classList.remove('hidden')
+
+              document.querySelector('#first_name_err').textContent = res.errors.first_name_err
+              document.querySelector('#middle_name_err').textContent = res.errors.middle_name_err
+              document.querySelector('#last_name_err').textContent = res.errors.last_name_err
+              document.querySelector('#birthdate_err').textContent = res.errors.birthdate_err
+              document.querySelector('#gender_err').textContent = res.errors.gender_err
+              document.querySelector('#contact_number_err').textContent = res.errors.contact_number_err
+              document.querySelector('#fb_account_name_err').textContent = res.errors.fb_account_name_err
+              document.querySelector('#address_err').textContent = res.errors.address_err
+            }
+          }))
+
+        event.target.textContent = 'Save'
+      },
+
+      checkIfRegistrationIsExpired: function() {
+        return dayjs(this.license.prc_expiration_date) < dayjs() ? true : false
+      },
+      getRelativeTimeSinceExpiration: function() {
+        return `expired ${dayjs(this.license.prc_expiration_date).from(dayjs())}`
+      },
+      getRemainingTimeBeforeExpiration: function() {
+        let remainingYear = dayjs(this.license.prc_expiration_date).year() - dayjs().year()
+
+        return dayjs(this.license.prc_expiration_date).subtract(remainingYear, 'year')
+      },
+      getRelativeTimeBeforeExpiration: function() {
+        let remainingTime = this.getRemainingTimeBeforeExpiration();
+
+        return `expires ${dayjs(this.license.remainingTime).to(dayjs(this.license.prc_expiration_date))}`
+      },
+      generateExpirationStatus: function() {
+        if (this.checkIfRegistrationIsExpired()) {
+          return this.getRelativeTimeSinceExpiration()
+        } else {
+          return this.getRelativeTimeBeforeExpiration()
         }
-        return false
-      }
+      },
     }))
   })
 </script>

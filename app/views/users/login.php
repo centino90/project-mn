@@ -8,10 +8,6 @@
       </h2>
     </div>
     <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/login" method="post" @submit="$refs.submit.disabled = true; $refs.submit.value = 'Please wait...'">
-      <div class="text-black text-center">
-        <?php flash('login_status'); ?>
-      </div>
-
       <div class="flex flex-col gap-y-5">
         <div class="rounded-md">
           <div class="flex">

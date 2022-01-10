@@ -36,75 +36,87 @@
   </header>
 
   <div class="gap-y-8">
-    <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
-      <nav>
-        <div class="md:w-60">
-          <label for="" class="form-label">Type</label>
-          <select class="form-input" @change="type = $event.target.value; filterColumnByType($event.target.value)" name="type" id="type">
-            <option value="">Select type</option>
-            <option value="PDA">PDA</option>
-            <option value="DCC">DCC</option>
-          </select>
-        </div>
-      </nav>
-    </div>
-
-    <div class="table-container">
-      <table id="myTable" style="width: 100%">
-        <thead class="border-t border-b">
-          <tr>
-            <th scope="col">
-              Date
-            </th>
-            <th scope="col">
-              Type
-            </th>
-            <th scope="col">
-              Amount
-            </th>
-            <th scope="col">
-              OR No.
-            </th>
-            <th scope="col">
-              Remarks
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white relative">
-          <?php foreach ($data['paymentHistory'] as $payment) : ?>
+    <?php if (!empty($data['dues'])) : ?>
+      <div class="table-container">
+        <table x-cloak id="myTable" style="width: 100%">
+          <thead class="border-t border-b">
             <tr>
-              <td>
-                <?php echo $payment->date_created ?>
-              </td>
-              <td>
-                <?php echo strtoupper($payment->type) ?>
-              </td>
-              <td>
-                <?php echo $payment->amount ?>
-              </td>
-              <td class="text-secondary-500">
-                <?php echo $payment->or_number ?>
-              </td>
-              <td class="text-secondary-500">
-                <?php echo $payment->remarks ?>
-              </td>
+              <th scope="col">
+                Year
+              </th>
+              <th scope="col">
+                DCC
+              </th>
+              <th scope="col">
+                Receipt #
+              </th>
+              <th scope="col">
+                PDA
+              </th>
+              <th scope="col">
+                Receipt #
+              </th>
+              <th scope="col">
+                Remarks
+              </th>
             </tr>
-          <?php endforeach; ?>
-        <tfoot>
-          <th scope="col">
-          </th>
-          <th scope="col">
-          </th>
-          <th scope="col">
-          </th>
-          <th scope="col">
-          </th>
-          <th scope="col">
-          </th>
-        </tfoot>
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody class="bg-white relative">
+            <?php foreach ($data['dues'] as $due) : ?>
+              <tr>
+                <td class="text-secondary-500">
+                  <?php echo $due->year ?>
+                </td>
+                <td>
+                  <?php if (!empty($due->dcc)) : ?>
+                    <?php echo $due->dcc ?>
+                  <?php endif ?>
+                </td>
+                <td class="text-secondary-500">
+                  <?php echo $due->dcc_or ?>
+                </td>
+                <td>
+                  <?php if (!empty($due->pda)) : ?>
+                    <?php echo $due->pda ?>
+                  <?php endif ?>
+                </td>
+                <td class="ptext-secondary-500">
+                  <?php echo $due->pda_or ?>
+                </td>
+                <td class="text-secondary-500">
+                  <?php echo $due->remarks ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <tfoot>
+            <th scope="col">
+            </th>
+            <th scope="col">
+            </th>
+            <th scope="col">
+            </th>
+            <th scope="col">
+            </th>
+            <th scope="col">
+            </th>
+          </tfoot>
+          </tbody>
+        </table>
+      </div>
+    <?php else : ?>
+      <div class="shadow sm:rounded-md sm:overflow-hidden h-52 flex flex-wrap justify-center items-center">
+        <div class="flex flex-col">
+          <div class="mb-3 ml-auto">
+          </div>
+          <div class="rounded-lg w-96 py-8 px-4 bg-warning-100 flex justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            You currently do not have recorded payments
+          </div>
+        </div>
+      </div>
+    <?php endif ?>
   </div>
 </div>
 
@@ -118,7 +130,8 @@
     Alpine.data('app', () => ({
       init() {
         this.writeToFooterColumn(0, 'Payment Summary', 'text')
-        this.writeToFooterColumn(2, this.calculateTotalAmount(2), 'currency')
+        this.writeToFooterColumn(1, this.calculateTotalAmount(1), 'currency')
+        this.writeToFooterColumn(3, this.calculateTotalAmount(3), 'currency')
       },
       type: '',
       calculateTotalAmount(colIndex) {
@@ -158,21 +171,11 @@
       formatToCurrency(amount) {
         return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,")
       },
-
-      filterColumnByType(type) {
-        let typeCol = $('#myTable').DataTable().column(1)
-        this.type = type
-
-        typeCol
-          .search(this.type ? '^' + this.type + '$' : '', true, false)
-          .draw();
-
-          this.writeToFooterColumn(2, this.calculateTotalAmount(2), 'currency')
-      },
     }))
 
     // initilize datatable
     $('#myTable').DataTable({
+      order: [[0, 'desc']],
       initComplete: function() {
         const api = this.api();
         api.columns('.hidden-first').visible(false)

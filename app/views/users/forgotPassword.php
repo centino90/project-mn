@@ -8,10 +8,6 @@
       </h2>
     </div>
     <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/forgotPassword" method="post" @submit="$refs.submit.disabled = true; $refs.submit.value = 'Please wait...'">
-      <!-- <div class="text-black text-center">
-        <?php flash('login_status'); ?>
-      </div> -->
-
       <div class="flex flex-col gap-y-5">
         <!-- email -->
         <div class="rounded-md">
@@ -31,6 +27,7 @@
           <?php endif; ?>
         </div>
 
+        <!-- recaptcha -->
         <div class="g-recaptcha" id="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITEKEY ?>" data-callback="verifyCheckState"></div>
         <?php if (!empty($data['g_recaptcha_response_err'])) : ?>
           <div class="text-sm text-danger-500 px-2 pt-2">

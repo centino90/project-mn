@@ -117,7 +117,7 @@
                             </div>
                           </div>
                           <div class="w-full items-center flex">
-                            <div class="mx-2 -mt-1"><span x-text="option.first_name + ' ' + option.last_name"></span>
+                            <div class="mx-2 -mt-1"><span x-text="option.first_name.toUpperCase() + ' ' + option.last_name.toUpperCase()"></span>
                               <div class="text-xs truncate w-full normal-case font-normal -mt-1 text-secondary-500" x-text="option.email + ' / ' + option.prc_number"></div>
                             </div>
                           </div>
@@ -370,23 +370,38 @@
     Alpine.data('app', () => ({
       init() {
         const app = this
-        // select component 2
-        fetch("<?php echo URLROOT . '/profiles/fetchUserProfile' ?>")
-          .then(response => response.json())
-          .then(data => {
-            if (data.status == 'ok') {
-              this.options = data
-            }
-          });
 
         // jquery datatable
+        $.fn.dataTable.Debounce = function(table, options) {
+          let tableId = table.settings()[0].sTableId;
+          $('.dataTables_filter input[aria-controls="' + tableId + '"]') // select the correct input field
+            .unbind() // Unbind previous default bindings
+            .bind('input', (delay(function(e) { // Bind our desired behavior
+              table.search($(this).val()).draw();
+              return;
+            }, 1000))); // Set delay in milliseconds
+        }
+
+        function delay(callback, ms) {
+          let timer = 0;
+          return function() {
+            let context = this,
+              args = arguments;
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+              callback.apply(context, args);
+            }, ms || 0);
+          };
+        }
+        
         const dataTable = $('#myTable').DataTable({
-          "order": [
-            [0, "desc"]
+          'order': [
+            [0, 'desc']
           ],
-          "bLengthChange": false,
+          'bLengthChange': false,
           'processing': true,
           'serverSide': true,
+          'searchDelay': 350,
           'serverMethod': 'post',
           'ajax': {
             'url': 'reportsDatatable',
@@ -412,7 +427,8 @@
             app.startDateString = `${dayjs().month(app.startMonth - 1).format('MMMM')} ${app.startYear}`
             app.endDateString = `${dayjs().month(app.endMonth - 1).format('MMMM')} ${app.endYear}`
           },
-          'columns': [{
+          'columns': [
+            {
               data: 'date_created',
               render: function(d, t, r, m) {
                 return `<span class="text-secondary-500">${r.date_created}</span>`
@@ -459,8 +475,19 @@
 
           initComplete: function() {
             this.api().columns('.hidden-first').visible(false)
+
+            // search user profile component
+            fetch("<?php echo URLROOT . '/profiles/fetchUserProfile' ?>", {
+                method: 'POST'
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.status == 'ok') {
+                  app.options = data
+                }
+              });
           },
-          dom: 'Bfrtip',
+          dom: 'fBrtip',
           buttons: [{
               text: 'exports',
               extend: 'collection',
@@ -572,6 +599,7 @@
             }
           ],
         });
+        let debounce = new $.fn.dataTable.Debounce(dataTable);
 
         $('#report_filter').click(function() {
           dataTable.draw();
@@ -908,71 +936,7 @@
           return value > startYear
         })
       },
-      type: '',
-
-      // getPaymentsBetweenYears: function() {
-      //   const updateRequest = new FormData();
-      //   console.log(this.startMonth, this.startYear)
-      //   console.log(this.endMonth, this.endYear)
-      //   updateRequest.append('startMonth', this.startMonth);
-      //   updateRequest.append('startYear', this.startYear);
-      //   updateRequest.append('endMonth', this.endMonth);
-      //   updateRequest.append('endYear', this.endYear);
-
-      //   const dataTable = $('#myTable').DataTable();
-      //   const tableEmptyRow = $(dataTable.table().container()).find('.dataTables_empty');
-
-      //   // remove rows and set loading cues
-      //   dataTable.rows().remove()
-      //   tableEmptyRow.textContent = 'Please wait...'
-      //   this.$el.textContent = 'Please wait...'
-
-      //   // send start and end year then retrieve payments summary data 
-      //   const response = fetch('<?php echo URLROOT . "/admins/filterData" ?>', {
-      //       method: 'POST',
-      //       body: updateRequest
-      //     })
-      //     .then((response) => response.json())
-      //     .then((res) => {
-      //       // remove loading cues
-      //       this.$el.textContent = 'Filter'
-      //       tableEmptyRow.textContent = 'Sorry, we found no records.'
-
-      //       // load new rows on datatable
-      //       let data = $(res.data)
-      //       data.each(function(index, row) {
-      //         if (row.is_active == 'active') {
-      //           dataTable.rows.add([
-      //             [row.date_created, `${row.last_name}, ${row.first_name} ${row.middle_name}.`, row.amount, `<span class="rounded-lg px-2 bg-success-100 text-success-600">${row.is_active}</span>`, row.type, row.channel, row.or_number]
-      //           ])
-      //         } else {
-      //           dataTable.rows.add([
-      //             [row.date_created, `${row.last_name}, ${row.first_name} ${row.middle_name}.`, row.amount, `<span class="rounded-lg px-2 bg-secondary-100 text-secondary-500">${row.is_active}</span>`, row.type, row.channel, row.or_number]
-      //           ])
-      //         }
-      //       })
-
-      //       dataTable.draw()
-      //       this.writeToFooterColumn(2, this.calculateTotalAmount())
-      //       this.afterDrawStartMonth = this.startMonth
-      //       this.afterDrawStartYear = this.startYear
-      //       this.afterDrawEndMonth = this.endMonth
-      //       this.afterDrawEndYear = this.endYear
-
-      //       this.startDateString = `${dayjs().month(this.startMonth - 1).format('MMMM')} ${this.startYear}`
-      //       this.endDateString = `${dayjs().month(this.endMonth - 1).format('MMMM')} ${this.endYear}`
-      //     })
-      // },
-      // filterColumnByType(type) {
-      //   let typeColumn = $('#myTable').DataTable().column(3)
-      //   this.type = type
-
-      //   typeColumn
-      //     .search(this.type ? '^' + this.type + '$' : '', true, false)
-      //     .draw();
-
-      //   this.writeToFooterColumn(2, this.calculateTotalAmount())
-      // },
+      type: ''
     }))
   })
 </script>

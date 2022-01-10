@@ -1,4 +1,3 @@
-<!-- This example requires Tailwind CSS v2.0+ -->
 <div class="bg-white">
   <div class="container mx-auto px-5">
     <div class="flex flex-wrap justify-between items-center border-b border-secondary-100 py-6 md:justify-start md:space-x-10">
@@ -10,7 +9,7 @@
       </div>
 
       <ul class="flex items-center justify-end">
-        <?php if (isset($_SESSION['user_id'])) : ?>
+        <?php if ( $this->session->has(SessionManager::SESSION_USER)) : ?>
           <a href="<?php echo URLROOT; ?>/users/logout" class="ml-8 whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-400 hover:bg-primary-500">
             Sign out
           </a>
