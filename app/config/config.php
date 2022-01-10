@@ -1,9 +1,11 @@
 <?php
-/* SITE configs */
+// APP ROOT
 define('APPROOT', dirname(dirname(__FILE__)));
-define('DOCROOT', dirname(dirname(__FILE__), 2));
-define('URLROOT', 'http://localhost/DuesPaymentSystem');
+// URL Root
+define('URLROOT', 'https://www.pda-dcc.com');
+// Site Name
 define('SITENAME', 'PDA-DCC');
+// App Version
 define('APPVERSION', '1.0.0');
 
 /* FB graph configs */
