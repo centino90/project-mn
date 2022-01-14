@@ -951,15 +951,14 @@
         const f = fetch('<?php echo URLROOT . "/profiles/profileImage" ?>', {
           method: "POST",
           body: updateRequest,
-        })
-
-        f.then(data => data.json()
+        }).then(data => data.json()
           .then(res => {
             if (res.status == 'ok') {
               document.querySelectorAll('.profile-img').forEach(el => {
                 el.src = URL.createObjectURL(file)
               })
-              document.querySelector('#view_img_link').href = '<?php echo URLROOT ?>' + `/${res.thumbnail_img_path}`
+              // console.log
+              document.querySelector('#view_img_link').href = `<?php echo URLROOT ?>/${res.profile_img_path}`
 
               errorMsg.classList.add('hidden')
             } else {

@@ -203,7 +203,7 @@ class Profiles extends Controller
                 [$decoded['user_id']]
             );
 
-            $decoded['filename'] = $user->first_name . '-' . time() . '.' . 'webp';
+            $decoded['filename'] = time() . '.' . 'webp';
 
             // full-sized img
             $fullsized = $this->image
@@ -215,9 +215,6 @@ class Profiles extends Controller
                 ->start($decoded["profile_img"]['tmp_name'], $decoded['filename'])
                 ->repurpose(50, 50)
                 ->save(Image::IMAGE_THUMBNAIL_DIRECTORY, 25);
-            
-                // echo Image::IMAGE_ROOT;
-                // dd(Image::IMAGE_THUMBNAIL_ROOT);
 
             // check if user already has profile img
             if (!empty($user->profile_img_path)) {

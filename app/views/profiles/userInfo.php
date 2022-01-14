@@ -265,7 +265,7 @@
                     .then(res => {
                         if (res.status == 'ok') {
                             this.$refs.profile_imgs.src = URL.createObjectURL(file)
-                            this.$refs.view_img_link.href = '<?php echo URLROOT ?>' + `/public/${res.profile_img_path}`
+                            this.$refs.view_img_link.href = '<?php echo URLROOT ?>' + `/${res.profile_img_path}`
                             errorMsg.classList.add('hidden')
                         } else {
                             errorMsg.classList.remove('hidden')
