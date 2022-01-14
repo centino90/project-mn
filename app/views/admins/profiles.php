@@ -291,7 +291,7 @@
               data: 'payment_status',
               sortable: false,
               render: function(d, t, r, m) {
-                return `<span class="px-2 py-1 rounded-full" :class="'${r.payment_status}' == 'Dormant' ? 'bg-secondary-100 text-secondary-700' : '${r.payment_status}' == 'Complete Payment' ? 'bg-success-100 text-success-700' : '${r.payment_status}' == 'Incomplete Payment' ? 'bg-danger-100 text-danger-700' : ''">${r.payment_status}</span>`
+                return `<span class="px-2 py-1 rounded-full whitespace-nowrap" :class="'${r.payment_status}' == 'Dormant' ? 'bg-secondary-100 text-secondary-700' : '${r.payment_status}' == 'Complete Payment' ? 'bg-success-100 text-success-700' : '${r.payment_status}' == 'Incomplete Payment' ? 'bg-danger-100 text-danger-700' : ''">${r.payment_status}</span>`
               }
             },
             {

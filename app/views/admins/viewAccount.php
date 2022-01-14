@@ -938,7 +938,7 @@
 
         const updateRequest = new FormData();
         const file = event.target.files[0];
-        updateRequest.append('user_id', <?php echo $data['user']->id ?>)
+        updateRequest.append('user_id', <?php echo $data['user']->user_id ?>)
         updateRequest.append('profile_img', file)
 
         // greater than 2 mb

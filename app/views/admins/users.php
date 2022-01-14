@@ -196,7 +196,7 @@
                 return `
                 <div class="flex items-center gap-2">
                 <a href="<?php echo URLROOT ?>/${r.profile_img_path ?? 'img/profiles/default-profile.png'}" target="_blank" class="block rounded-full w-10 h-10 overflow-hidden">
-                  <img class="w-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
+                  <img class="w-full h-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
                 </a>
                 <div class="relative" x-data="{dropDownOpen:false}">
                   <a @click="dropDownOpen = true" href="javascript:void(0)" class="block text-lg text-secondary-500 hover:bg-secondary-200 rounded-full p-1">
@@ -245,7 +245,7 @@
               data: 'account_status',
               sortable: false,
               render: function(d, t, r, m) {
-                return `<span class="px-2 py-1 rounded-full" :class="'${r.account_status}' == 'active' ? 'bg-success-100 text-success-700' : 'bg-secondary-100 text-secondary-700'">${r.account_status}</span>`
+                return `<span class="px-2 py-1 rounded-full whitespace-nowrap" :class="'${r.account_status}' == 'active' ? 'bg-success-100 text-success-700' : 'bg-secondary-100 text-secondary-700'">${r.account_status}</span>`
               }
             },
             {

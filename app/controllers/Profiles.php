@@ -199,7 +199,7 @@ class Profiles extends Controller
 
             $user = $this->userModel->findUserProfile(
                 ['*', 'accounts.id AS id'],
-                ['profile_id'],
+                ['accounts.id'],
                 [$decoded['user_id']]
             );
 
