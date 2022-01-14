@@ -199,7 +199,7 @@ class Profiles extends Controller
 
             $user = $this->userModel->findUserProfile(
                 ['*', 'accounts.id AS id'],
-                ['accounts.id'],
+                ['profile_id'],
                 [$decoded['user_id']]
             );
 
@@ -209,12 +209,15 @@ class Profiles extends Controller
             $fullsized = $this->image
                 ->start($decoded["profile_img"]['tmp_name'], $decoded['filename'])
                 ->repurpose(500, 500)
-                ->save(Image::IMAGE_ROOT, 15);
+                ->save(Image::IMAGE_DIRECTORY, 15);
 
             $thumb = $this->image
                 ->start($decoded["profile_img"]['tmp_name'], $decoded['filename'])
                 ->repurpose(50, 50)
-                ->save(Image::IMAGE_THUMBNAIL_ROOT, 25);
+                ->save(Image::IMAGE_THUMBNAIL_DIRECTORY, 25);
+            
+                // echo Image::IMAGE_ROOT;
+                // dd(Image::IMAGE_THUMBNAIL_ROOT);
 
             // check if user already has profile img
             if (!empty($user->profile_img_path)) {

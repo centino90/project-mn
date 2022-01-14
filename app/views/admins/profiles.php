@@ -115,6 +115,7 @@
             <th>DCDC Dues</th>
             <th>Payment Status</th>
             <th>Remarks</th>
+            <th>Email</th>
             <th>birthdate</th>
             <th>address</th>
             <th>contact_number</th>
@@ -267,7 +268,7 @@
                       </a>
                     </div>                    
                   </div>
-                  <div x-show="${r.deleted_at}" class="text-danger-600 italic text-sm">Archived</div>
+                  <div x-show="${r.deleted_at != null ? true : false}" class="text-danger-600 italic text-sm">Archived</div>
                 </div>
                 `
               }
@@ -288,7 +289,10 @@
             },
             {
               data: 'payment_status',
-              sortable: false
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `<span class="px-2 py-1 rounded-full" :class="'${r.payment_status}' == 'Dormant' ? 'bg-secondary-100 text-secondary-700' : '${r.payment_status}' == 'Complete Payment' ? 'bg-success-100 text-success-700' : '${r.payment_status}' == 'Incomplete Payment' ? 'bg-danger-100 text-danger-700' : ''">${r.payment_status}</span>`
+              }
             },
             {
               data: 'status_remarks',
@@ -296,6 +300,11 @@
               render: function(d, t, r, m) {
                 return r.status_remarks
               }
+            },          
+            {
+              data: 'email',
+              visible: false,
+              sortable: false
             },
             {
               data: 'birthdate',

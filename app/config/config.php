@@ -5,7 +5,6 @@ define('APPROOT', dirname(dirname(__FILE__)));
 define('URLROOT', 'https://www.pda-dcc.com');
 // Site Name
 define('SITENAME', 'PDA-DCC');
-// App Version
 define('APPVERSION', '1.0.0');
 
 /* FB graph configs */

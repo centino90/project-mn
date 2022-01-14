@@ -491,7 +491,7 @@ class Admins extends Controller
           $row[6] = trim($row[6] ?? null);
 
           $row[5] = $row[5] ?? null;
-          if($row[5] != null) trim($row[5]);
+          if ($row[5] != null) trim($row[5]);
 
           // ignore row if all cells are empty
           if (
@@ -711,19 +711,26 @@ class Admins extends Controller
       // custom filters
       $accountStatus = $_POST['accountStatus'];
       $role = $_POST['role'];
+      $includeDeleted = $_POST['includeDeleted'];
 
       // initialize search filter
-      $searchQuery = " AND role != 'superadmin'";
+      $searchQuery = " AND deleted_at IS NULL ";
+      if ($includeDeleted == 'show') {
+        $searchQuery = '';
+      }
+      if ($includeDeleted == 'hide') {
+        $searchQuery = ' and deleted_at IS NULL ';
+      }
+      if ($includeDeleted == 'only') {
+        $searchQuery = ' and deleted_at IS NOT NULL ';
+      }
+
+      $searchQuery .= " AND email_verified != false AND role != 'superadmin' ";
       if ($searchValue != '') {
         $searchQuery .= " and ( account_status = '" . $searchValue . "') ";
       }
-
       if ($role != '') {
         $searchQuery .= " and ( role = '" . $role . "') ";
-      }
-
-      if ($accountStatus != '') {
-        $searchQuery .= " and ( account_status = '" . $accountStatus . "') ";
       }
 
       // initilize columns to be selected
@@ -745,6 +752,16 @@ class Admins extends Controller
         $lastLogDate = date('Y-m-d', strtotime($row->logged_at));
         $dateInSixMonthsSinceLastLog = date('Y-m-d', strtotime($lastLogDate . ' + 6 months'));
 
+        if (strtolower($accountStatus) == 'inactive') {
+          if ($dateInSixMonthsSinceLastLog >= $today) {
+            continue;
+          }
+        } else if (strtolower($accountStatus) == 'active') {
+          if ($dateInSixMonthsSinceLastLog <= $today) {
+            continue;
+          }
+        }
+
         $data[] = array(
           "profile_img_path" => $row->profile_img_path,
           "thumbnail_img_path" => $row->thumbnail_img_path,
@@ -753,6 +770,7 @@ class Admins extends Controller
           "role" => $row->role,
           "account_status" => $dateInSixMonthsSinceLastLog <= $today ? 'inactive' : 'active',
           "logged_at" => $row->logged_at,
+          "deleted_at" => $row->deleted_at,
 
           "user_id" => $row->id,
         );
@@ -776,6 +794,87 @@ class Admins extends Controller
       header("Content-Type: application/json; charset=UTF-8");
 
       exit(json_encode($response));
+    }
+  }
+  public function archiveUser()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+      if ($contentType !== "application/json") {
+        throw new Error('Your content type must be in \'application/json\'');
+      }
+
+      $content = trim(file_get_contents("php://input"));
+
+      $decoded = json_decode($content, true);
+
+      $decoded['message'] = 'A profile was successfully deleted!';
+      $decoded['status'] = 'ok';
+      $decoded['errors'] = [];
+
+      // check inputs
+      if (empty($decoded['user_id'])) {
+        $decoded['errors']['user_id_err'] = 'Your user id must not be empty';
+      }
+
+      if (sizeof($decoded['errors']) > 0) {
+        throw new Error('You have some input errors. Please check your inputs');
+      }
+
+      if (!$this->userModel->hasRow(
+        ['id'],
+        [$decoded['user_id']]
+      )) {
+        throw new Error('User id: ' . $decoded['user_id'] . ' does not exist.');
+      }
+
+      $user = $this->userModel->find(['*'], ['id'], [$decoded['user_id']]);
+      $deleteVal = null;
+      $archiveLabel = 'restore';
+      if (empty($user->deleted_at)) {
+        $deleteVal = date('Y-m-d H:i:s');
+        $archiveLabel = 'archive';
+      }
+
+      $this->userModel->update4(
+        [
+          'deleted_at',
+        ],
+        [
+          $deleteVal
+        ],
+        ['id'],
+        [$decoded['user_id']],
+      );
+
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
+        $this->activityModel->store(
+          [
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . $archiveLabel . 'd the user with the email ' . $user->email,
+            'type' => $archiveLabel . 'd_profile',
+          ]
+        );
+      }
+
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    } catch (\Throwable $th) {
+      header("Content-Type: application/json; charset=UTF-8");
+      $decoded['status'] = 'fail';
+      $decoded['message'] = $th->getMessage();
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
     }
   }
 
@@ -828,16 +927,13 @@ class Admins extends Controller
           prc_number LIKE '%" . $searchValue . "%') ";
       }
 
-      if ($paymentStatus != '') {
-        $searchQuery .= " and (payment_status like '%" . $paymentStatus . "%') ";
-      }
-
       // initilize columns to be selected
       $selectables = [];
       $selectables[] = 'GROUP_CONCAT(YEAR(cd_dues.cd_dates)) AS cd_dates';
       $selectables[] = 'GROUP_CONCAT(CONCAT(YEAR(cd_dues.cd_dates), IFNULL(CONCAT(" (#", or_number, ")" ), "")) SEPARATOR ", ") AS dcdc_dues';
       $selectables[] = 'profiles.*';
       $selectables[] = 'profiles.deleted_at AS deleted_at';
+      $selectables[] = 'accounts.email';
 
 
       // Row count without filtering
@@ -856,26 +952,35 @@ class Admins extends Controller
         date('Y', strtotime(date('Y-m-d') . ' - 3 year')),
       ];
       foreach ($empRecords as $row) {
-        $paymentDates = array_reverse(explode(',', $row->cd_dates));
+        $paymentDates = explode(',', $row->cd_dates);
+        if (!empty($paymentDates[0])) sort($paymentDates, SORT_NUMERIC);
+
         $firstYearOfPayment = $paymentDates[0];
         $missingYears = $this->getMissingYears($paymentDates, $firstYearOfPayment);
-        $paymentStatus = '';
+        $paymentStats = '';
 
-        if (empty($missingYears)) $paymentStatus = 'Complete Payment';
-        else $paymentStatus = 'Incomplete Payment';
-        if (empty($firstYearOfPayment)) $paymentStatus = '';
+        if (empty($missingYears)) $paymentStats = 'Complete Payment';
+        else $paymentStats = 'Incomplete Payment';
+        if (empty($firstYearOfPayment)) $paymentStats = '';
         if (
           in_array($lastThreeYears[0], $missingYears) &&
           in_array($lastThreeYears[1], $missingYears) &&
           in_array($lastThreeYears[2], $missingYears)
-        ) $paymentStatus = 'Dormant';
+        ) $paymentStats = 'Dormant';
+
+        // filter by payment status
+        if ($paymentStatus != '') {
+          if (strtolower($paymentStatus) != strtolower($paymentStats)) {
+            continue;
+          }
+        }
 
         $data[] = array(
           "dcdc_dues" => $row->dcdc_dues,
 
           "prc_number" => $row->prc_number,
           "last_name" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name) ?? '',
-          "payment_status" => $paymentStatus,
+          "payment_status" => $paymentStats,
           "status_remarks" => $row->status_remarks,
           "birthdate" => $row->birthdate,
           "address" => $row->address,
@@ -894,6 +999,8 @@ class Admins extends Controller
           "emergency_person_name" => $row->emergency_person_name,
           "emergency_address" => $row->emergency_address,
           "emergency_contact_number" => $row->emergency_contact_number,
+
+          "email" => $row->email,
 
           'profiles.id' => $row->id,
           "deleted_at" => $row->deleted_at,
@@ -1141,7 +1248,7 @@ class Admins extends Controller
           $row[2] = trim($row[2] ?? null);
           $row[8] = trim($row[8] ?? null);
           $row[3] = $row[3] ?? null;
-          if($row[3] != null) trim($row[3]);
+          if ($row[3] != null) trim($row[3]);
 
           if (
             empty($row[0])

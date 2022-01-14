@@ -112,7 +112,8 @@
               data: 'created_at'
             },
             {
-              data: 'initiator'
+              data: 'initiator',
+              sortable: false
             },
             {
               data: 'type',

@@ -61,9 +61,7 @@
         </svg>
         <span class="mx-4 font-medium">Add dues</span>
       </a>
-    <?php endif; ?>
 
-    <?php if ($this->role->isSuperAdmin()) : ?>
       <a href="<?php echo URLROOT ?>/admins/users" class="sidebar-nav-item <?php if ($data['current_route'] == 'users') : ?> active <?php endif; ?>">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -71,6 +69,9 @@
         <span class="mx-4 font-medium">Registered users</span>
       </a>
 
+    <?php endif; ?>
+
+    <?php if ($this->role->isSuperAdmin()) : ?>
       <a href="<?php echo URLROOT ?>/admins/activities" class="sidebar-nav-item <?php if ($data['current_route'] == 'activities') : ?> active <?php endif; ?>">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" />

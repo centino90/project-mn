@@ -99,6 +99,15 @@
               <option value="Inactive">Inactive</option>
             </select>
           </div>
+
+          <div class="w-full lg:w-auto space-y-2">
+            <label for="" class="form-label">Archive option</label>
+            <select class="form-input" x-model="dt_include_deleted">
+              <option value="hide">Hide archived</option>
+              <option value="show">Show archived</option>
+              <option value="only">Only archived</option>
+            </select>
+          </div>
         </div>
       </nav>
     </div>
@@ -129,7 +138,7 @@
     Alpine.data('app', () => ({
       init() {
         const app = this
-          
+
         $.fn.dataTable.Debounce = function(table, options) {
           let tableId = table.settings()[0].sTableId;
           $('.dataTables_filter input[aria-controls="' + tableId + '"]')
@@ -173,6 +182,7 @@
               // Append to data
               data.role = app.role
               data.accountStatus = app.account_status
+              data.includeDeleted = app.dt_include_deleted;
             }
           },
           "language": {
@@ -200,15 +210,22 @@
                     @click.away="dropDownOpen=false"
                     x-transition:enter-start="transition ease-in duration-3000"
                   >
-                    <a href="javascript:void(0)" @click="confirmSendAssignRole(${r.user_id})" class="flex gap-2 items-center justify-center text-secondary-700 text-center bg-white hover:bg-secondary-100 focus:bg-secondary-200 px-4 py-2">
+                    <?php if ($this->role->isSuperadmin()) : ?>
+                      <a href="javascript:void(0)" @click="confirmSendAssignRole(${r.user_id})" class="flex gap-2 items-center justify-center text-secondary-700 text-center bg-white hover:bg-secondary-100 focus:bg-secondary-200 px-4 py-2">
                     ${r.role == 'admin' 
                       ? `<img width="20" src="<?php echo URLROOT ?>/img/icons/x-circle.svg"/>`
                       : `<img width="20" src="<?php echo URLROOT ?>/img/icons/badge-check.svg"/>`
                     }
                     ${r.role == 'admin' ? 'Retire as admin' : 'Assign as admin'}
                     </a>
+                    <?php endif ?>
+                    <a href="javascript:void(0)" @click="archiveUser(${r.user_id});" class="flex gap-2 items-center justify-center text-center px-4 py-2" :class="'${r.deleted_at ? ' bg-success-600 hover:bg-success-700 focus:bg-success-800 text-white ' : ' bg-danger-600 hover:bg-danger-700 focus:bg-danger-800 text-white '}'" >
+                      <img width="20" src="<?php echo URLROOT ?>/img/icons${r.deleted_at ? '/refresh.svg' : '/trash.svg'}"/>                    
+                      <span>${r.deleted_at ? 'Restore' : 'Archive'}</span>
+                      </a>                      
                   </div>
                 </div>
+                <div x-show="${r.deleted_at != null ? true : false}" class="text-danger-600 italic text-sm">Archived</div>
                 </div>
                 `
               }
@@ -249,8 +266,8 @@
                   extend: 'csv',
                   exportOptions: {
                     columns: ':visible :not(.disabled-cols)'
-                  },    
-                  title: ''              
+                  },
+                  title: ''
                 },
                 {
                   extend: 'excel',
@@ -264,29 +281,28 @@
             {
               text: 'column visibility',
               extend: 'colvis',
-              prefixButtons: [
-                    {
-                      text: "<span>Show all</span>",
-                      action: function (e, dt, node, config) {
-                        dt.columns().visible(true);
-                        
-                      }
-                    },
-                    {
-                      text: "<span>Hide all</span>",
-                      action: function (e, dt, node, config) {
-                        dt.columns(':not(.visible-always)').visible(false);
-                      }
-                    }
-                  ],
+              prefixButtons: [{
+                  text: "<span>Show all</span>",
+                  action: function(e, dt, node, config) {
+                    dt.columns().visible(true);
+
+                  }
+                },
+                {
+                  text: "<span>Hide all</span>",
+                  action: function(e, dt, node, config) {
+                    dt.columns(':not(.visible-always)').visible(false);
+                  }
+                }
+              ],
               columns: ':not(:first-child)'
             },
             {
-                  extend: 'colvisRestore',
+              extend: 'colvisRestore',
             },
             {
               text: "<span>Refresh</span>",
-              action: function (e, dt, node, config) {
+              action: function(e, dt, node, config) {
                 dt.clear().draw();
                 dt.ajax.reload(null, false);
               }
@@ -294,14 +310,17 @@
           ],
         });
 
-        dataTable.on( 'preXhr.dt', function () {
+        dataTable.on('preXhr.dt', function() {
           $('#myTable').addClass('text-secondary-200');
         });
-        dataTable.on( 'xhr.dt', function () {
+        dataTable.on('xhr.dt', function() {
           $('#myTable').removeClass('text-secondary-200');
-        } );
+        });
         let debounce = new $.fn.dataTable.Debounce(dataTable);
 
+        this.$watch('dt_include_deleted', (value) => {
+          dataTable.draw();
+        });
         this.$watch('role', (value) => {
           dataTable.draw();
         });
@@ -319,6 +338,8 @@
         })
 
       },
+      dt_include_deleted: '',
+
       openModalOnClick(event) {
         const accountId = event.target.dataset.userid
         const accountName = event.target.dataset.username
@@ -389,6 +410,23 @@
             "Content-type": "application/json"
           }
         })
+      },
+
+      archiveUser(userId) {
+        fetch('<?php echo URLROOT . "/admins/archiveUser" ?>', {
+            method: "POST",
+            body: JSON.stringify({
+              user_id: userId
+            }),
+            headers: {
+              "Content-type": "application/json"
+            }
+          }).then(data => data.json())
+          .then(res => {
+            if (res.status == 'ok') {
+              $('#myTable').DataTable().draw('page');
+            }
+          })
       },
 
       setRole: {

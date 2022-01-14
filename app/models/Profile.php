@@ -142,7 +142,8 @@ class Profile extends Model
   {
     $selected = join(',', $columns);
     $sql = 'SELECT ' . $selected . ' FROM ' .
-      $this->table . ' LEFT JOIN (SELECT or_number, date_posted AS cd_dates, profile_id FROM dues GROUP BY dues.profile_id, date_posted) cd_dues ON cd_dues.profile_id = profiles.id '
+      $this->table . ' LEFT JOIN (SELECT or_number, date_posted AS cd_dates, profile_id FROM dues WHERE deleted_at IS NULL GROUP BY dues.profile_id, date_posted) cd_dues ON cd_dues.profile_id = profiles.id '
+      . ' LEFT JOIN accounts ON accounts.profile_id = profiles.id '
       . ' WHERE 1 ' .
       $filters . ' GROUP BY profiles.id ORDER BY ' .
       $orderColumn . ' ' .

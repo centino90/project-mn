@@ -1064,6 +1064,14 @@
         type_practice: '<?php echo $data['user']->type_practice ?>',
         user_id: '<?php echo $data['user']->id ?>'
       },
+      licensePerm: {
+        prc_number: '<?php echo $data['user']->prc_number ?>',
+        prc_registration_date: '<?php echo $data['user']->prc_registration_date ?>',
+        prc_expiration_date: '<?php echo $data['user']->prc_expiration_date ?>',
+        field_practice: '<?php echo $data['user']->field_practice ?>',
+        type_practice: '<?php echo $data['user']->type_practice ?>',
+        user_id: '<?php echo $data['user']->id ?>'
+      },
       submitLicense(event) {
         event.target.textContent = 'Please wait...'
 
