@@ -35,38 +35,37 @@
     </div>
   </header>
 
-  <!-- Set status modal dialog -->
-  <div x-cloak x-ref="modal" x-transition x-show.transition.opacity="setStatusModalOpen" class="overflow-auto fixed z-20 top-0 left-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center" role="dialog" aria-modal="true">
-    <div class="w-full max-w-screen-sm bg-white rounded-xl shadow-xl flex flex-col absolute divide-y divide-secondary-200">
+  <!-- Payment modal dialog -->
+  <div x-cloak x-ref="modal" x-transition x-show.transition.opacity="openEditRemarksModal" class="overflow-auto fixed z-20 top-0 left-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center" role="dialog" aria-modal="true">
+    <div class="w-full h-full lg:h-4/5 max-w-screen-md bg-white rounded-xl shadow-xl flex flex-col absolute divide-y divide-secondary-200">
 
-      <div class="px-5 py-4 flex items-center justify-between">
-        <h2 class="text-xl text-secondary-700" x-ref="modal_title" x-text="setStatusOperation">
-        </h2>
+      <div class="px-5 py-4 flex items-center justify-between bg-gradient-to-r from-primary-400 to-primary-600 rounded-t-lg text-white">
+        <h1 class="flex items-center gap-2 text-2xl leading-tight font-bold">
+          Edit remarks
+        </h1>
 
-        <button class="text-secondary-400 hover:text-secondary-600" @click="setStatusModalOpen = false">
+        <button class="text-white hover:bg-primary-700 p-2 rounded-full" @click="openEditRemarksModal = false">
           <svg class="w-4 fill-current transition duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512.001 512.001">
             <path d="M284.286 256.002L506.143 34.144c7.811-7.811 7.811-20.475 0-28.285-7.811-7.81-20.475-7.811-28.285 0L256 227.717 34.143 5.859c-7.811-7.811-20.475-7.811-28.285 0-7.81 7.811-7.811 20.475 0 28.285l221.857 221.857L5.858 477.859c-7.811 7.811-7.811 20.475 0 28.285a19.938 19.938 0 0014.143 5.857 19.94 19.94 0 0014.143-5.857L256 284.287l221.857 221.857c3.905 3.905 9.024 5.857 14.143 5.857s10.237-1.952 14.143-5.857c7.811-7.811 7.811-20.475 0-28.285L284.286 256.002z" />
           </svg>
         </button>
       </div>
 
-      <div class="py-5 mb-5 overflow-auto" id="modal_content" style="min-height: 300px; max-height: 300px">
-
-        <div class="flex flex-col mx-5 border-b">
-          <label for="remarks" class="form-label">Subject</label>
-          <h1 class="text-secondary-40" x-ref="modal_subject" x-text="setStatusModalSubject"></h1>
-        </div>
-
-        <div x-show="enableRemarks" class="flex flex-col px-5 mt-5">
-          <label for="remarks" class="form-label">Remarks (optional)</label>
-          <textarea name="remarks" type="text" x-model="setStatus.remarks" @keydown.enter="addEmail" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
-          </textarea>
+      <div class="pt-5 pb-10 overflow-auto" id="modal_content">
+        <!-- input form -->
+        <div class="space-y-4 flex flex-col px-5">
+          <label for="remarks" class="form-label">Remarks <span class="text-secondary-500">(optional)</span></label>
+          <textarea name="remarks" type="text" x-model="remarks" class="rounded border border-secondary-300 px-3 py-2 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
+            </textarea>
+          <span class="hidden text-danger-600" id="remarks_err">
+          </span>
         </div>
       </div>
 
-      <div class="flex">
-        <button @click="setStatusModalOpen = false" class="w-full p=4 rounded-bl-xl text-secondary-600 font-semibold transition duration-150 hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none">Cancel</button>
-        <button x-ref="modal_submit" x-text="setStatusModalSubmit.text" @click="statusChangeForm" :class="setStatusModalSubmit.class.join(' ')" class="w-full p-4 rounded-br-xl disabled:opacity-50 disabled:cursor-wait text-white font-semibold transition duration-150 focus:outline-none"></button>
+      <div class="flex items-center justify-end px-5 py-4 gap-5">
+        <button @click="openEditRemarksModal = false" class="py-3 px-5 rounded bg-secondary-100 border text-secondary-600 font-semibold transition duration-150 hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none">Cancel</button>
+
+        <button @click="submitEditRemarksForm" class="py-3 px-10 rounded disabled:opacity-50 disabled:cursor-wait bg-primary-600 text-white font-semibold transition duration-150 hover:bg-primary-500 focus:outline-none">Update</button>
       </div>
     </div>
   </div>
@@ -141,7 +140,7 @@
     <div class="hidden" id="print_header">
       <div class="flex justify-center gap-5">
         <div style="width: 100px">
-          <img width="100%" src="<?php echo URLROOT ?>/public/img/PDA-DCC.jpg" />
+          <img width="100%" src="<?php echo URLROOT ?>/img/PDA-DCC.jpg" />
         </div>
         <div>
           <h1 class="text-4xl text-center text-primary-500">DAVAO CITY DENTAL CHAPTER</h1>
@@ -255,12 +254,9 @@
                       @click.away="dropDownOpen=false"
                       x-transition:enter-start="transition ease-in duration-3000"
                     >
-                      <a href="<?php echo URLROOT ?>/admins/viewAccount?id=${r['profiles.id']}" class="flex gap-2 items-center justify-center text-secondary-700 text-center bg-white hover:bg-secondary-100 focus:bg-secondary-200 px-4 py-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>               
-                      View
+                      <a href="javascript:void(0)" @click="openEditRemarksModal = true; editRemarksProfileId = '${r['profiles.id']}'; remarks = '${r.status_remarks}'" class="flex gap-2 hover:bg-secondary-100 focus:bg-secondary-200 items-center justify-center text-center px-4 py-2" >
+                      <img width="20" src="<?php echo URLROOT ?>/img/icons/pencil-alt.svg"/>                    
+                      <span>Edit remarks</span>
                       </a>
                       <a href="javascript:void(0)" @click="archiveProfile(${r['profiles.id']});" class="flex gap-2 items-center justify-center text-center px-4 py-2" :class="'${r.deleted_at ? ' bg-success-600 hover:bg-success-700 focus:bg-success-800 text-white ' : ' bg-danger-600 hover:bg-danger-700 focus:bg-danger-800 text-white '}'" >
                       <img width="20" src="<?php echo URLROOT ?>/img/icons${r.deleted_at ? '/refresh.svg' : '/trash.svg'}"/>                    
@@ -285,7 +281,10 @@
             },
             {
               data: 'dcdc_dues',
-              sortable: false
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `<p class="line-clamp-3 hover:line-clamp-none w-40"> ${r.dcdc_dues}</p>`
+              }
             },
             {
               data: 'payment_status',
@@ -300,7 +299,7 @@
               render: function(d, t, r, m) {
                 return r.status_remarks
               }
-            },          
+            },
             {
               data: 'email',
               visible: false,
@@ -559,12 +558,10 @@
         });
         let debounce = new $.fn.dataTable.Debounce(dataTable);
 
-        this.$watch('setStatusModalOpen', value => {
+        this.$watch('openEditRemarksModal', value => {
           if (value === false) {
-            this.enableRemarks = false
-            this.setStatus.updateRemarks = false
-            this.setStatus.remarks = ''
-            this.setStatus.user_id = ''
+            this.remarks = ''
+            this.editRemarksProfileId = ''
           }
         })
         this.$watch('dt_include_deleted', (value) => {
@@ -572,6 +569,28 @@
         });
 
       },
+      openEditRemarksModal: false,
+      remarks: '',
+      editRemarksProfileId: '',
+      submitEditRemarksForm() {
+        fetch('<?php echo URLROOT . "/admins/updateProfileRemarks" ?>', {
+            method: "POST",
+            body: JSON.stringify({
+              profile_id: this.editRemarksProfileId,
+              remarks: this.remarks
+            }),
+            headers: {
+              "Content-type": "application/json"
+            }
+          }).then(data => data.json())
+          .then(res => {
+            if (res.status == 'ok') {
+              this.openEditRemarksModal = false
+              $('#myTable').DataTable().draw('page');
+            }
+          })
+      },
+
       dt_include_deleted: '',
 
       archiveProfile(profileId) {
@@ -591,103 +610,37 @@
           })
       },
 
-      openModalOnClick(event) {
-        const accountId = event.target.dataset.userid
-        const accountName = event.target.dataset.username
-        const accountRemarks = event.target.dataset.remarks
+      // openModalOnClick(event) {
+      //   const accountId = event.target.dataset.userid
+      //   const accountName = event.target.dataset.username
+      //   const accountRemarks = event.target.dataset.remarks
 
-        this.setStatusOperation = event.target.textContent.toLowerCase().trim()
-        this.setStatusModalSubmit.text = 'Confirm'
-        this.setStatus.user_id = accountId
-        this.setStatusModalOpen = true
+      //   this.setStatusOperation = event.target.textContent.toLowerCase().trim()
+      //   this.setStatusModalSubmit.text = 'Confirm'
+      //   this.setStatus.user_id = accountId
+      //   this.openEditRemarksModal = true
 
-        if (this.setStatusOperation == 'set as inactive' || this.setStatusOperation == 'update remarks') {
-          this.enableRemarks = true
-          this.setStatus.remarks = accountRemarks
-        }
-        if (this.setStatusOperation == 'set as inactive') {
-          this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} deactivation`
-          this.setStatusModalSubmit.class = ['bg-danger-500', 'hover:bg-danger-700']
-        }
-        if (this.setStatusOperation == 'set as active') {
-          this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} activation`
-          this.setStatusModalSubmit.class = ['bg-success-500', 'hover:bg-success-700']
-        }
-        if (this.setStatusOperation == 'update remarks') {
-          this.setStatus.updateRemarks = true
-          this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} update`
-          this.setStatusModalSubmit.class = ['bg-primary-500', 'hover:bg-primary-700']
-        }
+      //   if (this.setStatusOperation == 'set as inactive' || this.setStatusOperation == 'update remarks') {
+      //     this.enableRemarks = true
+      //     this.setStatus.remarks = accountRemarks
+      //   }
+      //   if (this.setStatusOperation == 'set as inactive') {
+      //     this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} deactivation`
+      //     this.setStatusModalSubmit.class = ['bg-danger-500', 'hover:bg-danger-700']
+      //   }
+      //   if (this.setStatusOperation == 'set as active') {
+      //     this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} activation`
+      //     this.setStatusModalSubmit.class = ['bg-success-500', 'hover:bg-success-700']
+      //   }
+      //   if (this.setStatusOperation == 'update remarks') {
+      //     this.setStatus.updateRemarks = true
+      //     this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} update`
+      //     this.setStatusModalSubmit.class = ['bg-primary-500', 'hover:bg-primary-700']
+      //   }
 
-        this.setStatusOperation = this.setStatusOperation.charAt(0).toUpperCase() + this.setStatusOperation.slice(1);
-        this.setStatusModalSubject = accountName
-      },
-      setStatusOperation: '',
-      setStatusModalOpen: false,
-      setStatusModalTitle: '',
-      setStatusModalSubmit: {
-        class: [],
-        text: ''
-      },
-      setStatusModalSubject: '',
-      enableRemarks: false,
-      setStatus: {
-        initiator: '<?php echo arrangeFullname($this->session->get(SessionManager::SESSION_USER)->first_name, $this->session->get(SessionManager::SESSION_USER)->middle_name, $this->session->get(SessionManager::SESSION_USER)->last_name) ?>',
-        remarks: '',
-        user_id: '',
-        updateRemarks: false
-      },
-      statusChangeForm: function() {
-        let actionText = this.$el.textContent
-        this.$el.textContent = 'Please wait...'
-
-        this.sendStatusChange().then(data => data.json())
-          .then(res => {
-            this.$el.textContent = actionText
-            this.$el.disabled = false
-
-            if (res.status == 'ok') {
-              window.location.reload()
-            }
-          })
-      },
-      sendStatusChange: async function() {
-        return await fetch('<?php echo URLROOT . "/admins/userStatusChange" ?>', {
-          method: "POST",
-          body: JSON.stringify({
-            setStatus: this.setStatus
-          }),
-          headers: {
-            "Content-type": "application/json"
-          }
-        })
-      },
-
-      setRole: {
-        user_id: ''
-      },
-      confirmSendAssignRole: function($user_id) {
-        this.setRole.user_id = $user_id
-
-        this.sendAssignRole().then(data => data.json())
-          .then(res => {
-            console.log(res)
-            if (res.status == 'ok') {
-              window.location.reload()
-            }
-          })
-      },
-      sendAssignRole: async function() {
-        return await fetch('<?php echo URLROOT . "/admins/reassignAdminRole" ?>', {
-          method: "POST",
-          body: JSON.stringify({
-            user_id: this.setRole.user_id
-          }),
-          headers: {
-            "Content-type": "application/json"
-          }
-        })
-      },
+      //   this.setStatusOperation = this.setStatusOperation.charAt(0).toUpperCase() + this.setStatusOperation.slice(1);
+      //   this.setStatusModalSubject = accountName
+      // },
 
       status: '',
       filterColumnByStatus(status) {

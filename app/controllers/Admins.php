@@ -930,7 +930,7 @@ class Admins extends Controller
       // initilize columns to be selected
       $selectables = [];
       $selectables[] = 'GROUP_CONCAT(YEAR(cd_dues.cd_dates)) AS cd_dates';
-      $selectables[] = 'GROUP_CONCAT(CONCAT(YEAR(cd_dues.cd_dates), IFNULL(CONCAT(" (#", or_number, ")" ), "")) SEPARATOR ", ") AS dcdc_dues';
+      $selectables[] = 'CONCAT(GROUP_CONCAT(CONCAT(YEAR(cd_dues.cd_dates), IFNULL(CONCAT(" (#: ", or_number, ")" ), "")) SEPARATOR ", "), IFNULL(CONCAT(" (", status_remarks, ")" ), "")) AS dcdc_dues';
       $selectables[] = 'profiles.*';
       $selectables[] = 'profiles.deleted_at AS deleted_at';
       $selectables[] = 'accounts.email';
@@ -976,7 +976,7 @@ class Admins extends Controller
         }
 
         $data[] = array(
-          "dcdc_dues" => $row->dcdc_dues,
+          "dcdc_dues" => $row->dcdc_dues ?? '',
 
           "prc_number" => $row->prc_number,
           "last_name" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name) ?? '',
@@ -1753,6 +1753,76 @@ class Admins extends Controller
       exit($reply);
     }
   }
+  public function updateProfileRemarks()
+  {
+    try {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Error('Your request method must be in \'POST\'');
+      }
+
+      $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+
+      if ($contentType !== "application/json") {
+        throw new Error('Your content type must be in \'application/json\'');
+      }
+
+      $content = trim(file_get_contents("php://input"));
+      $decoded = json_decode($content, true);
+
+      $decoded['message'] = 'Profile remarks was successfully updated!';
+      $decoded['status'] = 'ok';
+      $decoded['errors'] = [];
+
+      // check inputs
+      if (empty($decoded['profile_id'])) {
+        $decoded['errors']['profile_id_err'] = 'The field \'Profile id\' should not be empty';
+      } 
+      // if (empty($decoded['remarks'])) {
+      //   $decoded['errors']['remarks_err'] = 'Your email should not be empty';
+      // } 
+
+      if (sizeof($decoded['errors']) > 0) {
+        throw new Error('You have some input errors. Please check your inputs');
+      }
+
+      // check if payment insert is unsuccessful or prc number does not exist
+      if (!$this->profileModel->update3(
+        ['status_remarks'],
+        [$decoded['remarks']],
+        ['id'],
+        [$decoded['profile_id']]
+      )) {
+        throw new Error('Something went wrong with the updating of the email. Try again');
+      }
+
+      $user = $this->profileModel->findProfileUser(['*'], ['profiles.id'], [$decoded['profile_id']]);
+
+      $userFullname = arrangeFullname($user->first_name, $user->middle_name, $user->last_name);
+      if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
+        $this->activityModel->store(
+          [
+            'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
+            'initiator' => $this->currentUserFullname,
+            'message' => 'Admin: ' . $this->currentUserFullname . ' updated the profile remarks of ' . $userFullname,
+            'type' => 'update_profile_remarks',
+          ]
+        );
+      }
+
+      $reply = json_encode($decoded);
+
+      header("Content-Type: application/json; charset=UTF-8");
+      exit($reply);
+    } catch (\Throwable $th) {
+      header("Content-Type: application/json; charset=UTF-8");
+      $decoded['status'] = 'fail';
+      $decoded['message'] = $th->getMessage();
+      $reply = json_encode($decoded);
+
+      exit($reply);
+    }
+  }
+  
 
   public function updatePersonal()
   {

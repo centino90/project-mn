@@ -180,7 +180,7 @@
       <div class="flex items-center justify-end px-5 py-4 gap-5">
         <button @click="paymentModalOpen = false" class="py-3 px-5 rounded bg-secondary-100 border text-secondary-600 font-semibold transition duration-150 hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none">Cancel</button>
 
-        <button @click="submitForm" class="py-3 px-10 rounded disabled:opacity-50 disabled:cursor-wait bg-primary-600 text-white font-semibold transition duration-150 hover:bg-primary-500 focus:outline-none">Update</button>
+        <button @click="submitEditRemarksForm" class="py-3 px-10 rounded disabled:opacity-50 disabled:cursor-wait bg-primary-600 text-white font-semibold transition duration-150 hover:bg-primary-500 focus:outline-none">Update</button>
       </div>
     </div>
   </div>
@@ -394,7 +394,7 @@
           'dom': 'lfBrtip',
           'pageLength': 5,
           'order': [
-            [0, 'desc']
+            [1, 'desc']
           ],
           'processing': true,
           'serverSide': true,
@@ -433,6 +433,7 @@
           },
           'columns': [{
               data: 'dues.id',
+              sortable: false,
               class: 'disabled-cols visible-always',
               render: function(d, t, r, m) {
                 return `
@@ -473,6 +474,7 @@
             },
             {
               data: 'last_name',
+              sortable: false,
               render: function(d, t, r, m) {
                 if (!r.user_id) {
                   return `<span>${r.last_name}</span>`;
@@ -505,6 +507,7 @@
             },
             {
               data: 'remarks',
+              visible: false,
               sortable: false,
               render: function(d, t, r, m) {
                 return `<span class="text-secondary-600">${r.remarks}</span>`
@@ -512,6 +515,7 @@
             },
             {
               data: 'channel',
+              visible: false,
               sortable: false,
               render: function(d, t, r, m) {
                 return `<span class="text-secondary-600">${r.channel}</span>`
@@ -636,6 +640,7 @@
             {
               text: 'column visibility',
               extend: 'colvis',
+              columns: ':not(.disabled-cols)',
               prefixButtons: [{
                   text: "<span>Show all</span>",
                   action: function(e, dt, node, config) {

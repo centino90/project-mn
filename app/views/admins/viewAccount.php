@@ -686,9 +686,9 @@
 
             <div class="hidden" id="print_header">
               <div class="flex justify-center gap-5">
-                <div style="width: 100px">
-                  <img width="100%" src="<?php echo URLROOT ?>/public/img/PDA-DCC.jpg" />
-                </div>
+                <!-- <div style="width: 100px">
+                  <img width="100%" src="<?php echo URLROOT ?>/img/PDA-DCC.jpg" />
+                </div> -->
                 <div>
                   <h1 class="text-4xl text-center text-primary-500">DAVAO CITY DENTAL CHAPTER</h1>
                   <div class="flex justify-between gap-3 mt-3 text-md">
@@ -715,7 +715,7 @@
                 </div>
 
                 <div style="width: 100px">
-                  <img width="100%" src="<?php echo URLROOT ?>/public/img/PDA-DCC.jpg" />
+                  <img width="100%" src="<?php echo URLROOT ?>/img/PDA-DCC.jpg" />
                 </div>
               </div>
 
@@ -731,7 +731,7 @@
                       PRC #: <?php echo $data['user']->prc_number ?>
                     </div>
                     <div class="w-full border-b border-black">
-                      PDA #: N\A
+                      PDA #:
                     </div>
                   </div>
                 </div>
@@ -760,7 +760,7 @@
                   </div>
                   <div class="whitespace-nowrap w-1/2 pl-2 mt-2">PRC Registration Date: <?php echo $data['user']->prc_registration_date ?>
                   </div>
-                  <div class="whitespace-nowrap w-1/2 pr-2 mt-2">Date of Induction: N\A
+                  <div class="whitespace-nowrap w-1/2 pr-2 mt-2">Date of Induction:
                   </div>
                   <div class="whitespace-nowrap w-1/2 pl-2 mt-2">Expiry Date: <?php echo $data['user']->prc_expiration_date ?>
                   </div>
