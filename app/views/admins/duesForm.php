@@ -529,11 +529,7 @@
       },
       successModalOpen: false,
       insertedRows: [],
-      filterInsertedRows() {
-        return this.insertedRows;
-      },
-
-
+      
       // search input component
       show: false,
       selected: null,

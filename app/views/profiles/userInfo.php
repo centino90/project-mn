@@ -25,7 +25,7 @@
                     </li>
                     <li class="flex items-center">
                         <span aria-current="page">
-                            My user profile
+                            My account
                         </span>
                     </li>
                 </ol>
@@ -35,7 +35,7 @@
         <form x-ref="change_password_form" x-data="{hasPassword: <?php echo $data['has_password'] ?>}" @submit.prevent>
             <header class="flex flex-wrap items-center justify-between gap-3 mb-10">
                 <div class="w-64 flex-shrink-0">
-                    <span class="text-2xl font-bold">My user profile</span>
+                    <span class="text-2xl font-bold">My account</span>
                 </div>
             </header>
 
@@ -55,7 +55,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
-                                        Choose a profile
+                                        Choose a profile img
                                     </span>
                                     <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
                                 </a>
@@ -73,7 +73,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
-                                            Update profile
+                                            Update profile img
                                         </span>
                                         <input type="file" @change="submitProfileImg" x-ref="profile_input" class="form-input hidden" name="profile_image">
                                     </a>

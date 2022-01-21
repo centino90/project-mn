@@ -82,29 +82,33 @@ class Admins extends Controller
 
       // check inputs
       if (empty($decoded['duesForm']['prc_number'])) {
-        $decoded['errors']['prc_number_err'] = 'Prc number must not be empty';
+        $decoded['errors']['prc_number_err'] = 'prc number must not be empty';
       }
 
       if (empty($decoded['duesForm']['type'])) {
-        $decoded['errors']['type_err'] = 'Please select a payment type';
+        $decoded['errors']['type_err'] = 'payment type must not be empty';
       }
 
       if (empty($decoded['duesForm']['amount'])) {
-        $decoded['errors']['amount_err'] = 'Please enter an amount';
+        $decoded['errors']['amount_err'] = 'amount must not be empty';
       } else if (!is_numeric($decoded['duesForm']['amount'])) {
-        $decoded['errors']['amount_err'] = 'Please enter a valid amount';
+        $decoded['errors']['amount_err'] = 'amount must be numeric';
       }
 
       if (empty($decoded['duesForm']['channel'])) {
-        $decoded['errors']['channel_err'] = 'Please enter a payment channel';
+        $decoded['errors']['channel_err'] = 'payment channel must not be empty';
       }
 
       if (empty($decoded['duesForm']['or_number'])) {
-        $decoded['errors']['or_number_err'] = 'Please enter the OR number';
+        $decoded['errors']['or_number_err'] = 'or number must not be empty';
+      } else {
+        if ($this->duesModel->hasRow(['or_number'], [$decoded['duesForm']['or_number']])) {
+          $decoded['errors']['or_number_err'] = 'this or number is already taken';
+        }
       }
 
       if (empty($decoded['duesForm']['date_posted']['month'])) {
-        $decoded['errors']['date_posted_err'] = 'Month must not be empty';
+        $decoded['errors']['date_posted_err'] = 'month must not be empty';
       }
       if ($decoded['duesForm']['date_posted']['month'] > 12 || $decoded['duesForm']['date_posted']['month'] < 1) {
         $decoded['errors']['date_posted_err'] = 'Please enter a valid month';
@@ -125,7 +129,7 @@ class Admins extends Controller
 
       if ($this->profileModel->hasRow(['prc_number'], [$decoded['duesForm']['prc_number']]) === false) {
         $decoded['errors']['prc_number_err'] = 'The prc number: ' . $decoded['duesForm']['prc_number'] . ' does not have a linked profile. Try again.';
-        throw new Error('prc number is non-existing');
+        throw new Error('The prc number: ' . $decoded['duesForm']['prc_number'] . ' does not have a linked profile. Try again.');
       }
 
       $profile =  $this->profileModel->find(
@@ -189,32 +193,40 @@ class Admins extends Controller
 
       // check inputs
       if (empty($decoded['duesForm']['prc_number'])) {
-        $decoded['errors']['profile_id_err'] = 'Your prc number must not be empty';
+        $decoded['errors']['profile_id_err'] = 'prc number must not be empty';
       }
 
       if (empty($decoded['duesForm']['type'])) {
-        $decoded['errors']['type_err'] = 'Please select a payment type';
+        $decoded['errors']['type_err'] = 'payment type must not be empty';
       }
 
       if (empty($decoded['duesForm']['amount'])) {
-        $decoded['errors']['amount_err'] = 'Please enter an amount';
+        $decoded['errors']['amount_err'] = 'amount must not be empty';
       } else if (!is_numeric($decoded['duesForm']['amount'])) {
-        $decoded['errors']['amount_err'] = 'Please enter a valid amount';
+        $decoded['errors']['amount_err'] = 'amount must be a numeric';
       }
 
       if (empty($decoded['duesForm']['channel'])) {
-        $decoded['errors']['channel_err'] = 'Please enter a payment channel';
+        $decoded['errors']['channel_err'] = 'payment channel must not be empty';
       }
 
       if (empty($decoded['duesForm']['or_number'])) {
-        $decoded['errors']['or_number_err'] = 'Please enter the OR number';
+        $decoded['errors']['or_number_err'] = 'or number must not be empty';
+      } else {
+        $due = $this->duesModel->find(['*'], ['id'], [$decoded['duesForm']['dues_id']]);
+        if (
+          $due->or_number !== $decoded['duesForm']['or_number']
+          && $this->duesModel->hasRow(['or_number'], [$decoded['duesForm']['or_number']])
+        ) {
+          $decoded['errors']['or_number_err'] = 'this or number is already taken';
+        }
       }
 
       if (empty($decoded['duesForm']['date_posted']['month'])) {
         $decoded['errors']['date_posted_err'] = 'Month must not be empty';
       }
       if ($decoded['duesForm']['date_posted']['month'] > 12 || $decoded['duesForm']['date_posted']['month'] < 1) {
-        $decoded['errors']['date_posted_err'] = 'Please enter a valid month';
+        $decoded['errors']['date_posted_err'] = 'month must be a valid date of a month';
       }
       if (empty($decoded['duesForm']['date_posted']['year'])) {
         $decoded['errors']['date_posted_err'] = 'year must not be empty';
@@ -298,7 +310,7 @@ class Admins extends Controller
 
       // check inputs
       if (empty($decoded['dues_id'])) {
-        $decoded['errors']['dues_id_err'] = 'Your dues id must not be empty';
+        $decoded['errors']['dues_id_err'] = 'Dues id must not be empty';
       }
 
       if (sizeof($decoded['errors']) > 0) {
@@ -374,7 +386,7 @@ class Admins extends Controller
       $content = trim(file_get_contents("php://input"));
       $decoded = json_decode($content, true);
 
-      $decoded['message'] = 'New profile(s) were successfully added!';
+      $decoded['message'] = 'New payment(s) were successfully added!';
       $decoded['status'] = 'ok';
       $decoded['errors'] = [];
 
@@ -409,7 +421,11 @@ class Admins extends Controller
         throw new Error('You imported 0 rows. You need to populate the necessary cells or rows. Try again');
       }
 
+      $orNumbers = array();
+      $orNumbersWithoutRows = array();
+      $prcNumbersWithoutRows = array();
       $scannedRows = array();
+      $emptyFailedRows = array();
       $index = 0;
       foreach ($data as $row) {
         $row['prc_number'] = trim($row[0]);
@@ -421,6 +437,8 @@ class Admins extends Controller
         $row['remarks'] = trim($row[6]);
 
         if ($index > 0) {
+          $rowNo = $index + 1;
+
           // ignore row if all cells are empty
           if (
             empty($row['prc_number'])
@@ -435,40 +453,184 @@ class Admins extends Controller
           }
 
           if (empty($row['prc_number'])) {
-            throw new Error('\'row ' . $index . '\' on column \'PRC No.\' should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['prc_number'],
+                'column' => 'PRC No',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['prc_number'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'PRC No',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           } else if (empty($row['amount'])) {
-            throw new Error('\'row ' . $index . '\' on column \'AMOUNT\' should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['amount'],
+                'column' => 'AMOUNT',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['amount'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'AMOUNT',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           } else if (empty($row['paid_to'])) {
-            throw new Error('\'row ' . $index . '\' on column \'PAID TO (PDA/DCC)\' should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['paid_to'],
+                'column' => 'PAID TO (PDA/DCC)',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['paid_to'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'PAID TO (PDA/DCC)',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
+          } else if (!empty($row['paid_to']) && !in_array(strtolower($row['paid_to']), ['pda', 'dcc'])) {
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['paid_to'],
+                'column' => 'PAID TO (PDA/DCC)',
+                'status' => 'INCORRECT INPUT',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['paid_to'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'PAID TO (PDA/DCC)',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INCORRECT INPUT',
+              ];
+            }
           } else if (empty($row['channel'])) {
-            throw new Error('\'row ' . $index . '\' on column \'PAYMENT CHANNEL\' should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['channel'],
+                'column' => 'PAYMENT CHANNEL',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['channel'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'PAYMENT CHANNEL',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           } else if (empty($row['or_number'])) {
-            throw new Error('\'row ' . $index . '\' on column \'OR NO.\' should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['or_number'],
+                'column' => 'OR NO',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['or_number'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'OR NO',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           } else if (empty($row['date_posted'])) {
-            throw new Error('\'row ' . $index . '\' on column \'DATE POSTED \' should not be empty. Try again');
-          }
-
-          // check if the input type is not valid
-          if (!in_array(strtolower($row['paid_to']), ['pda', 'dcc'])) {
-            throw new Error($row['paid_to'] . ' is not a valid cell value for column \'type\'. It should either be (pda and dcc or PDA and DCC). Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['date_posted'],
+                'column' => 'DATE POSTED',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['date_posted'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'DATE POSTED',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           }
 
           if (!is_numeric($row['amount'])) {
-            throw new Error($row['amount'] . ' is not a valid numeric value for the cell \'amount\'. It should be numeric to be considered as money. Try again');
-          }
-
-          if (!strtotime($row['date_posted']) || strlen($row['date_posted']) <= 1) {
-            throw new Error($row['date_posted'] . ' is not a valid date value for the cell \'DATE POSTED\'. It should be a date formatted in (MM/DD/YYYY). Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['amount'],
+                'column' => 'AMOUNT',
+                'status' => 'NOT NUMERIC',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['amount'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'AMOUNT',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'NOT NUMERIC',
+              ];
+            }
           }
 
           $day = date('d', strtotime($row['date_posted']));
           $month = date('m', strtotime($row['date_posted']));
           $year = date('Y', strtotime($row['date_posted']));
-          if (!checkdate($month, $day, $year)) {
-            throw new Error($row['date_posted'] . ' is not a valid date value for the cell \'DATE POSTED\'. It should have a correct Month, Day, and Year values. Try again');
+
+          if (!strtotime($row['date_posted']) || strlen($row['date_posted']) <= 1) {
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['date_posted'],
+                'column' => 'DATE POSTED',
+                'status' => 'INVALID DATE',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['date_posted'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'DATE POSTED',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+              ];
+            }
           }
 
+          if (!checkdate($month, $day, $year)) {
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['date_posted'],
+                'column' => 'DATE POSTED',
+                'status' => 'INVALID DATE',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['date_posted'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'DATE POSTED',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+              ];
+            }
+          }
+          // change format so that mysql accepts 
+          $row['paid_to'] = strtoupper($row['paid_to']);
+          $row['date_posted'] = date('Y-m-d', strtotime($row['date_posted']));
+
           array_push($scannedRows, $row);
+          array_push($orNumbers, ['or_number' => $row['or_number'], 'rowNo' => $rowNo]);
+          $prcNumbersWithoutRows[$rowNo] = $row['prc_number'];
+          $orNumbersWithoutRows[$rowNo] = $row['or_number'];
         }
 
         $index++;
@@ -478,69 +640,116 @@ class Admins extends Controller
         throw new Error('Rows should not be empty. Try again');
       }
 
-      $insertedRows = array();
-      $insertedRowInfos = array();
-      $index2 = 0;
-      foreach ($data as $row) {
-        if ($index2 > 0) {
-          $row[0] = trim($row[0] ?? null);
-          $row[1] = trim($row[1] ?? null);
-          $row[2] = trim($row[2] ?? null);
-          $row[3] = trim($row[3] ?? null);
-          $row[4] = trim($row[4] ?? null);
-          $row[6] = trim($row[6] ?? null);
+      if (!empty($emptyFailedRows) && sizeof($emptyFailedRows) > 0) {
+        $decoded['status'] = 'fail';
+        $decoded['error_title'] = 'cell error';
+        $decoded['rows'] = $emptyFailedRows;
+        $decoded['failedCount'] = sizeof($emptyFailedRows);
+        $decoded['passedCount'] = sizeof($emptyFailedRows) - $decoded['failedCount'];
+        $decoded['message'] = $decoded['failedCount'] . ' entries were unsuccessful due to anomalies detected in spreadsheet.';
 
-          $row[5] = $row[5] ?? null;
-          if ($row[5] != null) trim($row[5]);
-
-          // ignore row if all cells are empty
-          if (
-            empty($row[0])
-            && empty($row[1])
-            && empty($row[2])
-            && empty($row[3])
-            && empty($row[4])
-            && empty($row[5])
-            && empty($row[6])
-          ) {
-            continue;
-          }
-
-          $row[2] = strtoupper($row[2]);
-          $row[5] = date('Y-m-d', strtotime($row[5])); // change format so that mysql accepts date
-          $row['profile_id'] = null;
-          $row['profile_name'] = null;
-
-          if (!$this->profileModel->hasRow(['prc_number'], [$row[0]])) {
-            throw new Error('The PRC No.: ' . $row[0] . ' on row ' . $index2 . ' does not have a linked profile. Try again.');
-          }
-
-          $profile =  $this->profileModel->find(
-            ['*'],
-            ['prc_number'],
-            [$row[0]]
-          );
-
-          $row['profile_id'] = $profile->id;
-          $row['profile_name'] = arrangeFullname($profile->first_name, $profile->middle_name, $profile->last_name);
-
-          $last_row = $this->duesModel->store2($row);
-
-          $last_row->profile_id = !empty($last_row->profile_id) ? 'Linked (' . $row["profile_name"] . ')' : 'No links';
-          $insertedRows[] = $last_row; // returns the last row
-          $insertedRowInfos[] = $last_row->type . ' - ' . date('Y', strtotime($last_row->date_posted)) . ' (#' . $last_row->or_number . ')';
-        }
-        $index2++;
+        $reply = json_encode($decoded);
+        header("Content-Type: application/json; charset=UTF-8");
+        exit($reply);
       }
 
-      $decoded['insertedRows'] = $insertedRows;
+      $noLinks = $this->profileModel->whereIn(['prc_number'], 'prc_number', array_values($prcNumbersWithoutRows));
+      if ($noLinks) {
+        foreach ($noLinks as $key => $value) {
+          foreach (array_keys($prcNumbersWithoutRows, $value->prc_number, true) as $key) {
+            unset($prcNumbersWithoutRows[$key]);
+          }
+        }
+      }
+
+      if (!empty($prcNumbersWithoutRows) && sizeof($prcNumbersWithoutRows) > 0) {
+        $decoded['status'] = 'fail';
+        $decoded['error_title'] = 'prc not found';
+        $decoded['rows'] = $prcNumbersWithoutRows;
+        $decoded['failedCount'] = sizeof($prcNumbersWithoutRows);
+        $decoded['passedCount'] = sizeof($prcNumbersWithoutRows) - $decoded['failedCount'];
+        $decoded['message'] = $decoded['failedCount'] . ' entries were unsuccessful due to anomalies detected in spreadsheet.';
+
+        $reply = json_encode($decoded);
+        header("Content-Type: application/json; charset=UTF-8");
+        exit($reply);
+      }
+
+      // set spreadsheet-level duplicate checking
+      $returnedDupes = $this->returnDuplicate($orNumbers, 'or_number');
+      //  dd($returnedDupes);
+      if (!empty($returnedDupes) && sizeof($returnedDupes) > 0) {
+        $decoded['status'] = 'fail';
+        $decoded['error_title'] = 'spreadsheet duplicate';
+        $decoded['rows'] = $returnedDupes;
+        $decoded['failedCount'] = sizeof($returnedDupes);
+        $decoded['passedCount'] = sizeof($orNumbers) - $decoded['failedCount'];
+        $decoded['message'] = $decoded['failedCount'] . ' entries were unsuccessful due to duplicate rows (or_number) detected in spreadsheet.';
+
+        $reply = json_encode($decoded);
+        header("Content-Type: application/json; charset=UTF-8");
+        exit($reply);
+      }
+
+
+      // set db-level duplicate checking
+      $orNumbersWithoutRows = array_unique($orNumbersWithoutRows);
+      $dbDuplicates = $this->duesModel->whereIn(['or_number'], 'or_number', array_values($orNumbersWithoutRows));
+
+      if (!empty($dbDuplicates) && sizeof($dbDuplicates) > 0) {
+        $newORs = array();
+        foreach ($dbDuplicates as $key => $value) {
+          if (in_array($value->or_number, $orNumbersWithoutRows)) {
+            $k = array_search($value->or_number, $orNumbersWithoutRows);
+            $dbDuplicates[$k] = $value;
+            $newORs[$k] = $orNumbersWithoutRows[$k];
+          }
+        }
+        ksort($newORs);
+
+        $decoded['status'] = 'fail';
+        $decoded['error_title'] = 'database duplicate';
+        $decoded['rows'] = $newORs;
+        $decoded['failedCount'] = sizeof($newORs);
+        $decoded['passedCount'] = sizeof($orNumbersWithoutRows) - $decoded['failedCount'];
+        $decoded['message'] = $decoded['failedCount'] . ' entries were unsuccessful due to duplicate rows (prc_number) detected in database.';
+
+        $reply = json_encode($decoded);
+        header("Content-Type: application/json; charset=UTF-8");
+        exit($reply);
+      }
+
+      $profiles =  $this->profileModel->get(
+        ['*'],
+        ['1'],
+        ['1'],
+      );
+
+      foreach ($profiles as $key => $value) {
+        $profileVal = $value;
+        foreach ($scannedRows as $key => $value) {
+          if ($profileVal->prc_number == $value['prc_number']) {
+            $scannedRows[$key]['profile_id'] = $profileVal->id;
+          }
+        }
+      }
+
+      $this->duesModel->insertMultiple(
+        array_values($scannedRows)
+      );
+
+      //     $last_row->profile_id = !empty($last_row->profile_id) ? 'Linked (' . $row["profile_name"] . ')' : 'No links';
+      //     $insertedRows[] = $last_row; // returns the last row
+      //     $insertedRowInfos[] = $last_row->type . ' - ' . date('Y', strtotime($last_row->date_posted)) . ' (#' . $last_row->or_number . ')';
+
+      $decoded['insertedRows'] = $scannedRows;
       if ($this->role->isAdmin($this->session->get(SessionManager::SESSION_USER)->role)) {
         $this->activityModel->store(
           [
             'user_id' =>     $this->session->get(SessionManager::SESSION_USER)->id,
             'initiator' => $this->currentUserFullname,
-            'message' => 'Admin: ' . $this->currentUserFullname . ' imported ' . count($insertedRows) . ' payments [' . join(', ', $insertedRowInfos) . ']',
-            'type' => 'add_dues',
+            'message' => 'Admin: ' . $this->currentUserFullname . ' imported ' . count($scannedRows) . ' payments',
+            'type' => 'import_dues',
           ]
         );
       }
@@ -628,6 +837,7 @@ class Admins extends Controller
       $selectables = [];
       foreach ($_POST['columns'] as $column) {
         $selectables[] = 'profiles.*';
+        $selectables[] = 'accounts.email';
         $selectables[] = 'dues.*';
       }
 
@@ -657,7 +867,14 @@ class Admins extends Controller
           'user_id' => $row->profile_id,
           'dues.id' => $row->id,
           'total_amount' => $totalFilteredAmount->total_filtered_amount,
-          'deleted_at' => empty($row->deleted_at) ? false : true
+          'deleted_at' => empty($row->deleted_at) ? false : true,
+
+          "surname" => $row->last_name,
+          "first_name" => $row->first_name,
+          "middle_name" => $row->middle_name,
+          "prc_number" => $row->prc_number,
+          "contact_number" => $row->contact_number,
+          "email" => $row->email,
         );
       }
 
@@ -725,7 +942,7 @@ class Admins extends Controller
         $searchQuery = ' and deleted_at IS NOT NULL ';
       }
 
-      $searchQuery .= " AND email_verified != false AND role != 'superadmin' ";
+      $searchQuery .= " AND email_verified != false";
       if ($searchValue != '') {
         $searchQuery .= " and ( account_status = '" . $searchValue . "') ";
       }
@@ -769,6 +986,7 @@ class Admins extends Controller
           "email" => $row->email,
           "role" => $row->role,
           "account_status" => $dateInSixMonthsSinceLastLog <= $today ? 'inactive' : 'active',
+          "is_online" => $row->is_online ? 'online' : 'offline',
           "logged_at" => $row->logged_at,
           "deleted_at" => $row->deleted_at,
 
@@ -929,11 +1147,16 @@ class Admins extends Controller
 
       // initilize columns to be selected
       $selectables = [];
-      $selectables[] = 'GROUP_CONCAT(YEAR(cd_dues.cd_dates)) AS cd_dates';
-      $selectables[] = 'CONCAT(GROUP_CONCAT(CONCAT(YEAR(cd_dues.cd_dates), IFNULL(CONCAT(" (#: ", or_number, ")" ), "")) SEPARATOR ", "), IFNULL(CONCAT(" (", status_remarks, ")" ), "")) AS dcdc_dues';
+      $selectables[] = 'GROUP_CONCAT(YEAR(cd_dues.cd_dates)) AS dcc_dates';
+      $selectables[] = 'GROUP_CONCAT(YEAR(pda_dues.pda_dates)) AS pda_dates';
+      // $selectables[] = 'GROUP_CONCAT(YEAR(dues.date_posted)) AS date_posted';
+      $selectables[] = 'CONCAT(GROUP_CONCAT(CONCAT(YEAR(cd_dues.cd_dates), IFNULL(CONCAT(" (#: ", cd_dues.or_number, ")" ), "")) SEPARATOR ", "), IFNULL(CONCAT(" (", status_remarks, ")" ), "")) AS dcc_dues';
+      $selectables[] = 'CONCAT(GROUP_CONCAT(CONCAT(YEAR(pda_dues.pda_dates), IFNULL(CONCAT(" (#: ", pda_dues.or_number, ")" ), "")) SEPARATOR ", "), IFNULL(CONCAT(" (", status_remarks, ")" ), "")) AS pda_dues';
       $selectables[] = 'profiles.*';
       $selectables[] = 'profiles.deleted_at AS deleted_at';
       $selectables[] = 'accounts.email';
+      $selectables[] = 'accounts.profile_img_path';
+      $selectables[] = 'accounts.thumbnail_img_path';
 
 
       // Row count without filtering
@@ -952,11 +1175,15 @@ class Admins extends Controller
         date('Y', strtotime(date('Y-m-d') . ' - 3 year')),
       ];
       foreach ($empRecords as $row) {
-        $paymentDates = explode(',', $row->cd_dates);
-        if (!empty($paymentDates[0])) sort($paymentDates, SORT_NUMERIC);
+        $combinedDatePosted = [];
+        $combinedDatePosted[] = $row->dcc_dates;
+        $combinedDatePosted[] = $row->pda_dates;
+        array_unique($combinedDatePosted);
+        // $paymentDates = explode(',', $combinedDatePosted);
+        if (!empty($paymentDates[0])) sort($combinedDatePosted, SORT_NUMERIC);
 
-        $firstYearOfPayment = $paymentDates[0];
-        $missingYears = $this->getMissingYears($paymentDates, $firstYearOfPayment);
+        $firstYearOfPayment = $combinedDatePosted[0];
+        $missingYears = $this->getMissingYears($combinedDatePosted, $firstYearOfPayment);
         $paymentStats = '';
 
         if (empty($missingYears)) $paymentStats = 'Complete Payment';
@@ -976,10 +1203,13 @@ class Admins extends Controller
         }
 
         $data[] = array(
-          "dcdc_dues" => $row->dcdc_dues ?? '',
+          "dcc_dues" => $row->dcc_dues ?? '',
+          "pda_dues" => $row->pda_dues ?? '',
 
           "prc_number" => $row->prc_number,
-          "last_name" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name) ?? '',
+          "last_name" => $row->last_name,
+          "first_name" => $row->first_name,
+          "middle_name" => $row->middle_name,
           "payment_status" => $paymentStats,
           "status_remarks" => $row->status_remarks,
           "birthdate" => $row->birthdate,
@@ -1001,9 +1231,13 @@ class Admins extends Controller
           "emergency_contact_number" => $row->emergency_contact_number,
 
           "email" => $row->email,
+          "profile_img_path" => $row->profile_img_path,
+          "thumbnail_img_path" => $row->thumbnail_img_path,
 
           'profiles.id' => $row->id,
           "deleted_at" => $row->deleted_at,
+
+          "fullname" => arrangeFullname($row->first_name, $row->middle_name, $row->last_name) ?? '',
         );
       }
 
@@ -1188,13 +1422,20 @@ class Admins extends Controller
         throw new Error('You imported 0 rows. You need to populate the necessary cells or rows. Try again');
       }
 
+      $emptyFailedRows = array();
       $index = 0;
       $prcNumbers = array();
+      $prcNumbersWithoutRows = array();
+      $inserts = array();
       foreach ($data as $row) {
         $row['first_name'] = trim($row[0] ?? null);
         $row['last_name'] = trim($row[2] ?? null);
         $row['prc_number'] = trim($row[8] ?? null);
         $row['birthdate'] = trim($row[3] ?? null);
+
+        $row[3] = trim($row[3] ?? null);
+        $row[9] = trim($row[9] ?? null);
+        $row[10] = trim($row[10] ?? null);
 
         if (
           empty($row['first_name'])
@@ -1209,62 +1450,245 @@ class Admins extends Controller
           $rowNo = $index + 1;
           // check for the correct column values
           if (empty($row['first_name'])) {
-            exit(var_dump($row['first_name']));
-            throw new Error('Column \'FIRSTNAME\' on \'row ' . $rowNo . '\' should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['first_name'],
+                'column' => 'FIRSTNAME',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['first_name'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'FIRSTNAME',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           } else if (empty($row['last_name'])) {
-            throw new Error('Column \'LASTNAME\' on \'row ' . $rowNo . '\'  should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['last_name'],
+                'column' => 'LASTNAME',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['last_name'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'LASTNAME',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           } else if (empty($row['prc_number'])) {
-            throw new Error('Column \'PRC NO.\' on \'row ' . $rowNo . '\' should not be empty. Try again');
+            if (!isset($emptyFailedRows[$rowNo])) {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $row['prc_number'],
+                'column' => 'PRC NO',
+                'status' => 'EMPTY CELL',
+              ];
+            } else {
+              $emptyFailedRows[$rowNo] = [
+                'rowNo' => $rowNo,
+                'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['prc_number'],
+                'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'PRC NO',
+                'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'EMPTY CELL',
+              ];
+            }
           }
 
           if (!empty($row['birthdate'])) {
             if (!strtotime($row['birthdate']) || strlen($row['birthdate']) <= 1) {
-              throw new Error($row['birthdate'] . 'on row \' ' . $rowNo . '\' is not a valid date value for the cell \'BIRTHDATE\'. It should be a date formatted in (MM/DD/YYYY). Try again');
+              if (!isset($emptyFailedRows[$rowNo])) {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $row['birthdate'],
+                  'column' => 'BIRTHDATE',
+                  'status' => 'INVALID DATE',
+                ];
+              } else {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['birthdate'],
+                  'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'BIRTHDATE',
+                  'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+                ];
+              }
             }
 
             $day = date('d', strtotime($row['birthdate']));
             $month = date('m', strtotime($row['birthdate']));
             $year = date('Y', strtotime($row['birthdate']));
             if (!checkdate($month, $day, $year)) {
-              throw new Error($row['birthdate'] . 'on row \' ' . $rowNo . '\' is not a valid date value for the cell \'BIRTHDATE\'. It should have a correct Month, Day, and Year values. Try again');
+              if (!isset($emptyFailedRows[$rowNo])) {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $row['birthdate'],
+                  'column' => 'BIRTHDATE',
+                  'status' => 'INVALID DATE',
+                ];
+              } else {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row['birthdate'],
+                  'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'BIRTHDATE',
+                  'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+                ];
+              }
             }
+
+            $row['birthdate'] = date('Y-m-d', strtotime($row['birthdate']));
+          }
+
+          // prc reg date
+          if (!empty($row[9])) {
+            if (!strtotime($row[9]) || strlen($row[9]) <= 1) {
+              if (!isset($emptyFailedRows[$rowNo])) {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' =>  $row[9],
+                  'column' => 'REGISTRATION DATE',
+                  'status' => 'INVALID DATE',
+                ];
+              } else {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row[9],
+                  'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'REGISTRATION DATE',
+                  'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+                ];
+              }
+            }
+
+            $day = date('d', strtotime($row[9]));
+            $month = date('m', strtotime($row[9]));
+            $year = date('Y', strtotime($row[9]));
+            if (!checkdate($month, $day, $year)) {
+              if (!isset($emptyFailedRows[$rowNo])) {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' =>  $row[9],
+                  'column' => 'REGISTRATION DATE',
+                  'status' => 'INVALID DATE',
+                ];
+              } else {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row[9],
+                  'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'REGISTRATION DATE',
+                  'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+                ];
+              }
+            }
+
+            $row[9] = date('Y-m-d', strtotime($row[9]));
+          }
+
+          // prc expiry date
+          if (!empty($row[10])) {
+            if (!strtotime($row[10]) || strlen($row[10]) <= 1) {
+              if (!isset($emptyFailedRows[$rowNo])) {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' =>  $row[10],
+                  'column' => 'EXPIRY DATE',
+                  'status' => 'INVALID DATE',
+                ];
+              } else {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row[10],
+                  'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'EXPIRY DATE',
+                  'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+                ];
+              }
+            }
+
+            $day = date('d', strtotime($row[10]));
+            $month = date('m', strtotime($row[10]));
+            $year = date('Y', strtotime($row[10]));
+            if (!checkdate($month, $day, $year)) {
+              if (!isset($emptyFailedRows[$rowNo])) {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' =>  $row[10],
+                  'column' => 'EXPIRY DATE',
+                  'status' => 'INVALID DATE',
+                ];
+              } else {
+                $emptyFailedRows[$rowNo] = [
+                  'rowNo' => $rowNo,
+                  'value' => $emptyFailedRows[$rowNo]['value'] . ',' . $row[10],
+                  'column' => $emptyFailedRows[$rowNo]['column'] . ',' . 'EXPIRY DATE',
+                  'status' => $emptyFailedRows[$rowNo]['status'] . ',' . 'INVALID DATE',
+                ];
+              }
+            }
+
+            $row[10] = date('Y-m-d', strtotime($row[10]));
           }
 
           array_push($prcNumbers, ['prc_number' => $row['prc_number'], 'rowNo' => $rowNo]);
+          array_push($inserts, $row);
+          $prcNumbersWithoutRows[$rowNo] = $row['prc_number'];
         }
         $index++;
       }
 
+      if (!empty($emptyFailedRows) && sizeof($emptyFailedRows) > 0) {
+        $decoded['status'] = 'fail';
+        $decoded['error_title'] = 'cell error';
+        $decoded['rows'] = $emptyFailedRows;
+        $decoded['failedCount'] = sizeof($emptyFailedRows);
+        $decoded['passedCount'] = sizeof($emptyFailedRows) - $decoded['failedCount'];
+        $decoded['message'] = $decoded['failedCount'] . ' entries were unsuccessful due to anomalies detected in spreadsheet.';
+
+        $reply = json_encode($decoded);
+        header("Content-Type: application/json; charset=UTF-8");
+        exit($reply);
+      }
+
+      // set spreadsheet-level duplicate checking
       $returnedDupes = $this->returnDuplicate($prcNumbers);
-      if ($returnedDupes) {
-        throw new Error('The PRC No. \'' . $returnedDupes['prc_number'] . '\' is a duplicate. Try again. The anomaly was detected on row ' . $returnedDupes['rowNo'] . ' column PRC NO.');
-      };
+      if (!empty($returnedDupes) && sizeof($returnedDupes) > 0) {
+        $decoded['status'] = 'fail';
+        $decoded['error_title'] = 'spreadsheet duplicate';
+        $decoded['rows'] = $returnedDupes;
+        $decoded['failedCount'] = sizeof($returnedDupes);
+        $decoded['passedCount'] = sizeof($prcNumbers) - $decoded['failedCount'];
+        $decoded['message'] = $decoded['failedCount'] . ' entries were unsuccessful due to duplicate rows (prc_number) detected in spreadsheet.';
 
-      $index2 = 0;
-      $inserts = [];
-      foreach ($data as $row) {
-        if ($index2 > 0) {
-          $row[0] = trim($row[0] ?? null);
-          $row[2] = trim($row[2] ?? null);
-          $row[8] = trim($row[8] ?? null);
-          $row[3] = $row[3] ?? null;
-          if ($row[3] != null) trim($row[3]);
+        $reply = json_encode($decoded);
+        header("Content-Type: application/json; charset=UTF-8");
+        exit($reply);
+      }
 
-          if (
-            empty($row[0])
-            && empty($row[2])
-            && empty($row[8])
-          ) {
-            continue;
+      // set db-level duplicate checking
+      $prcNumbersWithoutRows = array_unique($prcNumbersWithoutRows);
+      $dbDuplicates = $this->profileModel->whereIn(['prc_number'], 'prc_number', array_values($prcNumbersWithoutRows));
+      if (!empty($dbDuplicates) && sizeof($dbDuplicates) > 0) {
+        $newPrcs = array();
+        foreach ($dbDuplicates as $key => $value) {
+          if (in_array($value->prc_number, $prcNumbersWithoutRows)) {
+            $k = array_search($value->prc_number, $prcNumbersWithoutRows);
+            $dbDuplicates[$k] = $value;
+            $newPrcs[$k] = $prcNumbersWithoutRows[$k];
           }
-
-          if (isset($row[3]) && !empty(trim($row[3]))) {
-            $row[3] = date('Y-m-d', strtotime(trim($row[3]))); // change format so that mysql accepts date
-          }
-
-          array_push($inserts, $row);
         }
-        $index2++;
+        ksort($newPrcs);
+
+        $decoded['status'] = 'fail';
+        $decoded['error_title'] = 'database duplicate';
+        $decoded['rows'] = $newPrcs;
+        $decoded['failedCount'] = sizeof($newPrcs);
+        $decoded['passedCount'] = sizeof($prcNumbersWithoutRows) - $decoded['failedCount'];
+        $decoded['message'] = $decoded['failedCount'] . ' entries were unsuccessful due to duplicate rows (prc_number) detected in database.';
+
+        $reply = json_encode($decoded);
+        header("Content-Type: application/json; charset=UTF-8");
+        exit($reply);
       }
 
       $this->profileModel->insertMultiple(
@@ -1291,35 +1715,58 @@ class Admins extends Controller
     } catch (\Throwable $th) {
       header("Content-Type: application/json; charset=UTF-8");
       $decoded['status'] = 'fail';
-      $decoded['message'] = $th->getCode() == '23000' ? 'The prc # \'' . $row[8] . '\' already has existing records in the database. Try again with a non-existing prc number. The anomaly was detected on Row ' . $index2 . ' PRC NO. column.' : $th->getMessage();
+      $decoded['message'] = $th->getMessage();
       $reply = json_encode($decoded);
 
 
       exit($reply);
     }
   }
-  private function returnDuplicate($array): ?array
+  private function returnDuplicate($array, $field = 'prc_number'): ?array
   {
-    $prc_numbers = array();
+    $errs = array();
+    $added = array();
     foreach ($array as $val) {
-      array_push($prc_numbers, $val['prc_number']);
-    }
-
-    $unique = array_unique($prc_numbers);
-    $duplicates = array_diff_assoc($prc_numbers, $unique);
-
-    if (empty($duplicates)) {
-      return null;
-    }
-
-    $firstDuplicateKey = array_key_first($duplicates);
-    $firstDuplicateKey = $firstDuplicateKey + 1;
-
-    foreach ($array as $val) {
-      if ($duplicates[$firstDuplicateKey - 1] == $val['prc_number'] && $val['rowNo'] != $firstDuplicateKey - 1) {
-        return ['prc_number' => $duplicates[$firstDuplicateKey - 1], 'rowNo' =>  $val['rowNo'] . ' and ' . ++$firstDuplicateKey];
+      if (in_array($val[$field], $added)) {
+        $errs[$val['rowNo']] = $val[$field];
       }
+      $added[$val['rowNo']] = $val[$field];
     }
+
+    $uniques = array_unique($errs);
+    foreach ($uniques as $rowNo => $prc) {
+      $k = array_search($prc, $added);
+      $errs[$k] = $prc;
+    }
+
+    $newArr = array();
+    ksort($errs, SORT_ASC);
+    foreach ($errs as $key => $value) {
+      $newArr[] = [
+        'rowNo' => $key,
+        $field => $value
+      ];
+    }
+    return $newArr;
+
+
+    // $unique = array_unique($prc_numbers);
+    // $duplicates = array_diff_assoc($prc_numbers, $unique);
+
+    // if (empty($duplicates)) {
+    //   return null;
+    // }
+
+    // $firstDuplicateKey = array_key_first($duplicates);
+    // $firstDuplicateKey = $firstDuplicateKey + 1;
+
+    // foreach ($array as $val) {
+    //   if ($duplicates[$firstDuplicateKey - 1] == $val['prc_number'] && $val['rowNo'] != $firstDuplicateKey - 1) {
+    //     return ['prc_number' => $duplicates[$firstDuplicateKey - 1], 'rowNo' =>  $val['rowNo'] . ' and ' . ++$firstDuplicateKey];
+    //   } else {
+    //     return ['prc_number' => $duplicates[$firstDuplicateKey], 'rowNo' =>  $val['rowNo'] + 1 . ' and ' . $val['rowNo'] + 1];
+    //   }
+    // }
   }
 
   // public function memberList()
@@ -1703,12 +2150,12 @@ class Admins extends Controller
           $decoded['errors']['email_err'] = 'Please enter a valid email';
         }
 
-        if ($this->userModel->find(
-          ['*'],
-          ['email'],
-          [$decoded['profile']['email']]
-        )) {
-          $decoded['errors']['email_err'] = 'Email is already taken';
+        $user = $this->userModel->find(['*'], ['profile_id'], [$decoded['profile']['user_id']]);
+        if (
+          $user->email !== $decoded['profile']['email']
+          && $this->userModel->hasRow(['email'], [$decoded['profile']['email']])
+        ) {
+          $decoded['errors']['email_err'] = 'this email is already taken';
         }
       }
 
@@ -1776,7 +2223,7 @@ class Admins extends Controller
       // check inputs
       if (empty($decoded['profile_id'])) {
         $decoded['errors']['profile_id_err'] = 'The field \'Profile id\' should not be empty';
-      } 
+      }
       // if (empty($decoded['remarks'])) {
       //   $decoded['errors']['remarks_err'] = 'Your email should not be empty';
       // } 
@@ -1822,7 +2269,7 @@ class Admins extends Controller
       exit($reply);
     }
   }
-  
+
 
   public function updatePersonal()
   {

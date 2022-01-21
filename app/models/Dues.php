@@ -7,22 +7,6 @@ class Dues extends Model
     $this->db = new Database;
   }
 
-  public function getDatatable2($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
-  {
-    $selected = join(',', $columns);
-    $sql = 'SELECT ' . $selected . ' FROM ' .
-      $this->table . ' LEFT JOIN profiles ON profiles.id = ' .
-      $this->table . '.profile_id WHERE 1 ' .
-      $filters . ' ORDER BY ' .
-      $orderColumn . ' ' .
-      $orderType . ' LIMIT ' .
-      $limitRow . ',' .
-      $limitPerpage;
-
-    $this->db->query($sql);
-
-    return $this->db->resultSet();
-  }
 
   public function getDatatable3($columns, $filters)
   {
@@ -37,6 +21,23 @@ class Dues extends Model
     return $this->db->single();
   }
 
+  public function getDatatable2($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
+  {
+    $selected = join(',', $columns);
+    $sql = 'SELECT ' . $selected . ' FROM ' .
+      $this->table . ' LEFT JOIN profiles ON profiles.id = ' .
+      $this->table . '.profile_id LEFT JOIN accounts ON accounts.profile_id = ' .
+      $this->table . '.profile_id WHERE 1 ' .
+      $filters . ' ORDER BY ' .
+      $orderColumn . ' ' .
+      $orderType . ' LIMIT ' .
+      $limitRow . ',' .
+      $limitPerpage;
+
+    $this->db->query($sql);
+
+    return $this->db->resultSet();
+  }
   function countAll2()
   {
     $sql = 'SELECT count(*) as count FROM ' . $this->table . ' LEFT JOIN profiles ON profiles.id = ' . $this->table . '.profile_id';
@@ -46,13 +47,44 @@ class Dues extends Model
   }
   function countAllWithFilters2($filters)
   {
-    $sql = 'SELECT count(*) as count FROM ' . $this->table . ' LEFT JOIN profiles ON profiles.id = ' . $this->table . '.profile_id WHERE 1 ' . $filters;
+    $sql = 'SELECT count(*) as count FROM ' . $this->table . ' LEFT JOIN profiles ON profiles.id = ' . $this->table . '.profile_id LEFT JOIN accounts ON accounts.profile_id = ' . $this->table . '.profile_id WHERE 1 ' . $filters;
     $this->db->query($sql);
 
     return $this->db->single();
   }
 
-  // inherited methods
+  public function getPDARemittanceDatatable($columns, $filters, $orderColumn, $orderType, $limitRow, $limitPerpage)
+  {
+    $selected = join(',', $columns);
+    $sql = 'SELECT ' . $selected . ' FROM ' .
+      $this->table . ' LEFT JOIN profiles ON profiles.id = ' .
+      $this->table . '.profile_id LEFT JOIN accounts ON accounts.profile_id = ' .
+      $this->table . '.profile_id WHERE 1 ' .
+      $filters . ' GROUP BY profiles.prc_number ORDER BY ' .
+      $orderColumn . ' ' .
+      $orderType . ' LIMIT ' .
+      $limitRow . ',' .
+      $limitPerpage;
+
+    $this->db->query($sql);
+
+    return $this->db->resultSet();
+  }
+  function countAllPDARemittance()
+  {
+    $sql = 'SELECT count(*) as count FROM ' . $this->table . ' LEFT JOIN profiles ON profiles.id = ' . $this->table . '.profile_id GROUP BY profiles.prc_number';
+    $this->db->query($sql);
+
+    return $this->db->single();
+  }
+  function countAllPDARemittanceWithFilters($filters)
+  {
+    $sql = 'SELECT count(*) as count FROM ' . $this->table . ' LEFT JOIN profiles ON profiles.id = ' . $this->table . '.profile_id LEFT JOIN accounts ON accounts.profile_id = ' . $this->table . '.profile_id WHERE 1 ' . $filters . ' GROUP BY profiles.prc_number';
+    $this->db->query($sql);
+
+    return $this->db->single();
+  }
+
   public function store($data)
   {
     $this->db->query(
@@ -153,6 +185,38 @@ class Dues extends Model
     }
   }
 
+  public function insertMultiple($vals): bool
+  {
+    $sql = 'INSERT INTO ' . $this->table . ' (profile_id, prc_number, amount, type, channel, or_number, date_posted, remarks) VALUES ';
+    $insertQuery = array();
+    $insertData = array();
+    $n = 0;
+    foreach ($vals as $row) {
+      $insertQuery[] = '(:profile_id' . $n . ', :prc_number' . $n . ', :amount' . $n . ', :type' . $n . ', :channel' . $n . ',:or_number' . $n . ', :date_posted' . $n . ', :remarks' . $n . ')';
+      $insertData['profile_id' . $n] = empty(trim($row['profile_id'] ?? '')) ? null : trim($row['profile_id']);
+      $insertData['prc_number' . $n] = empty(trim($row['prc_number'] ?? '')) ? null : trim($row['prc_number']);
+      $insertData['amount' . $n] = empty(trim($row['amount'] ?? '')) ? null : trim($row['amount']);
+      $insertData['type' . $n] = empty(trim($row['type'] ?? '')) ? null : trim($row['type']);
+      $insertData['channel' . $n] = empty(trim($row['channel'] ?? '')) ? null : trim($row['channel']);
+      $insertData['or_number' . $n] = empty(trim($row['or_number'] ?? '')) ? null : trim($row['or_number']);
+      $insertData['date_posted' . $n] = empty(trim($row['date_posted'] ?? '')) ? null : trim($row['date_posted']);
+      $insertData['remarks' . $n] = empty(trim($row['remarks'] ?? '')) ? null : trim($row['remarks']);
+      $n++;
+    }
+
+    if (!empty($insertQuery)) {
+      $sql .= implode(', ', $insertQuery);
+      $this->db->query($sql);
+      if ($this->db->execute($insertData)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
   public function getAllDuesByUserId($idType, $id)
   {
     $this->db->query('SELECT * FROM dues WHERE ' . $idType . ' = :id ORDER BY date_created');
@@ -224,6 +288,21 @@ class Dues extends Model
 
     if ($this->db->rowCount() > 0) {
       return true;
+    } else {
+      return false;
+    }
+  }
+  public function whereIn(array $selects, $filterCol, array $filterVals)
+  {
+    $placeholders = implode(',', array_fill(0, sizeof($filterVals), '?'));
+
+    $sql = 'SELECT ' . join(',', $selects) . ' FROM ' . $this->table . ' WHERE ' . $filterCol . ' IN (' . $placeholders . ')';
+    $this->db->query($sql);
+
+    $this->db->execute($filterVals);
+
+    if ($this->db->rowCount() > 0) {
+      return $this->db->resultSet();
     } else {
       return false;
     }

@@ -95,7 +95,7 @@
           'order': [
             [0, 'desc']
           ],
-          dom: 'lfrtip',
+          dom: 'frtilp',
           lengthMenu: [
             [5, 10, 25, <?php echo MAX_ROW ?>],
             ['5 rows', '10 rows', '25 rows', 'All rows']

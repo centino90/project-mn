@@ -18,7 +18,8 @@ module.exports = merge(common, {
                 '!directoryToExclude/**',
                 '!index.php',
                 '!.htaccess',
-                '!img/**',                
+                '!img/**',   
+                '!vendors/**',             
             ],
         })
     ],

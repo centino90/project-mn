@@ -29,13 +29,187 @@
     </nav>
   </div>
 
-  <header class="flex flex-col gap-10 mb-10">
+  <!-- header -->
+  <header class="flex flex-col gap-3 mb-10">
     <div class="w-64 flex-shrink-0">
       <span class="text-2xl font-bold">Profiles</span>
     </div>
+    <div class="w-full">
+      <div class="mt-5">
+        <ul class="list-reset flex flex-wrap border-b">
+          <li @click="currentTab = 1" class="-mb-px mr-1">
+            <a :class="currentTab == 1 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">General</a>
+          </li>
+          <li @click="currentTab = 2" class="-mb-px mr-1">
+            <a :class="currentTab == 2 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Import bulk profile</a>
+          </li>
+          <li @click="currentTab = 3" class="-mb-px mr-1">
+            <a :class="currentTab == 3 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Archived profiles</a>
+          </li>
+        </ul>
+      </div>
+    </div>
   </header>
 
-  <!-- Payment modal dialog -->
+  <!-- main content -->
+  <main>
+    <!--  general tab -->
+    <div x-transition x-show="currentTab == 1" class="w-full bg-opacity-50">
+      <div class="gap-y-8">
+        <!-- filters -->
+        <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
+          <nav>
+            <div class="flex gap-3">
+              <div class="w-full lg:w-auto space-y-2">
+                <label for="" class="form-label">Payment status</label>
+                <select class="form-input" @change="status = $event.target.value; filterColumnByStatus($event.target.value)" name="" id="">
+                  <option value="">All</option>
+                  <option value="Complete payment">Complete payment</option>
+                  <option value="Incomplete payment">Incomplete payment</option>
+                  <option value="Dormant">Dormant</option>
+                </select>
+              </div>
+            </div>
+          </nav>
+        </div>
+
+        <!-- datatable -->
+        <div class="table-container">
+          <table id="myTable" style="width: 100%" x-cloak>
+            <thead class="border-t border-b">
+              <tr>
+                <th>ACTION</th>
+                <th>SURNAME</th>
+                <th>FIRST NAME</th>
+                <th>MIDDLE NAME</th>
+                <th>PRC #</th>
+                <th>EMAIL</th>
+                <th>PAYMENT STATUS</th>
+                <th>REMARKS</th>
+                <th>DCC DUES</th>
+                <th>PDA</th>
+                <th>BIRTHDATE</th>
+                <th>ADDRESS</th>
+                <th>CONTACT NUMBER</th>
+                <th>GENDER</th>
+                <th>FB ACCOUNT NAME</th>
+                <th>PRC REGISTRATION DATE</th>
+                <th>PRC EXPIRY DATE</th>
+                <th>PRACTICE FIELD</th>
+                <th>PRACTICE TYPE</th>
+                <th>CLINIC NAME</th>
+                <th>CLINIC STREET</th>
+                <th>CLINIC DISTRICT</th>
+                <th>CLINIC CITY</th>
+                <th>CLINIC CONTACT</th>
+                <th>EMERGENCY PERSON NAME</th>
+                <th>EMERGENCY PERSON ADDRESS</th>
+                <th>EMERGENCY PERSON CONTACT</th>
+                <th>NAME</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+
+        <!-- print DCC dues template -->
+        <div class="hidden" id="print_header">
+          <div class="flex justify-center gap-5">
+            <div style="width: 100px">
+              <img width="100%" src="<?php echo URLROOT ?>/img/PDA-DCC.jpg" />
+            </div>
+            <div>
+              <h1 class="text-4xl text-center text-primary-500">DAVAO CITY DENTAL CHAPTER</h1>
+              <div class="flex justify-between gap-3 mt-3 text-md">
+                <div class="w-1/2">
+                  <div class="mx-auto w-60">
+                    <div>SECRETARIAT:</div>
+                    DAVAO CITY DENTAL CHAPTER BLDG.
+                    MAHOGANY ST., PALM VILLAGE
+                    DACUDAO AVE. DAVAO CITY
+                  </div>
+                </div>
+
+                <div class="w-1/2">
+                  <div class="mx-auto w-60">
+                    CONSTITUENT CHAPTER
+                    OF THE
+                    PHILIPPINE DENTAL
+                    ASSOCIATION
+                  </div>
+                </div>
+              </div>
+
+              <div class="w-full border-b border-black mt-2"></div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex justify-center text-center">
+            <h5>List of Members</h5>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--  add profile tab -->
+    <div x-transition x-show="currentTab == 2" class="w-full bg-opacity-50">
+      <div class="gap-y-8">
+        <a href="<?php echo URLROOT ?>/users/downloadTemplates?filename=IMPORT_PROFILES_TEMPLATE.xlsx" class="flex-inline border border-primary-600 text-primary-600 p-2 text-white rounded-md hover:bg-secondary-100">
+          Download template
+        </a>
+
+        <!-- add profile form -->
+        <form @submit.prevent x-ref="profile_file_form" class="mt-10 flex flex-col gap-y-8">
+
+          <!-- import csv -->
+          <div x-bind="formGroup">
+            <label x-bind="formGroup.formLabel">Import Profiles</label>
+            <div x-bind="formGroup.inputContainer">
+              <input type="file" x-ref="profile_file" name="profile_file" id="profile_file" class="rounded border border-secondary-300 px-3 py-5 text-secondary-700 w-full focus:ring-primary-500 focus:border-primary-500">
+
+              <div class="w-full text-xs text-secondary-400 font-bold px-2">CHOOSE OR DRAG YOUR SPREADSHEET FILE</div>
+              <span class="hidden text-danger-600 text-sm" x-ref="profile_file_err" id="profile_file_err"></span>
+            </div>
+          </div>
+
+          <!-- Form submit -->
+          <div x-bind="formGroup">
+            <label></label>
+            <div x-bind="formGroup.inputContainer">
+              <button type="submit" @click="importForm" x-ref="submit" class="form-btn lg:ml-2 disabled:cursor-wait bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+                Submit
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!--  archived profiles tab -->
+    <div x-transition x-show="currentTab == 3" class="w-full bg-opacity-50">
+      <div class="gap-y-8">
+        <!-- datatable -->
+        <div class="table-container">
+          <table id="archivedProfilesTable" style="width: 100%" x-cloak>
+            <thead class="border-t border-b">
+              <tr class="border-b">
+                <th>ACTION</th>
+                <th>LAST NAME</th>
+                <th>FIRST NAME</th>
+                <th>MIDDLE NAME</th>
+                <th>PRC #</th>
+                <th>EMAIL</th>
+                <th>PAYMENT STATUS</th>
+                <th>REMARKS</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+  <!-- Edit remarks dialog -->
   <div x-cloak x-ref="modal" x-transition x-show.transition.opacity="openEditRemarksModal" class="overflow-auto fixed z-20 top-0 left-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center" role="dialog" aria-modal="true">
     <div class="w-full h-full lg:h-4/5 max-w-screen-md bg-white rounded-xl shadow-xl flex flex-col absolute divide-y divide-secondary-200">
 
@@ -70,108 +244,85 @@
     </div>
   </div>
 
-  <div class="gap-y-8">
+  <!-- Import status dialog -->
+  <div x-cloak x-ref="importSuccessModal" x-transition x-show.transition.opacity="successModalOpen" class="overflow-auto fixed z-20 top-0 left-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center" role="dialog" aria-modal="true">
+    <div class="w-full h-full lg:h-4/5 max-w-screen-md bg-white rounded-xl shadow-xl flex flex-col absolute divide-y divide-secondary-200">
 
-    <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
-      <nav>
-        <div class="mb-5">
-          <h1 class="text-lg font-semibold text-secondary-400 bg-secondary-100 rounded-full px-4 py-1 inline">
+      <div class="px-5 py-4 flex items-center justify-between bg-gradient-to-r from-primary-400 to-primary-600 rounded-t-lg text-white">
+        <h1 class="flex items-center gap-2 text-2xl leading-tight font-bold" x-ref="import_success_title">
 
-            Filters
-          </h1>
-        </div>
+        </h1>
 
-        <div class="flex gap-3">
-          <div class="w-full lg:w-auto space-y-2">
-            <label for="" class="form-label">Payment status</label>
-            <select class="form-input" @change="status = $event.target.value; filterColumnByStatus($event.target.value)" name="" id="">
-              <option value="">Select status</option>
-              <option value="Complete payment">Complete payment</option>
-              <option value="Incomplete payment">Incomplete payment</option>
-              <option value="Dormant">Dormant</option>
-            </select>
-          </div>
-
-          <div class="w-full lg:w-auto space-y-2">
-            <label for="" class="form-label">Archive option</label>
-            <select class="form-input" x-model="dt_include_deleted">
-              <option value="hide">Hide archived</option>
-              <option value="show">Show archived</option>
-              <option value="only">Only archived</option>
-            </select>
-          </div>
-        </div>
-      </nav>
-    </div>
-
-    <div class="table-container">
-      <table id="myTable" style="width: 100%" x-cloak>
-        <thead class="border-t border-b">
-          <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>PRC #</th>
-            <th>DCDC Dues</th>
-            <th>Payment Status</th>
-            <th>Remarks</th>
-            <th>Email</th>
-            <th>birthdate</th>
-            <th>address</th>
-            <th>contact_number</th>
-            <th>gender</th>
-            <th>fb_account_name</th>
-            <th>prc_registration_date</th>
-            <th>prc_expiration_date</th>
-            <th>field_practice</th>
-            <th>type_practice</th>
-            <th>clinic_name</th>
-            <th>clinic_street</th>
-            <th>clinic_district</th>
-            <th>clinic_city</th>
-            <th>clinic_contact</th>
-            <th>emergency_person_name</th>
-            <th>emergency_address</th>
-            <th>emergency_contact_number</th>
-          </tr>
-        </thead>
-      </table>
-    </div>
-
-    <div class="hidden" id="print_header">
-      <div class="flex justify-center gap-5">
-        <div style="width: 100px">
-          <img width="100%" src="<?php echo URLROOT ?>/img/PDA-DCC.jpg" />
-        </div>
-        <div>
-          <h1 class="text-4xl text-center text-primary-500">DAVAO CITY DENTAL CHAPTER</h1>
-          <div class="flex justify-between gap-3 mt-3 text-md">
-            <div class="w-1/2">
-              <div class="mx-auto w-60">
-                <div>SECRETARIAT:</div>
-                DAVAO CITY DENTAL CHAPTER BLDG.
-                MAHOGANY ST., PALM VILLAGE
-                DACUDAO AVE. DAVAO CITY
-              </div>
-            </div>
-
-            <div class="w-1/2">
-              <div class="mx-auto w-60">
-                CONSTITUENT CHAPTER
-                OF THE
-                PHILIPPINE DENTAL
-                ASSOCIATION
-              </div>
-            </div>
-          </div>
-
-          <div class="w-full border-b border-black mt-2"></div>
-        </div>
+        <button class="text-white hover:bg-primary-700 p-2 rounded-full" @click="successModalOpen = false">
+          <svg class="w-4 fill-current transition duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512.001 512.001">
+            <path d="M284.286 256.002L506.143 34.144c7.811-7.811 7.811-20.475 0-28.285-7.811-7.81-20.475-7.811-28.285 0L256 227.717 34.143 5.859c-7.811-7.811-20.475-7.811-28.285 0-7.81 7.811-7.811 20.475 0 28.285l221.857 221.857L5.858 477.859c-7.811 7.811-7.811 20.475 0 28.285a19.938 19.938 0 0014.143 5.857 19.94 19.94 0 0014.143-5.857L256 284.287l221.857 221.857c3.905 3.905 9.024 5.857 14.143 5.857s10.237-1.952 14.143-5.857c7.811-7.811 7.811-20.475 0-28.285L284.286 256.002z" />
+          </svg>
+        </button>
       </div>
 
-      <div class="mt-4 flex justify-center text-center">
-        <h5>List of Members</h5>
+      <div class="bg-blue-100 border-t border-b border-blue-500 text-blue-700 px-4 py-3" role="alert">
+        <div class="flex items-center gap-2 font-bold">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Reminder
+        </div>
+        <p class="text-sm">To fulfill your recent unsuccessful import, you have to resolve these following rows in your spreadsheet.</p>
+      </div>
+
+      <div class="overflow-y-scroll w-full py-3">
+        <table class="w-full">
+          <thead>
+            <tr x-ref="import_success_table_thead">
+              <th>Row no</th>
+              <!-- <th>Prc number</th> -->
+            </tr>
+          </thead>
+          <tbody x-ref="import_success_table_rows">
+          </tbody>
+        </table>
       </div>
     </div>
+  </div>
+
+  <!-- Success popup -->
+  <div x-cloak class="fixed left-0 bottom-0 z-40 " @keydown.window.escape="fixedAlertOpen = false">
+    <div x-show="fixedAlertOpen === true" x-ref="fixed_alert" class="fixed left-4 bottom-4 sm:bottom-10 rounded-lg bg-white shadow-2xl w-96 overflow-hidden" style="display: none;" x-transition:enter="transition ease-in duration-200" x-transition:enter-start="opacity-0 transform -translate-x-40" x-transition:enter-end="opacity-100 transform translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform -translate-x-40">
+      <div class="">
+        <div class="relative overflow-hidden px-6 pt-4">
+          <header class="mb-2 flex gap-2 font-bold" :class="fixedAlertIsSuccess ? 'text-success-600' : 'text-danger-600'">
+            <svg x-show="fixedAlertIsSuccess" class="w-6 sm:w-5 h-6 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <svg x-show="!fixedAlertIsSuccess" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span x-ref="fixed_alert_label" x-text="fixedAlertIsSuccess ? 'Success' : 'Fail'"></span>
+          </header>
+          <div class="pb-4 flex gap-2 justify-between items-end">
+            <p class="line-clamp-3 text-secondary-800" x-ref="fixed_alert_message">
+            </p>
+            <button x-show="fixedAlertWithView" @click="successModalOpen = true" class="whitespace-nowrap text-sm font-bold hover:bg-secondary-100 p-2 rounded-md">
+              View More
+            </button>
+          </div>
+        </div>
+
+        <div class="absolute right-4 top-3 text-gray-400 hover:text-gray-800 cursor-pointer" @click="fixedAlertOpen = !fixedAlertOpen">
+          <svg class="w-6 sm:w-5 h-6 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <button x-show="fixedAlertOpen === false" class="fixed left-4 bottom-10 uppercase text-sm px-4 py-3 bg-secondary-900 rounded-full" :class="fixedAlertIsSuccess ? 'text-success-600' : 'text-danger-600'" @click="fixedAlertOpen = !fixedAlertOpen">
+      <svg x-show="fixedAlertIsSuccess" class="w-6 sm:w-5 h-6 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <svg x-show="!fixedAlertIsSuccess" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -185,14 +336,18 @@
       init() {
         const app = this
 
-        $.fn.dataTable.Debounce = function(table, options) {
-          let tableId = table.settings()[0].sTableId;
-          $('.dataTables_filter input[aria-controls="' + tableId + '"]')
-            .unbind()
-            .bind('input', (delay(function(e) {
-              table.search($(this).val()).draw();
-              return;
-            }, 1000)));
+        $.fn.dataTable.Debounce = function(tables = [], options) {
+          if (tables.length == 0) return
+
+          tables.forEach(table => {
+            let tableId = table.settings()[0].sTableId;
+            $('.dataTables_filter input[aria-controls="' + tableId + '"]')
+              .unbind()
+              .bind('input', (delay(function(e) {
+                table.search($(this).val()).draw();
+                return;
+              }, 1000)));
+          })
         }
 
         function delay(callback, ms) {
@@ -206,13 +361,12 @@
             }, ms || 0);
           };
         }
-
         const dataTable = $('#myTable').DataTable({
           'bStateSave': true,
           'order': [
             [1, 'asc']
           ],
-          'dom': 'lfBrtip',
+          'dom': 'fBrtilp',
           'lengthMenu': [
             [5, 10, 25, <?php echo MAX_ROW ?>],
             ['5 rows', '10 rows', '25 rows', 'All rows']
@@ -228,7 +382,7 @@
               // Append to data
 
               data.status = app.status;
-              data.includeDeleted = app.dt_include_deleted;
+              data.includeDeleted = 'hide';
             }
           },
           "language": {
@@ -241,7 +395,9 @@
               render: function(d, t, r, m) {
                 return `
                 <div class="flex items-center gap-2">
-                  <span class="text-secondary-600">${r['profiles.id']}</span>
+                  <a href="<?php echo URLROOT ?>/${r.profile_img_path ?? 'img/profiles/default-profile.png'}" target="_blank" class="block rounded-full w-10 h-10 overflow-hidden">
+                    <img class="w-full h-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
+                  </a>
                   <div class="relative" x-data="{dropDownOpen:false}">
                     <a @click="dropDownOpen = true" href="javascript:void(0)" class="block text-lg text-secondary-500 hover:bg-secondary-200 rounded-full p-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,7 +410,7 @@
                       @click.away="dropDownOpen=false"
                       x-transition:enter-start="transition ease-in duration-3000"
                     >
-                      <a href="javascript:void(0)" @click="openEditRemarksModal = true; editRemarksProfileId = '${r['profiles.id']}'; remarks = '${r.status_remarks}'" class="flex gap-2 hover:bg-secondary-100 focus:bg-secondary-200 items-center justify-center text-center px-4 py-2" >
+                      <a href="javascript:void(0)" @click="openEditRemarksModal = true; editRemarksProfileId = '${r['profiles.id']}'; remarks = '${r.status_remarks ?? ''}'" class="flex gap-2 hover:bg-secondary-100 focus:bg-secondary-200 items-center justify-center text-center px-4 py-2" >
                       <img width="20" src="<?php echo URLROOT ?>/img/icons/pencil-alt.svg"/>                    
                       <span>Edit remarks</span>
                       </a>
@@ -276,15 +432,18 @@
               }
             },
             {
+              data: 'first_name',
+            },
+            {
+              data: 'middle_name'
+            },
+            {
               data: 'prc_number',
               sortable: false
             },
             {
-              data: 'dcdc_dues',
-              sortable: false,
-              render: function(d, t, r, m) {
-                return `<p class="line-clamp-3 hover:line-clamp-none w-40"> ${r.dcdc_dues}</p>`
-              }
+              data: 'email',
+              sortable: false
             },
             {
               data: 'payment_status',
@@ -301,9 +460,20 @@
               }
             },
             {
-              data: 'email',
+              data: 'dcc_dues',
+              sortable: false,
               visible: false,
-              sortable: false
+              render: function(d, t, r, m) {
+                return `<p class="line-clamp-3 hover:line-clamp-none w-40"> ${r.dcc_dues}</p>`
+              }
+            },
+            {
+              data: 'pda_dues',
+              sortable: false,
+              visible: false,
+              render: function(d, t, r, m) {
+                return `<p class="line-clamp-3 hover:line-clamp-none w-40"> ${r.pda_dues}</p>`
+              }
             },
             {
               data: 'birthdate',
@@ -390,17 +560,24 @@
               data: 'emergency_contact_number',
               visible: false,
               sortable: false
-            }
+            },
+            {
+              data: 'fullname',
+              class: 'disabled-cols',
+              visible: false,
+              sortable: false
+            },
           ],
           initComplete: function() {
             const api = this.api();
             api.columns('.hidden-first').visible(false)
+            api.draw('page');
           },
           buttons: [{
               extend: 'print',
-              text: 'PRINT DCDC DUES',
+              text: 'PRINT DCC MEMBERS LIST',
               exportOptions: {
-                columns: [1, 2, 3]
+                columns: [27, 4, 8]
               },
               title: '',
               footer: true,
@@ -416,30 +593,25 @@
 
                 $(win.document.body).find('table th, table td')
                   .addClass('border border-black p-2')
+                  .css('font-size', '12px')
                   .css('text-align', 'left')
                   .css('max-width', '200px');
-              }
+
+                $(win.document.body).find('table th')
+                  .addClass('border border-black p-2')
+                  .css('font-weight', 'bold')
+
+                $(win.document.body).find('table td')
+                  .css('padding-top', '0')
+                  .css('padding-bottom', '0')
+              },
             },
             {
               text: 'exports',
               extend: 'collection',
-              className: 'custom-html-collection',
+              className: 'buttons-excel custom-html-collection',
               buttons: [
                 '<header>Export as</header>',
-                {
-                  extend: 'csv',
-                  title: '',
-                  exportOptions: {
-                    columns: ':visible :not(.disabled-cols)'
-                  },
-                  customize: function(csv) {
-                    return 'CHAPTER:______________________                                                                                                                                                  PDA MEMBERSHIP REMITTANCE FORM \n' +
-                      "PRESIDENT'S NAME:______________________\n" +
-                      'TOTAL NUMBER OF MEMBERS REMITTED:______________________\n' +
-                      'TOTAL AMOUNT REMITTED:______________________\n\n' +
-                      csv;
-                  }
-                },
                 {
                   extend: 'excel',
                   exportOptions: {
@@ -448,7 +620,7 @@
                   title: '',
                   customize: function(xlsx) {
                     var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                    var numrows = 6;
+                    var numrows = 2;
                     var clR = $('row', sheet);
 
                     //update Row
@@ -496,38 +668,29 @@
                     }
 
                     var r1 = Addrow(1, [{
-                      key: 'E',
-                      value: 'PDA MEMBERSHIP REMITTANCE FORM'
+                      key: 'A',
+                      value: 'PDA-DCC MEMBERS\' PROFILES'
                     }]);
                     var r2 = Addrow(2, [{
-                      key: 'A',
-                      value: 'CHAPTER:__________________________'
-                    }]);
-                    var r3 = Addrow(3, [{
-                      key: 'A',
-                      value: "PRESIDENT'S NAME:__________________________"
-                    }]);
-                    var r4 = Addrow(4, [{
-                      key: 'A',
-                      value: 'TOTAL NUMBER OF MEMBERS REMITTED:__________________________'
-                    }]);
-                    var r5 = Addrow(5, [{
-                      key: 'A',
-                      value: 'TOTAL AMOUNT REMITTED:__________________________'
-                    }]);
-                    var r6 = Addrow(6, [{
                       key: 'A',
                       value: ''
                     }]);
 
                     var sheetData = sheet.getElementsByTagName('sheetData')[0];
 
-                    sheetData.insertBefore(r6, sheetData.childNodes[0]);
-                    sheetData.insertBefore(r5, sheetData.childNodes[0]);
-                    sheetData.insertBefore(r4, sheetData.childNodes[0]);
-                    sheetData.insertBefore(r3, sheetData.childNodes[0]);
                     sheetData.insertBefore(r2, sheetData.childNodes[0]);
                     sheetData.insertBefore(r1, sheetData.childNodes[0]);
+                  }
+                },
+                {
+                  extend: 'csv',
+                  title: '',
+                  exportOptions: {
+                    columns: ':visible :not(.disabled-cols)'
+                  },
+                  customize: function(csv) {
+                    return 'PDA-DCC MEMBERS\' PROFILES \n\n' +
+                      csv;
                   }
                 },
               ]
@@ -535,14 +698,29 @@
             {
               text: 'column visibility',
               extend: 'colvis',
-              columns: ':not(.disabled-cols)'
-            },
-            {
-              extend: 'colvisRestore',
+              columns: ':not(.disabled-cols)',
+              prefixButtons: [{
+                  extend: 'colvisRestore',
+                },
+                {
+                  text: "<span>Show all</span>",
+                  action: function(e, dt, node, config) {
+                    dt.columns().visible(true);
+
+                  }
+                },
+                {
+                  text: "<span>Hide all</span>",
+                  action: function(e, dt, node, config) {
+                    dt.columns(':not(.visible-always)').visible(false);
+                  }
+                }
+              ],
             },
             {
               text: "<span>Refresh</span>",
               action: function(e, dt, node, config) {
+                dt.page.len(5);
                 dt.clear().draw();
                 dt.ajax.reload(null, false);
               }
@@ -556,7 +734,6 @@
         dataTable.on('xhr.dt', function() {
           $('#myTable').removeClass('text-secondary-200');
         });
-        let debounce = new $.fn.dataTable.Debounce(dataTable);
 
         this.$watch('openEditRemarksModal', value => {
           if (value === false) {
@@ -564,11 +741,110 @@
             this.editRemarksProfileId = ''
           }
         })
-        this.$watch('dt_include_deleted', (value) => {
-          dataTable.draw();
-        });
 
+        /* PROFILE FORM */
+        this.$watch('fixedAlertOpen', value => {
+          let alertTimer;
+          clearTimeout(alertTimer)
+
+          if (value === true) {
+            alertTimer = setTimeout(() => {
+              this.fixedAlertOpen = false
+            }, 10000);
+          }
+        })
+
+        /* ARCHIVE*/
+        const archivedDataTable = $('#archivedProfilesTable').DataTable({
+          'bStateSave': true,
+          'order': [
+            [1, 'asc']
+          ],
+          'dom': 'fBrtilp',
+          'lengthMenu': [
+            [5, 10, 25, <?php echo MAX_ROW ?>],
+            ['5 rows', '10 rows', '25 rows', 'All rows']
+          ],
+          'pageLength': 5,
+          'processing': true,
+          'serverSide': true,
+          'searchDelay': 350,
+          'serverMethod': 'post',
+          'ajax': {
+            'url': 'profilesDatatable',
+            'data': function(data) {
+              // Append to data
+              data.status = '';
+              data.includeDeleted = 'only';
+            }
+          },
+          "language": {
+            "processing": 'Please wait...'
+          },
+          'columns': [{
+              data: 'profiles.id',
+              class: 'disabled-cols visible-always',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `
+                <div class="flex items-center gap-2">
+                  <a href="<?php echo URLROOT ?>/${r.profile_img_path ?? 'img/profiles/default-profile.png'}" target="_blank" class="block rounded-full w-10 h-10 overflow-hidden">
+                    <img class="w-full h-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
+                  </a>
+                  <a href="javascript:void(0)" @click="archiveProfile(${r['profiles.id']});" class="flex gap-2 items-center justify-center text-center p-2 rounded" :class="'${r.deleted_at ? ' bg-success-600 hover:bg-success-700 focus:bg-success-800 text-white ' : ' bg-danger-600 hover:bg-danger-700 focus:bg-danger-800 text-white '}'" >
+                      <img width="20" src="<?php echo URLROOT ?>/img/icons/refresh.svg"/>                    
+                      <span>Restore</span>
+                  </a>
+                </div>
+                `
+              }
+            },
+            {
+              data: 'last_name',
+              render: function(d, t, r, m) {
+                return `<a href="<?php echo URLROOT ?>/admins/viewAccount?id=${r['profiles.id']}" class="hover:underline hover:text-primary-600 hover:bg-primary-50">${r.last_name}</a>`
+              }
+            },
+            {
+              data: 'first_name',
+            },
+            {
+              data: 'middle_name'
+            },
+            {
+              data: 'prc_number',
+              sortable: false
+            },
+            {
+              data: 'email',
+              sortable: false
+            },
+            {
+              data: 'payment_status',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `<span class="px-2 py-1 rounded-full whitespace-nowrap" :class="'${r.payment_status}' == 'Dormant' ? 'bg-secondary-100 text-secondary-700' : '${r.payment_status}' == 'Complete Payment' ? 'bg-success-100 text-success-700' : '${r.payment_status}' == 'Incomplete Payment' ? 'bg-danger-100 text-danger-700' : ''">${r.payment_status}</span>`
+              }
+            },
+            {
+              data: 'status_remarks',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return r.status_remarks
+              }
+            },
+          ],
+          initComplete: function() {
+            const api = this.api();
+            api.columns('.hidden-first').visible(false)
+            api.draw('page');
+          },
+          buttons: [],
+        });
+        let debounce = new $.fn.dataTable.Debounce([dataTable, archivedDataTable]);
       },
+      currentTab: 1,
+
       openEditRemarksModal: false,
       remarks: '',
       editRemarksProfileId: '',
@@ -591,8 +867,6 @@
           })
       },
 
-      dt_include_deleted: '',
-
       archiveProfile(profileId) {
         fetch('<?php echo URLROOT . "/admins/archiveProfile" ?>', {
             method: "POST",
@@ -606,41 +880,10 @@
           .then(res => {
             if (res.status == 'ok') {
               $('#myTable').DataTable().draw('page');
+              $('#archivedProfilesTable').DataTable().draw('page');
             }
           })
       },
-
-      // openModalOnClick(event) {
-      //   const accountId = event.target.dataset.userid
-      //   const accountName = event.target.dataset.username
-      //   const accountRemarks = event.target.dataset.remarks
-
-      //   this.setStatusOperation = event.target.textContent.toLowerCase().trim()
-      //   this.setStatusModalSubmit.text = 'Confirm'
-      //   this.setStatus.user_id = accountId
-      //   this.openEditRemarksModal = true
-
-      //   if (this.setStatusOperation == 'set as inactive' || this.setStatusOperation == 'update remarks') {
-      //     this.enableRemarks = true
-      //     this.setStatus.remarks = accountRemarks
-      //   }
-      //   if (this.setStatusOperation == 'set as inactive') {
-      //     this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} deactivation`
-      //     this.setStatusModalSubmit.class = ['bg-danger-500', 'hover:bg-danger-700']
-      //   }
-      //   if (this.setStatusOperation == 'set as active') {
-      //     this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} activation`
-      //     this.setStatusModalSubmit.class = ['bg-success-500', 'hover:bg-success-700']
-      //   }
-      //   if (this.setStatusOperation == 'update remarks') {
-      //     this.setStatus.updateRemarks = true
-      //     this.setStatusModalSubmit.text = `${this.setStatusModalSubmit.text} update`
-      //     this.setStatusModalSubmit.class = ['bg-primary-500', 'hover:bg-primary-700']
-      //   }
-
-      //   this.setStatusOperation = this.setStatusOperation.charAt(0).toUpperCase() + this.setStatusOperation.slice(1);
-      //   this.setStatusModalSubject = accountName
-      // },
 
       status: '',
       filterColumnByStatus(status) {
@@ -650,7 +893,163 @@
         statusColumn
           .search(this.status ? '^' + this.status + '$' : '', true, false)
           .draw();
-      }
+      },
+
+      /* PROFILE FORM */
+      successModalOpen: false,
+
+      onEditMode: true,
+      formGroup: {
+        [':class']() {
+          let defaultClass = 'form-group'
+
+          return this.onEditMode ? `${defaultClass} border-0` : `${defaultClass} border-b`
+        },
+        inputContainer: {
+          [':class']() {
+            return 'input-container'
+          }
+        },
+        formLabel: {
+          [':for']() {
+            return this.$el.parentNode.querySelector('input, select, textarea').getAttribute('name')
+          },
+          [':class']() {
+            return 'form-label'
+          }
+        },
+        formInput: {
+          [':id']() {
+            return this.$el.getAttribute('name')
+          },
+          [':disabled']() {
+            return !this.onEditMode
+          },
+          [':class']() {
+            let defaultClass = 'form-input'
+
+            return !this.onEditMode ? `${defaultClass} border-0 uppercase` : `${defaultClass} border-secondary-300`
+          },
+        },
+        formInputError: {
+          ['x-show']() {
+            return this.onEditMode
+          },
+          [':class']() {
+            return 'form-input-err'
+          }
+        },
+      },
+
+      importForm: function() {
+        let actionText = this.$el.textContent
+        this.$el.textContent = 'Please wait...'
+
+        const updateRequest = new FormData();
+        updateRequest.append('profile_file', this.$refs.profile_file.files[0])
+
+        fetch('<?php echo URLROOT . "/admins/importProfile" ?>', {
+            method: "POST",
+            body: updateRequest,
+          }).then(data => data.json())
+          .then(res => {
+            this.$el.textContent = actionText
+            this.$el.disabled = false
+            this.fixedAlertIsSuccess = false;
+            this.fixedAlertWithView = false;
+
+            if (res.status == 'ok') {
+              this.$refs.profile_file_form.reset()
+
+              this.fixedAlertOpen = true
+              this.fixedAlertIsSuccess = true
+              let newArr = []
+              res.insertedRows.forEach((item, index) => {
+                item.date_posted = dayjs(item.date_posted).year()
+                newArr.push(Object.values(item))
+              })
+
+              this.$refs.profile_file_err.classList.add('hidden')
+              this.$refs.fixed_alert_message.textContent = `You imported ${newArr.length} profile(s)`
+            } else {
+              this.$refs.profile_file_err.classList.remove('hidden')
+              this.fixedAlertOpen = true
+              this.fixedAlertIsSuccess = false
+              if (res.rows) {
+                this.fixedAlertWithView = true
+              }
+              this.$refs.fixed_alert_message.textContent = `${res.message}`
+
+              this.$refs.profile_file_err.textContent = res.message
+              this.$refs.import_success_table_rows.innerHTML = ''
+              this.$refs.import_success_table_thead.innerHTML = '<th>Row No.</th>'
+
+              if (res.error_title == 'cell error') {
+                this.$refs.import_success_title.textContent = 'List of rows with validation errors'
+
+                const cols = document.createElement('th')
+                cols.textContent = 'Column(s)'
+                const errs = document.createElement('th')
+                errs.textContent = 'Error(s)'
+                this.$refs.import_success_table_thead.append(cols)
+                this.$refs.import_success_table_thead.append(errs)
+
+                for (const [key, value] of Object.entries(res.rows)) {
+                  this.$refs.import_success_table_rows.innerHTML +=
+                    `<tr>
+                    <td>${value.rowNo}</td>
+                    <td>(${value.column.split(',').length}) ${value.column}</td>
+                    <td>(${value.status.split(',').length}) ${value.status}</td>
+                  </tr>`
+                }
+              } else {
+                if (res.error_title == 'spreadsheet duplicate') {
+                  this.$refs.import_success_title.textContent = 'List of rows with duplicate prc number'
+
+                  const cols = document.createElement('th')
+                  cols.textContent = 'Column(s)'
+                  const errs = document.createElement('th')
+                  errs.textContent = 'Error(s)'
+                  this.$refs.import_success_table_thead.append(cols)
+                  this.$refs.import_success_table_thead.append(errs)
+
+                  res.rows.forEach((item, index) => {
+                    this.$refs.import_success_table_rows.innerHTML +=
+                      `<tr>
+                    <td>${item.rowNo}</td>
+                    <td>PRC No.</td>
+                    <td>Duplicate PRC No.</td>
+                  </tr>`
+                  })
+                }
+                if (res.error_title == 'database duplicate') {
+                  this.$refs.import_success_title.textContent = 'List of rows with already taken prc numbers'
+
+                  const cols = document.createElement('th')
+                  cols.textContent = 'Column(s)'
+                  const errs = document.createElement('th')
+                  errs.textContent = 'Error(s)'
+                  this.$refs.import_success_table_thead.append(cols)
+                  this.$refs.import_success_table_thead.append(errs)
+
+                  for (const [key, value] of Object.entries(res.rows)) {
+                    this.$refs.import_success_table_rows.innerHTML +=
+                      `<tr>
+                    <td>${key}</td>
+                    <td>PRC No.</td>
+                    <td>Already taken PRC No.</td>
+                  </tr>`
+                  }
+                }
+              }
+            }
+
+            $('#myTable').DataTable().draw();
+          })
+      },
+      fixedAlertOpen: '',
+      fixedAlertIsSuccess: false,
+      fixedAlertWithView: false,
     }))
 
   })

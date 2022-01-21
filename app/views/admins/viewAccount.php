@@ -41,7 +41,13 @@
   </div>
 
   <header class="flex flex-col gap-10 mb-10">
-    <div class="flex-shrink-0">
+    <div class="flex gap-4">
+      <a href="<?php echo URLROOT?>/admins/profiles" class="hover:text-blue-500 text-blue-700 text-sm font-bold flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+        </svg>
+        Return
+      </a>
       <span class="text-2xl font-bold">View profile (<?php echo arrangeFullname($data['user']->first_name ?? '', $data['user']->middle_name ?? '', $data['user']->last_name ?? '') ?>)</span>
     </div>
   </header>
@@ -68,7 +74,7 @@
         <div class="mt-5">
           <ul class="list-reset flex flex-wrap border-b">
             <li @click="currentTab = 1" class="-mb-px mr-1">
-              <a :class="currentTab == 1 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Profile</a>
+              <a :class="currentTab == 1 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">User account</a>
             </li>
             <li @click="currentTab = 2" class="-mb-px mr-1">
               <a :class="currentTab == 2 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Personal</a>

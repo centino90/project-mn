@@ -344,7 +344,7 @@ class Users extends Controller
         $mail->MsgHTML($message);
 
         $mail->send();
-        
+
         if (isset($data['logoutAfter']) && $data['logoutAfter']) {
           $this->session->clear();
         }
@@ -1323,8 +1323,12 @@ class Users extends Controller
           $data['email_err'] = 'Please enter your email';
         }
 
-        if ($this->userModel->find(['*'], ['email'], [$data['email']])) {
-          $data['email_err'] = 'Email is already taken';
+        $user = $this->userModel->find(['*'], ['id'], [$this->session->auth()->id]);
+        if (
+          $user->email !== $data['email']
+          && $this->userModel->hasRow(['email'], [$data['email']])
+        ) {
+          $data['email_err'] = 'this email is already taken';
         }
       }
 
@@ -1360,7 +1364,7 @@ class Users extends Controller
         }
 
         $hashed_password = $verifiedUser->password;
-        if (password_verify($data['password'], $hashed_password)) {      
+        if (password_verify($data['password'], $hashed_password)) {
           $this->userModel->update4(
             ['new_email', 'changing_email'],
             [$data['email'], true],
@@ -1466,21 +1470,16 @@ class Users extends Controller
       ]
     );
 
-    // update login timestamp
+    // regen session id and update login credits
+    session_regenerate_id();
     $this->userModel->update4(
-      ['logged_at'],
-      [date("Y-m-d H:i:s")],
+      ['logged_at', 'login_session_id', 'is_online'],
+      [date("Y-m-d H:i:s"), session_id(), true],
       ['id'],
-      [$this->session->auth(false)->id]
+      [$this->session->auth()->id]
     );
-
-    //update payment status
-    // $this->profileModel->update3(
-    //   ['payment_status'],
-    //   ['dormant'],
-    //   ['id'],
-    //   [$this->session->auth(false)->profile_id]
-    // );
+    $this->session->set(SessionManager::SESSION_LOGIN_SESSION_ID, session_id());
+    $this->session->set(SessionManager::SESSION_REGENERATED, true);
 
     $this->url->redirectToHomepage();
   }
@@ -1559,7 +1558,6 @@ class Users extends Controller
       }
     }
   }
-
 }
 
   // public function removeThirdPartyAuth($authChannel = null)

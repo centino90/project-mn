@@ -9,6 +9,8 @@ class SessionManager
     const SESSION_PASS_REGISTERED = SESSION_PASS_REGISTERED ?? 'password_registered';
     const SESSION_COMPLETE_INFO = SESSION_COMPLETE_INFO ?? 'complete_info';
     const SESSION_CURRENT_REGS_STEP = SESSION_CURRENT_REGS_STEP ?? 'current_registration_step';
+    const SESSION_LOGIN_SESSION_ID = 'login_session_id';
+    const SESSION_REGENERATED = 'session_regenerated';
 
     private $url;
     private $userModel = 'User';
@@ -33,13 +35,17 @@ class SessionManager
      */
     public function start(): object
     {
-        if ($this->expired()) {
+        if (
+            $this->expired()
+            || $this->get(self::SESSION_REGENERATED) === true
+            && $this->get(self::SESSION_LOGIN_SESSION_ID) !== $this->auth(false)->login_session_id
+        ) {
             $this->clear();
             $this->url->redirectToLoginpage();
             exit();
         }
 
-        $this->set('login_timestamp', time());
+        $this->set(self::SESSION_LOGIN_TIMESTAMP, time());
         return $this;
     }
 
@@ -74,6 +80,15 @@ class SessionManager
 
     public function clear(): void
     {
+        if ($this->get(self::SESSION_LOGIN_SESSION_ID) == $this->auth(false)->login_session_id) {
+            $this->userModel->update4(
+                ['is_online'],
+                [false],
+                ['id'],
+                [$this->auth()->id]
+            );
+        }
+
         session_unset();
         session_destroy();
     }
@@ -130,7 +145,7 @@ class SessionManager
      */
     public function auth(bool $persistUser = true): ?object
     {
-        if($persistUser && is_object($this->user) && isset($this->user->id)) {
+        if ($persistUser && is_object($this->user) && isset($this->user->id)) {
             return $this->user;
         }
 

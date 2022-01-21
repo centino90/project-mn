@@ -29,9 +29,22 @@
     </nav>
   </div>
 
-  <header class="flex flex-col gap-10 mb-10">
+  <!-- header -->
+  <header class="flex flex-col gap-3 mb-10">
     <div class="w-64 flex-shrink-0">
       <span class="text-2xl font-bold">Users</span>
+    </div>
+    <div class="w-full">
+      <div class="mt-5">
+        <ul class="list-reset flex flex-wrap border-b">
+          <li @click="currentTab = 1" class="-mb-px mr-1">
+            <a :class="currentTab == 1 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">General</a>
+          </li>
+          <li @click="currentTab = 2" class="-mb-px mr-1">
+            <a :class="currentTab == 2 ? 'border-l border-t border-r rounded-t' : 'hover:text-primary-500 hover:bg-secondary-100'" class="rounded-t-lg bg-white inline-block py-2 px-4 font-semibold" href="javascript:void(0);">Archived users</a>
+          </li>
+        </ul>
+      </div>
     </div>
   </header>
 
@@ -71,49 +84,55 @@
     </div>
   </div>
 
-  <div class="gap-y-8">
+  <!--  general tab -->
+  <div x-transition x-show="currentTab == 1" class="w-full bg-opacity-50">
+    <div class="gap-y-8">
+      <div class="bg-white w-full px-0 mb-3">
+        <nav>
+          <div class="flex gap-3">
+            <div class="w-full lg:w-auto space-y-2">
+              <label for="" class="form-label">Role</label>
+              <select class="form-input" x-model="role">
+                <option value="">All</option>
+                <option value="member">Members</option>
+                <option value="admin">Admins</option>
+              </select>
+            </div>
 
-    <div class="bg-white w-full px-0 mb-3 mt-10 lg:mt-5">
-      <nav>
-        <div class="mb-5">
-          <h1 class="text-lg font-semibold text-secondary-400 bg-secondary-100 rounded-full px-4 py-1 inline">
-            Filters
-          </h1>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-full lg:w-auto space-y-2">
-            <label for="" class="form-label">Role</label>
-            <select class="form-input" x-model="role">
-              <option value="">Select role</option>
-              <option value="member">Members</option>
-              <option value="admin">Admins</option>
-            </select>
+            <div class="w-full lg:w-auto space-y-2">
+              <label for="" class="form-label">Status</label>
+              <select class="form-input" x-model="account_status">
+                <option value="">All</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
           </div>
+        </nav>
+      </div>
 
-          <div class="w-full lg:w-auto space-y-2">
-            <label for="" class="form-label">Status</label>
-            <select class="form-input" x-model="account_status">
-              <option value="">Select status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-
-          <div class="w-full lg:w-auto space-y-2">
-            <label for="" class="form-label">Archive option</label>
-            <select class="form-input" x-model="dt_include_deleted">
-              <option value="hide">Hide archived</option>
-              <option value="show">Show archived</option>
-              <option value="only">Only archived</option>
-            </select>
-          </div>
-        </div>
-      </nav>
+      <div class="table-container">
+        <table x-cloak id="myTable" style="width: 100%">
+          <thead class="border-t border-b">
+            <tr>
+              <th></th>
+              <th>SIGNED UP AT</th>
+              <th>email</th>
+              <th>role</th>
+              <th>Account status</th>
+              <th>Login status</th>
+              <th>Last Log in</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
     </div>
+  </div>
 
+  <!--  archived users tab -->
+  <div x-transition x-show="currentTab == 2" class="w-full bg-opacity-50">
     <div class="table-container">
-      <table x-cloak id="myTable" style="width: 100%">
+      <table x-cloak id="archivedUsersdataTable" style="width: 100%">
         <thead class="border-t border-b">
           <tr>
             <th></th>
@@ -139,16 +158,19 @@
       init() {
         const app = this
 
-        $.fn.dataTable.Debounce = function(table, options) {
-          let tableId = table.settings()[0].sTableId;
-          $('.dataTables_filter input[aria-controls="' + tableId + '"]')
-            .unbind()
-            .bind('input', (delay(function(e) {
-              table.search($(this).val()).draw();
-              return;
-            }, 1000)));
-        }
+        $.fn.dataTable.Debounce = function(tables = [], options) {
+          if (tables.length == 0) return
 
+          tables.forEach(table => {
+            let tableId = table.settings()[0].sTableId;
+            $('.dataTables_filter input[aria-controls="' + tableId + '"]')
+              .unbind()
+              .bind('input', (delay(function(e) {
+                table.search($(this).val()).draw();
+                return;
+              }, 1000)));
+          })
+        }
         function delay(callback, ms) {
           let timer = 0;
           return function() {
@@ -170,7 +192,7 @@
           'order': [
             [0, 'desc']
           ],
-          'dom': 'lfBrtip',
+          'dom': 'fBrtilp',
           'pageLength': 5,
           'processing': true,
           'serverSide': true,
@@ -182,7 +204,7 @@
               // Append to data
               data.role = app.role
               data.accountStatus = app.account_status
-              data.includeDeleted = app.dt_include_deleted;
+              data.includeDeleted = 'hide';
             }
           },
           "language": {
@@ -198,6 +220,7 @@
                 <a href="<?php echo URLROOT ?>/${r.profile_img_path ?? 'img/profiles/default-profile.png'}" target="_blank" class="block rounded-full w-10 h-10 overflow-hidden">
                   <img class="w-full h-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
                 </a>
+                <?php if ($this->role->isSuperadmin()) : ?>
                 <div class="relative" x-data="{dropDownOpen:false}">
                   <a @click="dropDownOpen = true" href="javascript:void(0)" class="block text-lg text-secondary-500 hover:bg-secondary-200 rounded-full p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,7 +233,6 @@
                     @click.away="dropDownOpen=false"
                     x-transition:enter-start="transition ease-in duration-3000"
                   >
-                    <?php if ($this->role->isSuperadmin()) : ?>
                       <a href="javascript:void(0)" @click="confirmSendAssignRole(${r.user_id})" class="flex gap-2 items-center justify-center text-secondary-700 text-center bg-white hover:bg-secondary-100 focus:bg-secondary-200 px-4 py-2">
                     ${r.role == 'admin' 
                       ? `<img width="20" src="<?php echo URLROOT ?>/img/icons/x-circle.svg"/>`
@@ -218,14 +240,148 @@
                     }
                     ${r.role == 'admin' ? 'Retire as admin' : 'Assign as admin'}
                     </a>
-                    <?php endif ?>
+
                     <a href="javascript:void(0)" @click="archiveUser(${r.user_id});" class="flex gap-2 items-center justify-center text-center px-4 py-2" :class="'${r.deleted_at ? ' bg-success-600 hover:bg-success-700 focus:bg-success-800 text-white ' : ' bg-danger-600 hover:bg-danger-700 focus:bg-danger-800 text-white '}'" >
                       <img width="20" src="<?php echo URLROOT ?>/img/icons${r.deleted_at ? '/refresh.svg' : '/trash.svg'}"/>                    
                       <span>${r.deleted_at ? 'Restore' : 'Archive'}</span>
-                      </a>                      
+                      </a>                   
                   </div>
                 </div>
+                <?php endif ?>   
                 <div x-show="${r.deleted_at != null ? true : false}" class="text-danger-600 italic text-sm">Archived</div>
+                </div>
+                `
+              }
+            },
+            {
+              data: 'created_at',
+            },
+            {
+              data: 'email',
+              class: 'visible-always'
+            },
+            {
+              data: 'role',
+              sortable: false
+            },
+            {
+              data: 'account_status',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `<span class="px-2 py-1 rounded-full whitespace-nowrap" :class="'${r.account_status}' == 'active' ? 'bg-success-100 text-success-700' : 'bg-secondary-100 text-secondary-700'">${r.account_status}</span>`
+              }
+            },
+            {
+              data: 'is_online',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `<span class="px-2 py-1 rounded-full whitespace-nowrap" :class="'${r.is_online}' == 'online' ? 'bg-success-100 text-success-700' : 'bg-secondary-100 text-secondary-700'">${r.is_online}</span>`
+              }
+            },
+            {
+              data: 'logged_at'
+            }
+          ],
+          initComplete: function() {
+            const api = this.api();
+            api.columns('.hidden-first').visible(false)
+          },
+          buttons: [{
+              text: 'exports',
+              extend: 'collection',
+              className: 'buttons-excel custom-html-collection',
+              buttons: [
+                '<header>Export to</header>',
+                {
+                  extend: 'excel',
+                  exportOptions: {
+                    columns: ':visible :not(.disabled-cols)'
+                  },
+                  title: ''
+                },
+                {
+                  extend: 'csv',
+                  exportOptions: {
+                    columns: ':visible :not(.disabled-cols)'
+                  },
+                  title: ''
+                },
+              ]
+            },
+            {
+              text: 'column visibility',
+              extend: 'colvis',
+              prefixButtons: [{
+                  extend: 'colvisRestore',
+                },
+                {
+                  text: "<span>Show all</span>",
+                  action: function(e, dt, node, config) {
+                    dt.columns().visible(true);
+
+                  }
+                },
+                {
+                  text: "<span>Hide all</span>",
+                  action: function(e, dt, node, config) {
+                    dt.columns(':not(.visible-always)').visible(false);
+                  }
+                }
+              ],
+              columns: ':not(:first-child)'
+            },
+            {
+              text: "<span>Refresh</span>",
+              action: function(e, dt, node, config) {
+                dt.clear().draw();
+                dt.ajax.reload(null, false);
+              }
+            },
+          ],
+        });
+        const archivedUsersdataTable = $('#archivedUsersdataTable').DataTable({
+          "bStateSave": true,
+          'lengthMenu': [
+            [5, 10, 25, <?php echo MAX_ROW ?>],
+            ['5 rows', '10 rows', '25 rows', 'All rows']
+          ],
+          'order': [
+            [0, 'desc']
+          ],
+          'dom': 'frtilp',
+          'pageLength': 5,
+          'processing': true,
+          'serverSide': true,
+          'searchDelay': 350,
+          'serverMethod': 'post',
+          'ajax': {
+            'url': 'usersDatatable',
+            'data': function(data) {
+              // Append to data
+              data.role = ''
+              data.accountStatus = ''
+              data.includeDeleted = 'only';
+            }
+          },
+          "language": {
+            "processing": 'Please wait...'
+          },
+          'columns': [{
+              data: 'thumbnail_img_path',
+              class: 'disabled-cols visible-always',
+              sortable: false,
+              render: function(d, t, r, m) {
+                return `
+                <div class="flex items-center gap-2">
+                <a href="<?php echo URLROOT ?>/${r.profile_img_path ?? 'img/profiles/default-profile.png'}" target="_blank" class="block rounded-full w-10 h-10 overflow-hidden">
+                  <img class="w-full h-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
+                </a>
+                <?php if ($this->role->isSuperadmin()) : ?>
+                <a href="javascript:void(0)" @click="archiveUser(${r.user_id});" class="rounded flex gap-2 items-center justify-center text-center p-2 bg-success-600 hover:bg-success-700 focus:bg-success-800 text-white">
+                    <img width="20" src="<?php echo URLROOT ?>/img/icons/refresh.svg"/>                    
+                    <span>Restore</span>
+                </a>  
+                <?php endif ?>
                 </div>
                 `
               }
@@ -255,22 +411,23 @@
           initComplete: function() {
             const api = this.api();
             api.columns('.hidden-first').visible(false)
+            api.draw();
           },
           buttons: [{
               text: 'exports',
               extend: 'collection',
-              className: 'custom-html-collection',
+              className: 'buttons-excel custom-html-collection',
               buttons: [
                 '<header>Export to</header>',
                 {
-                  extend: 'csv',
+                  extend: 'excel',
                   exportOptions: {
                     columns: ':visible :not(.disabled-cols)'
                   },
                   title: ''
                 },
                 {
-                  extend: 'excel',
+                  extend: 'csv',
                   exportOptions: {
                     columns: ':visible :not(.disabled-cols)'
                   },
@@ -282,6 +439,9 @@
               text: 'column visibility',
               extend: 'colvis',
               prefixButtons: [{
+                  extend: 'colvisRestore',
+                },
+                {
                   text: "<span>Show all</span>",
                   action: function(e, dt, node, config) {
                     dt.columns().visible(true);
@@ -296,9 +456,6 @@
                 }
               ],
               columns: ':not(:first-child)'
-            },
-            {
-              extend: 'colvisRestore',
             },
             {
               text: "<span>Refresh</span>",
@@ -316,7 +473,7 @@
         dataTable.on('xhr.dt', function() {
           $('#myTable').removeClass('text-secondary-200');
         });
-        let debounce = new $.fn.dataTable.Debounce(dataTable);
+        let debounce = new $.fn.dataTable.Debounce([dataTable, archivedUsersdataTable]);
 
         this.$watch('dt_include_deleted', (value) => {
           dataTable.draw();
@@ -338,6 +495,7 @@
         })
 
       },
+      currentTab: 1,
       dt_include_deleted: '',
 
       openModalOnClick(event) {
@@ -425,6 +583,7 @@
           .then(res => {
             if (res.status == 'ok') {
               $('#myTable').DataTable().draw('page');
+              $('#archivedUsersdataTable').DataTable().draw('page');
             }
           })
       },

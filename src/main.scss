@@ -171,8 +171,6 @@
     font-medium;
 }
 
-/* Breadcrumbs */
-
 /* Datatable Plugin */
 @media (min-width: 1024px) {
     .table-container {
@@ -192,6 +190,7 @@
     }
   }
 
+/* dt wrapper */
 .table-container {
     @apply
     overflow-x-auto 
@@ -200,32 +199,131 @@
     sm:rounded-lg 
     pb-10;
 }
-.dataTables_wrapper tbody tr {
+.dataTables_wrapper tbody tr, table tbody tr {
     @apply
     hover:bg-secondary-100;
 } 
-.dataTables_wrapper thead th {
+.dataTables_wrapper thead th, table thead th {
     @apply
     uppercase px-6 py-2 text-xs text-left text-secondary-400 font-bold hover:bg-secondary-100;
 } 
-.dataTables_wrapper tfoot th {
+.dataTables_wrapper tfoot th, table tfoot tr {
     @apply
     uppercase px-6 py-2 text-xs text-left text-black font-bold hover:bg-secondary-100;
 } 
-.dataTables_wrapper td {
+.dataTables_wrapper td, table td {
     @apply
     w-40
     px-6 py-4 text-sm text-left border-b;
 } 
 
-.dataTables_empty {
-	@apply
-    text-center;
+/* dt buttons */
+.dt-buttons {
+    @apply
+    bg-gradient-to-r from-white to-secondary-50
+    flex flex-col md:flex-row gap-3
+    p-6;
+}
+.dt-button {
+    @apply 
+    cursor-pointer
+    inline-flex justify-center items-center
+    px-4 py-2 
+    border border-secondary-400
+    text-secondary-600 
+    hover:bg-secondary-100
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+    font-bold uppercase text-xs
+    disabled:opacity-50 disabled:cursor-wait disabled:pointer-events-none
+    rounded-md;
+
+    &.buttons-copy {
+        @apply
+        border-secondary-400
+        focus:ring-secondary-300
+        text-secondary-400;       
+    }
+    &.buttons-csv, &.buttons-excel {
+        @apply
+        border-success-700
+        focus:ring-success-600
+        text-success-700;
+    }
+
+    &.buttons-pdf  {
+        @apply
+        border-danger-500
+        text-danger-500
+        focus:ring-danger-400;
+    }
+    &.buttons-print {
+        @apply
+        border-blue-500
+        text-blue-500
+        focus:ring-blue-400;
+    }
+
+}
+.dt-button-collection {
+    [role="menu"] {
+        @apply
+        flex flex-wrap 
+        space-y-2
+        w-96
+        h-80
+        overflow-y-auto
+        bg-white
+        p-4
+        shadow-2xl;
+
+        .buttons-colvis {
+            @apply
+            inline-block
+            w-1/2;
+        }
+        .dt-button {
+            @apply
+            flex justify-center items-center
+            w-full;
+        }
+    }
+}
+.dt-button-collection header {
+    @apply
+    w-full
+    my-3 py-3
+    border-b
+    font-bold text-left;
+}
+.buttons-columnVisibility.active {
+    @apply
+    bg-primary-600
+    text-white;
 }
 
+/* dt DOM */
+.dataTables_filter {
+    @apply
+    bg-white
+    flex
+    w-full
+    p-6;
+    
+    label {
+        @apply
+        text-sm  
+    }
+
+    input,select,textarea {
+        @apply 
+        h-10 w-full rounded-md
+        border-secondary-300 focus:border-primary-500 
+        sm:text-sm 
+        focus:ring-primary-500;        
+    }
+}
 .dataTables_info {
     @apply
-    lg:w-1/2
     inline-block
     w-full
     text-center
@@ -233,8 +331,27 @@
     p-6
     text-sm;
 }
+.dataTables_length {
+    @apply
+    bg-white
+    flex
+    justify-center
+    w-full
+    p-6;
+    
+    label {
+        @apply
+        text-sm  
+    }
 
-/* PAGER */
+    input,select,textarea {
+        @apply 
+        h-10 w-full rounded-md
+        border-secondary-300 focus:border-primary-500 
+        sm:text-sm 
+        focus:ring-primary-500;        
+    }
+}
 .dataTables_paginate.paging_simple_numbers {
     @apply
     flex
@@ -285,99 +402,9 @@
 
 }
 
-.dt-buttons {
-    @apply
-    bg-gradient-to-r from-white to-secondary-50
-    flex flex-col md:flex-row gap-3
-    p-6;
-}
-.dt-button {
-    @apply 
-    cursor-pointer
-    inline-flex justify-center items-center
-    px-4 py-2 
-    border border-secondary-400
-    text-secondary-600 
-    hover:bg-secondary-100
-    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
-    font-bold uppercase text-xs
-    disabled:opacity-50 disabled:cursor-wait disabled:pointer-events-none
-    rounded-md;
-
-    &.buttons-copy {
-        @apply
-        border-secondary-400
-        text-secondary-400;
-    }
-    &.buttons-csv {
-        @apply
-        border-success-400
-        text-success-400;
-    }
-    &.buttons-excel {
-        @apply
-        border-success-700
-        text-success-700;
-    }
-    &.buttons-pdf  {
-        @apply
-        border-danger-500
-        text-danger-500;
-    }
-    &.buttons-print {
-        @apply
-        border-blue-500
-        text-blue-500;
-    }
-    &.buttons-collection {
-        @apply
-        border-primary-500
-        text-primary-500;
-    }  
-}
-.dataTables_length {
-    @apply
-    bg-white
-    flex
-    w-full
-    lg:w-1/2
-    float-left
-    p-6;
-    
-    label {
-        @apply
-        text-sm  
-    }
-
-    input,select,textarea {
-        @apply 
-        h-10 w-full rounded-md
-        border-secondary-300 focus:border-primary-500 
-        sm:text-sm 
-        focus:ring-primary-500;        
-    }
-}
-.dataTables_filter {
-    @apply
-    bg-white
-    flex
-    w-full
-    lg:w-1/2
-    float-right
-    p-6;
-    
-    label {
-        @apply
-        text-sm  
-    }
-
-    input,select,textarea {
-        @apply 
-        h-10 w-full rounded-md
-        border-secondary-300 focus:border-primary-500 
-        sm:text-sm 
-        focus:ring-primary-500;        
-    }
+.dataTables_empty {
+	@apply
+    text-center;
 }
 .dataTables_processing {
     @apply
@@ -385,43 +412,3 @@
     font-bold text-primary-600
     animate-pulse;
 }
-
-
-.dt-button-collection {
-    [role="menu"] {
-        @apply
-        flex flex-wrap 
-        space-y-2
-        w-96
-        h-80
-        overflow-y-auto
-        bg-white
-        p-4
-        shadow-2xl;
-
-        .buttons-colvis {
-            @apply
-            inline-block
-            w-1/2;
-        }
-        .dt-button {
-            @apply
-            flex justify-center items-center
-            w-full;
-        }
-    }
-}
-.dt-button-collection header {
-    @apply
-    w-full
-    my-3 py-3
-    border-b
-    font-bold text-left;
-}
-
-.buttons-columnVisibility.active {
-    @apply
-    bg-primary-600
-    text-white;
-}
-
