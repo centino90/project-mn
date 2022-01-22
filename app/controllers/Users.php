@@ -158,7 +158,7 @@ class Users extends Controller
         $mail->MsgHTML($message);
 
         $mail->send();
-        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
+        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'], 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
       }
@@ -349,7 +349,7 @@ class Users extends Controller
           $this->session->clear();
         }
 
-        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'] . '. The changes will take effect after you have clicked the link.', 'email' => $data['receiver_email']]);
+        $this->view('users/redirectPage', $data = ['message' => 'A confirmation link was just sent to ' . $data['receiver_email'], 'email' => $data['receiver_email']]);
       } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
       }

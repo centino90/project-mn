@@ -221,7 +221,7 @@
                   <img class="w-full h-full" src="<?php echo URLROOT ?>/${r.thumbnail_img_path ?? 'img/profiles/default-profile.png'}"/>
                 </a>
                 <?php if ($this->role->isSuperadmin()) : ?>
-                <div class="relative" x-data="{dropDownOpen:false}">
+                <div x-show="${r.role != 'superadmin' ? true : false}" class="relative" x-data="{dropDownOpen:false}">
                   <a @click="dropDownOpen = true" href="javascript:void(0)" class="block text-lg text-secondary-500 hover:bg-secondary-200 rounded-full p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
