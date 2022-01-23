@@ -196,7 +196,7 @@ class Dues extends Model
       $insertData['profile_id' . $n] = empty(trim($row['profile_id'] ?? '')) ? null : trim($row['profile_id']);
       $insertData['prc_number' . $n] = empty(trim($row['prc_number'] ?? '')) ? null : trim($row['prc_number']);
       $insertData['amount' . $n] = empty(trim($row['amount'] ?? '')) ? null : trim($row['amount']);
-      $insertData['type' . $n] = empty(trim($row['type'] ?? '')) ? null : trim($row['type']);
+      $insertData['type' . $n] = empty(trim($row['paid_to'] ?? '')) ? null : trim($row['paid_to']);
       $insertData['channel' . $n] = empty(trim($row['channel'] ?? '')) ? null : trim($row['channel']);
       $insertData['or_number' . $n] = empty(trim($row['or_number'] ?? '')) ? null : trim($row['or_number']);
       $insertData['date_posted' . $n] = empty(trim($row['date_posted'] ?? '')) ? null : trim($row['date_posted']);

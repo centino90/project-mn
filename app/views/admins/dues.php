@@ -244,7 +244,7 @@
                           <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative hover:border-teal-100">
                             <div class="w-6 flex flex-col items-center">
                               <div class="flex relative w-5 h-5 bg-blue-500 justify-center items-center m-1 mr-2 w-4 h-4 mt-1 rounded-full">
-                                <img class="rounded-full" alt="A" x-bind:src="option.thumbnail_img_path ? `<?php echo URLROOT . '/' ?>${option.thumbnail_img_path}` : '<?php echo URLROOT . '/public/img/profiles/default-profile.png' ?>'">
+                                <img class="rounded-full" alt="A" x-bind:src="option.thumbnail_img_path ? `<?php echo URLROOT . '/' ?>${option.thumbnail_img_path}` : '<?php echo URLROOT . '/img/profiles/default-profile.png' ?>'">
                               </div>
                             </div>
                             <div class="w-full items-center flex">
@@ -360,7 +360,7 @@
           <div x-bind="formGroup" x-show="onEditMode">
             <label></label>
             <div x-bind="formGroup.inputContainer">
-              <button @click="submitForm" x-ref="submit" class="form-btn lg:ml-2 disabled:cursor-wait bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              <button @click="addSingleDues" x-ref="submit" class="form-btn lg:ml-2 disabled:cursor-wait bg-primary-500 text-white w-full md:w-80 py-2 px-4">
                 Submit
               </button>
             </div>
@@ -392,7 +392,7 @@
           <div x-bind="formGroup">
             <label></label>
             <div x-bind="formGroup.inputContainer">
-              <button type="submit" @click="importForm" x-ref="submit" class="form-btn lg:ml-2 disabled:cursor-wait bg-primary-500 text-white w-full md:w-80 py-2 px-4">
+              <button type="submit" @click="importBulkDues" x-ref="submit" class="form-btn lg:ml-2 disabled:cursor-wait bg-primary-500 text-white w-full md:w-80 py-2 px-4">
                 Submit
               </button>
             </div>
@@ -529,7 +529,7 @@
                         <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative hover:border-teal-100">
                           <div class="w-6 flex flex-col items-center">
                             <div class="flex relative w-5 h-5 bg-blue-500 justify-center items-center m-1 mr-2 w-4 h-4 mt-1 rounded-full">
-                              <img class="rounded-full" alt="A" x-bind:src="option.profile_img_path ? `<?php echo URLROOT . '/' ?>${option.profile_img_path}` : '<?php echo URLROOT . '/public/img/profiles/default-profile.png' ?>'">
+                              <img class="rounded-full" alt="A" x-bind:src="option.profile_img_path ? `<?php echo URLROOT . '/' ?>${option.profile_img_path}` : '<?php echo URLROOT . '/img/profiles/default-profile.png' ?>'">
                             </div>
                           </div>
                           <div class="w-full items-center flex">
@@ -584,7 +584,7 @@
       <div class="flex items-center justify-end px-5 py-4 gap-5">
         <button @click="paymentModalOpen = false" class="py-3 px-5 rounded bg-secondary-100 border text-secondary-600 font-semibold transition duration-150 hover:bg-secondary-100 hover:text-secondary-900 focus:outline-none">Cancel</button>
 
-        <button @click="submitEditRemarksForm" class="py-3 px-10 rounded disabled:opacity-50 disabled:cursor-wait bg-primary-600 text-white font-semibold transition duration-150 hover:bg-primary-500 focus:outline-none">Update</button>
+        <button @click="updateDues" class="py-3 px-10 rounded disabled:opacity-50 disabled:cursor-wait bg-primary-600 text-white font-semibold transition duration-150 hover:bg-primary-500 focus:outline-none">Update</button>
       </div>
     </div>
   </div>
@@ -1330,7 +1330,7 @@
           })
 
       },
-      submitEditRemarksForm: function() {
+      updateDues: function() {
         let actionText = this.$el.textContent
         this.$el.textContent = 'Please wait...'
 
@@ -1527,18 +1527,26 @@
       },
       type: '',
 
-      submitForm: function() {
-        const prc_number_err = document.querySelector('#prc_number_err')
-        const type_err = document.querySelector('#type_err')
-        const amount_err = document.querySelector('#amount_err')
-        const channel_err = document.querySelector('#channel_err')
-        const or_number_err = document.querySelector('#or_number_err')
-        const date_posted_err = document.querySelector('#date_posted_err')
+      addSingleDues: function() {
+        const prc_number_err = document.querySelector('#add_prc_number_err')
+        const type_err = document.querySelector('#add_type_err')
+        const amount_err = document.querySelector('#add_amount_err')
+        const channel_err = document.querySelector('#add_channel_err')
+        const or_number_err = document.querySelector('#add_or_number_err')
+        const date_posted_err = document.querySelector('#add_date_posted_err')
 
         let actionText = this.$el.textContent
         this.$el.textContent = 'Please wait...'
 
-        this.performFormRequest().then(data => data.json())
+        fetch('<?php echo URLROOT . "/admins/addDues" ?>', {
+            method: "POST",
+            body: JSON.stringify({
+              duesForm: this.duesForm
+            }),
+            headers: {
+              "Content-type": "application/json"
+            }
+          }).then(data => data.json())
           .then(res => {
             this.$el.textContent = actionText
             this.$el.disabled = false
@@ -1578,13 +1586,6 @@
               this.fixedAlertWithView = false;
               this.$refs.fixed_alert_message.textContent = res.message
 
-              const prc_number_err = document.querySelector('#add_prc_number_err')
-              const type_err = document.querySelector('#add_type_err')
-              const amount_err = document.querySelector('#add_amount_err')
-              const channel_err = document.querySelector('#add_channel_err')
-              const or_number_err = document.querySelector('#add_or_number_err')
-              const date_posted_err = document.querySelector('#add_date_posted_err')
-
               prc_number_err.classList.remove('hidden')
               type_err.classList.remove('hidden')
               amount_err.classList.remove('hidden')
@@ -1601,24 +1602,19 @@
             }
           })
       },
-      performFormRequest: async function() {
-        return await fetch('<?php echo URLROOT . "/admins/addDues" ?>', {
-          method: "POST",
-          body: JSON.stringify({
-            duesForm: this.duesForm
-          }),
-          headers: {
-            "Content-type": "application/json"
-          }
-        })
-      },
-      importForm: function() {
+      importBulkDues: function() {
         const dues_file_err = document.querySelector('#dues_file_err')
         dues_file_err.classList.add('hidden')
         let actionText = this.$el.textContent
         this.$el.textContent = 'Please wait...'
 
-        this.performImportRequest().then(data => data.json())
+        const updateRequest = new FormData();
+        updateRequest.append('dues_file', document.querySelector('#dues_file').files[0])
+
+        fetch('<?php echo URLROOT . "/admins/importDues" ?>', {
+          method: "POST",
+          body: updateRequest,
+        }).then(data => data.json())
           .then(res => {
             this.$el.textContent = actionText
             this.$el.disabled = false
@@ -1705,15 +1701,6 @@
               dues_file_err.textContent = res.message
             }
           })
-      },
-      performImportRequest: async function() {
-        const updateRequest = new FormData();
-        updateRequest.append('dues_file', document.querySelector('#dues_file').files[0])
-
-        return await fetch('<?php echo URLROOT . "/admins/importDues" ?>', {
-          method: "POST",
-          body: updateRequest,
-        })
       },
       fixedAlertOpen: '',
       fixedAlertIsSuccess: false,

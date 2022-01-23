@@ -146,7 +146,7 @@
           </div>
 
           <!-- Field of practice -->
-          <div x-data="formGroup()" class="form-group" x-init="$refs.select_field_practice.value != 'General' ? specified = true : specified = false">
+          <div x-data="formGroup()" class="form-group" x-init="$refs.select_field_practice.value != 'General' && '' ? specified = true : specified = false">
             <label x-bind="formLabel">
               Field of practice <span class="text-danger-500">*</span>
               <a class="mx-1 text-blue-400 hover:underline cursor-pointer" @click="specified = !specified" x-show="specified">Change option</a>
