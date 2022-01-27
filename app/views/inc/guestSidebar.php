@@ -25,5 +25,11 @@
             </svg>
             <span class="mx-4 font-medium">Terms of service</span>
         </a>
+        <a href="<?php echo URLROOT ?>/about/dataDeletionInstruction" class="sidebar-nav-item <?php if ($data['current_route'] == 'dataDeletionInstruction') : ?> active <?php endif; ?>">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+            </svg>
+            <span class="mx-4 font-medium">User data deletion</span>
+        </a>
     </nav>
 </div>

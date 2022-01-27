@@ -33,4 +33,13 @@ class About extends Controller
 
     $this->view('about/privacy', $data);
   }
+  public function dataDeletionInstruction()
+  {
+    $data = [
+      'current_route' => __FUNCTION__
+
+    ];
+
+    $this->view('about/dataDeletion', $data);
+  }
 }
