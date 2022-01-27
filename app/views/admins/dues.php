@@ -208,9 +208,9 @@
         </div>
 
         <section class="hidden text-right px-5 py-3 text-sm text-secondary-500">
-          <span id="cap_start_year" x-text="`Selected start month and year: ${startDateString}`"> </span>
+          <span id="cap_start_year" x-text="`Selected start period: ${startDateString}`"> </span>
           <br>
-          <span id="cap_end_year" x-text="`Selected end month and year: ${endDateString}`"></span>
+          <span id="cap_end_year" x-text="`Selected end period: ${endDateString}`"></span>
         </section>
       </div>
     </div>
@@ -1182,12 +1182,12 @@
         });
         this.$watch('startDateString', (value) => {
           $('#cap_start_year').text(
-            `Selected start month and year: ${value}`
+            `Selected start period: ${value}`
           )
         });
         this.$watch('endDateString', (value) => {
           $('#cap_end_year').text(
-            `Selected start month and year: ${value}`
+            `Selected end period: ${value}`
           )
         });
 
@@ -1548,6 +1548,8 @@
             }
           }).then(data => data.json())
           .then(res => {
+            $('#myTable').DataTable().draw('page');
+
             this.$el.textContent = actionText
             this.$el.disabled = false
             this.fixedAlertIsSuccess = false;
@@ -1623,6 +1625,7 @@
             this.fixedAlertOpen = false;
 
             if (res.status == 'ok') {
+              $('#myTable').DataTable().draw('page');
               this.$refs.dues_import.reset()
 
               this.fixedAlertOpen = true
@@ -1634,9 +1637,8 @@
                 item.date_posted = dayjs(item.date_posted).year()
                 newArr.push(Object.values(item))
               })
-              // $('#inserted_rows').dataTable().api().rows.add(newArr).draw()
 
-              this.$refs.fixed_alert_message.textContent = `You imported ${newArr.length} dues`
+              this.$refs.fixed_alert_message.textContent = `You imported ${newArr.length} dues`            
             } else {
               this.fixedAlertOpen = true
               this.fixedAlertIsSuccess = false

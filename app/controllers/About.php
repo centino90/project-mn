@@ -5,6 +5,7 @@ class About extends Controller
   {
 
     $this->userModel = $this->model('User');
+    $this->session = new SessionManager;
   }
 
   public function index()
